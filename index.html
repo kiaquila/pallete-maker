@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Palette Pro Studio</title>
+    <script src="https://cdn.tailwindcss.com">updateDrawerSpace();
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;0,900;1,900&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background: #ffffff; margin: 0; padding: 0; overflow: hidden; }
+
+        :root { --vh: 1vh; }
+        html, body { height: calc(var(--vh) * 100); }
+        body { touch-action: manipulation; overscroll-behavior: none; }
+
+        .logo-font { font-family: 'Inter', sans-serif; font-weight: 900; font-style: italic; letter-spacing: -0.05em; }
+
+        /* Фиксированные элементы */
+        header { position: fixed; top: 0; left: 0; right: 0; height: 160px; background: white; z-index: 100; border-bottom: 2px solid #000; padding: 20px; }
+        main { margin-top: 160px; height: calc((var(--vh) * 100) - 160px - 180px); overflow-y: auto; padding: 20px; padding-bottom: var(--drawer-space, 220px); -webkit-overflow-scrolling: touch; }
+        
+        @media (max-width: 768px) {
+            header { height: 180px; padding: 15px; }
+            main { margin-top: 180px; height: calc((var(--vh) * 100) - 180px - 180px); overflow-y: auto; padding: 15px; padding-bottom: var(--drawer-space, 220px); -webkit-overflow-scrolling: touch; }
+        }
+
+        /* Дизайн карточек-кружков */
+        .color-card { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .circle-wrapper {
+            width: 54px; height: 54px; border-radius: 50%;
+            border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center;
+            background: white; margin-bottom: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+        .color-inner { width: 44px; height: 44px; border-radius: 50%; border: 2px solid white; }
+
+        .hex-label { font-size: 9px; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 0.02em; }
+
+        /* Состояния подбора */
+        .dimmed { opacity: 0.08; filter: grayscale(1); pointer-events: none; }
+        .is-base .circle-wrapper { border-color: #000; box-shadow: 0 0 0 1px #000; }
+
+        /* Нижняя панель */
+        #paletteDrawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; z-index: 100; transition: transform 0.4s ease; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); }
+        .drawer-closed { transform: translateY(calc(100% - 25px)); }
+        
+        #toggleBtn {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            background: white; border: 1px solid #eee; border-bottom: none;
+            width: 50px; height: 20px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border-radius: 10px 10px 0 0;
+        }
+        .rotated { transform: rotate(180deg); }
+
+        /* Сетка для мобильных и десктопа */
+        #sourceGrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        @media (min-width: 640px) { #sourceGrid { grid-template-columns: repeat(6, 1fr); } }
+        @media (min-width: 1024px) { #sourceGrid { grid-template-columns: repeat(10, 1fr); } }
+        @media (min-width: 1280px) { #sourceGrid { grid-template-columns: repeat(12, 1fr); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+            <h1 class="text-4xl md:text-5xl flex items-baseline">
+                <span class="logo-font">PALETTE</span> 
+                <span class="text-lg md:text-xl font-normal not-italic ml-3 text-gray-400">Match & Export</span>
+            </h1>
+            <p class="text-gray-400 mt-2 md:mt-3 text-[11px] md:text-sm font-medium leading-tight">
+                1. Выберите базу → 2. Соберите гармоничную палитру → 3. Скачайте результат
+            </p>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="clearPalette()" class="flex-1 md:flex-none px-4 py-2 border border-gray-300 text-[10px] font-black uppercase">Сброс</button>
+            <button onclick="exportPalette()" class="flex-1 md:flex-none px-6 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest">Скачать PNG</button>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div id="sourceGrid"></div>
+</main>
+
+<div id="paletteDrawer" class="p-4 md:p-6">
+    <div id="toggleBtn" onclick="toggleDrawer()">
+        <span id="arrow" class="text-[10px] font-bold">∨</span>
+    </div>
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Ваша палитра (<span id="count">0</span>/10)</h3>
+        </div>
+        <div id="userPalette" class="flex gap-3 overflow-x-auto pb-2 items-start min-h-[100px]">
+            </div>
+    </div>
+</div>
+
+<div id="exportContainer" style="position: absolute; left: -9999px;">
+    <div id="exportArea" style="display: grid; gap: 30px; padding: 60px; background: white;"></div>
+</div>
+
+<script>
+
+    // Fix 100vh issues in mobile browsers / Telegram WebView
+    function setVh() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    window.addEventListener('resize', setVh, { passive: true });
+    setVh();
+    // Синхронизация отступа снизу под нижнюю панель (чтобы не оставалась белая зона при сворачивании)
+    function updateDrawerSpace() {
+        const drawer = document.getElementById('paletteDrawer');
+        if (!drawer) return;
+        const rect = drawer.getBoundingClientRect();
+        const isClosed = drawer.classList.contains('drawer-closed');
+        const visible = isClosed ? 25 : rect.height; // 25px — высота “ручки” (см. translateY(calc(100% - 25px)))
+        document.documentElement.style.setProperty('--drawer-space', `${Math.max(visible, 25)}px`);
+    }
+    window.addEventListener('resize', updateDrawerSpace, { passive: true });
+    
+
+    // Кураторская база цветов (основные группы для Fashion & Interior)
+    
+    // Кураторская база цветов (Fashion & Interior) + расширение до 600 цветов
+    const colorGroups = {
+        achromatics: ['#000000', '#1A1A1A', '#333333', '#4D4D4D', '#666666', '#808080', '#999999', '#B3B3B3', '#CCCCCC', '#E5E5E5', '#F2F2F2', '#FFFFFF'],
+        warm_neutrals: ['#F7F1E8', '#EFE2D3', '#E6D5C3', '#D8C2AD', '#C9AE96', '#B9977B', '#A47F61', '#8B6548'],
+        cool_neutrals: ['#F2F4F7', '#E7ECF2', '#D8DEE6', '#C7CED8', '#AEB7C4', '#8E99A8', '#6F7B8A', '#4E5966'],
+        earth: ['#283618', '#606C38', '#DDA15E', '#BC6C25', '#582F0E', '#7F4F24', '#936639', '#A68A64'],
+        jewel: ['#0B1320', '#1B263B', '#0B4F6C', '#1E6F5C', '#2E294E', '#5B2333', '#7A1E3A', '#0A0908'],
+        brights: ['#E63946', '#F4A261', '#E9C46A', '#2A9D8F', '#1D3557', '#457B9D', '#8D99AE', '#A8DADC'],
+        pastels: ['#FAD2E1', '#E2ECE9', '#BEE1E6', '#F0EFEB', '#DFE7FD', '#CDDAFD', '#FFF1E6', '#FDE2E4']
+    };
+
+    const paletteData = [];
+    const seen = new Set();
+    const pushHex = (hex) => {
+        if (!hex) return;
+        const up = hex.toUpperCase();
+        if (!seen.has(up)) {
+            seen.add(up);
+            paletteData.push({ hex: up });
+        }
+    };
+
+    // 1) База: кураторские группы
+    Object.values(colorGroups).flat().forEach(pushHex);
+
+    // 2) Заполняем до 600 с помощью LCH (лучше распределяет «дизайнерские» оттенки)
+    const TARGET = 600;
+    const Ls = [22, 32, 42, 52, 62, 72, 82, 90];       // светлота
+    const Cs = [10, 22, 34, 46, 58, 70];               // насыщенность (chroma)
+    const Hstep = 10;
+
+    // Делаем несколько проходов: сначала более «приглушённые» и «универсальные», потом ярче.
+    const passOrder = [
+        { cMax: 34 },  // мягкие / интерьерные / капсульные
+        { cMax: 58 },  // fashion-универсальные
+        { cMax: 999 }  // яркие акценты
+    ];
+
+    for (const pass of passOrder) {
+        for (let h = 0; h < 360; h += Hstep) {
+            for (const l of Ls) {
+                for (const c of Cs) {
+                    if (c > pass.cMax) continue;
+                    const col = chroma.lch(l, c, h);
+                    if (!col.clipped()) pushHex(col.hex());
+                    if (paletteData.length >= TARGET) break;
+                }
+                if (paletteData.length >= TARGET) break;
+            }
+            if (paletteData.length >= TARGET) break;
+        }
+        if (paletteData.length >= TARGET) break;
+    }
+
+    // На всякий случай: если по устройству / браузеру часть LCH была «clipped», добиваем HSL
+    if (paletteData.length < TARGET) {
+        for (let h = 0; h < 360 && paletteData.length < TARGET; h += 6) {
+            [0.15, 0.35, 0.55, 0.75].forEach(s => {
+                [0.25, 0.4, 0.55, 0.7, 0.85].forEach(l => {
+                    if (paletteData.length < TARGET) pushHex(chroma.hsl(h, s, l).hex());
+                });
+            });
+        }
+    }
+
+let selectedBaseColor = null;
+    let userPalette = [];
+    let isDrawerOpen = true;
+
+    function renderGrid() {
+        const grid = document.getElementById('sourceGrid');
+        grid.innerHTML = '';
+
+        paletteData.forEach(color => {
+            const isMatch = checkHarmony(color);
+            const card = document.createElement('div');
+            const isBase = selectedBaseColor?.hex === color.hex;
+            card.className = `color-card ${!isMatch && selectedBaseColor ? 'dimmed' : ''} ${isBase ? 'is-base' : ''}`;
+            
+            card.innerHTML = `
+                <div class="circle-wrapper">
+                    <div class="color-inner" style="background-color: ${color.hex}"></div>
+                </div>
+                <div class="hex-label">${color.hex}</div>
+            `;
+
+            card.onclick = () => {
+                if (!selectedBaseColor) { 
+                    selectedBaseColor = color; 
+                    addToPalette(color); 
+                } else if (isMatch) { 
+                    addToPalette(color); 
+                }
+                renderGrid();
+            };
+            grid.appendChild(card);
+        });
+    }
+
+    function hueDiff(a, b) {
+        if (!isFinite(a) || !isFinite(b)) return 999;
+        const d = Math.abs(a - b) % 360;
+        return d > 180 ? 360 - d : d;
+    }
+
+    function checkHarmony(targetColor) {
+        if (!selectedBaseColor) return true;
+
+        const base = chroma(selectedBaseColor.hex);
+        const target = chroma(targetColor.hex);
+
+        const [bL, bC, bH] = base.lch();
+        const [tL, tC, tH] = target.lch();
+
+        // 1) Ахроматы и «условные ахроматы» (низкая chroma)
+        const isAchromatic = tC < 8;
+        const isNearNeutral = tC < 18 && tL > 70;
+
+        // 2) Одинаковая тональность (похожая светлота) — важна для «капсулы»
+        const similarTone = Math.abs(bL - tL) < 18;
+
+        // 3) Аналоговая гармония по оттенку (с поправкой на круг)
+        const similarHue = hueDiff(bH, tH) < 18 && tC >= 8;
+
+        // 4) Контраст (акцент) — работает даже если тональность разная
+        const isContrast = chroma.contrast(base, target) >= 4.5;
+
+        return isAchromatic || isNearNeutral || similarTone || similarHue || isContrast;
+    }
+
+    function addToPalette(color) {
+        if (userPalette.length < 10 && !userPalette.find(c => c.hex === color.hex)) {
+            userPalette.push(color);
+            updatePaletteUI();
+        }
+    }
+
+    function updatePaletteUI() {
+        const container = document.getElementById('userPalette');
+        document.getElementById('count').innerText = userPalette.length;
+        container.innerHTML = '';
+
+        userPalette.forEach((color, index) => {
+            const card = document.createElement('div');
+            card.className = 'color-card flex-shrink-0';
+            card.innerHTML = `
+                <div class="circle-wrapper" style="width: 46px; height: 46px;">
+                    <div class="color-inner" style="width: 36px; height: 36px; background-color: ${color.hex}"></div>
+                </div>
+                <div class="hex-label" style="font-size: 7px;">${color.hex}</div>
+            `;
+            card.onclick = () => {
+                userPalette.splice(index, 1);
+                if (userPalette.length === 0) selectedBaseColor = null;
+                updatePaletteUI();
+                renderGrid();
+            };
+            container.appendChild(card);
+        });
+    }
+
+    function toggleDrawer() {
+        const drawer = document.getElementById('paletteDrawer');
+        const arrow = document.getElementById('arrow');
+        isDrawerOpen = !isDrawerOpen;
+        drawer.classList.toggle('drawer-closed', !isDrawerOpen);
+        arrow.classList.toggle('rotated', !isDrawerOpen);
+        // пересчитываем отступ снизу, чтобы не оставалось пустого места
+        setTimeout(updateDrawerSpace, 50);
+    }
+
+    function clearPalette() {
+        userPalette = [];
+        selectedBaseColor = null;
+        updatePaletteUI();
+        renderGrid();
+    }
+
+    function showExportPreview(dataUrl) {
+        // В Telegram WebView "download" иногда не срабатывает — покажем превью
+        let modal = document.getElementById('exportModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'exportModal';
+            modal.style.position = 'fixed';
+            modal.style.inset = '0';
+            modal.style.background = 'rgba(0,0,0,0.55)';
+            modal.style.zIndex = '9999';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.padding = '16px';
+            modal.innerHTML = `
+                <div style="background:#fff; border-radius:18px; max-width:560px; width:100%; padding:14px; box-shadow:0 20px 60px rgba(0,0,0,0.25)">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="font-weight:900; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280;">PNG Preview</div>
+                        <button id="closeExportModal" style="border:1px solid #e5e7eb; background:#fff; padding:6px 10px; border-radius:12px; font-weight:800; font-size:10px; text-transform:uppercase;">Закрыть</button>
+                    </div>
+                    <div style="font-size:11px; color:#6b7280; margin-bottom:10px;">
+                        Если скачивание не стартовало, откройте картинку и сохраните её (на iPhone — долгий тап → «Сохранить изображение»).
+                    </div>
+                    <a id="openExportImg" target="_blank" style="display:block;">
+                        <img id="exportImg" alt="palette export" style="width:100%; height:auto; border-radius:14px; border:1px solid #eee" />
+                    </a>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+            modal.querySelector('#closeExportModal').onclick = () => modal.remove();
+        }
+        modal.querySelector('#exportImg').src = dataUrl;
+        modal.querySelector('#openExportImg').href = dataUrl;
+    }
+
+    function exportPalette() {
+        if(userPalette.length === 0) return alert("Выберите хотя бы один цвет");
+        const area = document.getElementById('exportArea');
+        area.innerHTML = '';
+        const cols = Math.ceil(Math.sqrt(userPalette.length));
+        area.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+        userPalette.forEach(color => {
+            const card = document.createElement('div');
+            card.className = 'color-card';
+            card.style.width = '180px';
+            card.innerHTML = `
+                <div class="circle-wrapper" style="width: 130px; height: 130px; border-width: 2px;">
+                    <div class="color-inner" style="width: 115px; height: 115px; border-width: 4px; background-color: ${color.hex}"></div>
+                </div>
+                <div class="hex-label" style="font-size: 18px; margin-top: 10px;">${color.hex}</div>
+            `;
+            area.appendChild(card);
+        });
+
+        setTimeout(() => {
+            html2canvas(area, { scale: 2 }).then(canvas => {
+                const dataUrl = canvas.toDataURL('image/png');
+                // 1) Пробуем "download"
+                try {
+                    const link = document.createElement('a');
+                    link.download = 'palette-design.png';
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                } catch(e) {
+                    // 2) Фоллбэк: превью/открытие
+                    showExportPreview(dataUrl);
+                }
+
+                // В некоторых WebView click "download" молча игнорируется — показываем превью на всякий случай.
+                setTimeout(() => showExportPreview(dataUrl), 300);
+            });
+        }, 100);
+    }
+
+    renderGrid();
+</script>
+</body>
+</html>
