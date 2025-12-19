@@ -365,7 +365,6 @@
         isDrawerOpen = !isDrawerOpen;
         drawer.classList.toggle('drawer-closed', !isDrawerOpen);
         arrow.classList.toggle('rotated', !isDrawerOpen);
-        // Немедленный вызов для плавности
         updateDrawerSpace();
     }
 
@@ -374,43 +373,6 @@
         selectedBaseColor = null;
         updatePaletteUI();
         renderGrid();
-    }
-
-    function showExportPreview(dataUrl) {
-        let modal = document.getElementById('exportModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'exportModal';
-            modal.style.position = 'fixed';
-            modal.style.inset = '0';
-            modal.style.background = 'rgba(0,0,0,0.55)';
-            modal.style.zIndex = '9999';
-            modal.style.display = 'flex';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
-            modal.style.padding = '16px';
-            modal.innerHTML = `
-                <div style="background:#fff; border-radius:18px; max-width:560px; width:100%; padding:14px; box-shadow:0 20px 60px rgba(0,0,0,0.25)">
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
-                        <div style="font-weight:900; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#6b7280;">PNG Preview</div>
-                        <button id="closeExportModal" style="border:1px solid #e5e7eb; background:#fff; padding:6px 10px; border-radius:12px; font-weight:800; font-size:10px; text-transform:uppercase;">Закрыть</button>
-                    </div>
-                    <div style="font-size:11px; color:#6b7280; margin-bottom:10px;">
-                        Если скачивание не стартовало, откройте картинку и сохраните её.
-                    </div>
-                    <a id="openExportImg" target="_blank" style="display:block;">
-                        <img id="exportImg" alt="palette export" style="width:100%; height:auto; border-radius:14px; border:1px solid #eee" />
-                    </a>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.remove();
-            });
-            modal.querySelector('#closeExportModal').onclick = () => modal.remove();
-        }
-        modal.querySelector('#exportImg').src = dataUrl;
-        modal.querySelector('#openExportImg').href = dataUrl;
     }
 
     function exportPalette() {
@@ -436,17 +398,12 @@
         setTimeout(() => {
             html2canvas(area, { scale: 2 }).then(canvas => {
                 const dataUrl = canvas.toDataURL('image/png');
-                try {
-                    const link = document.createElement('a');
-                    link.download = 'palette-design.png';
-                    link.href = dataUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                } catch(e) {
-                    showExportPreview(dataUrl);
-                }
-                setTimeout(() => showExportPreview(dataUrl), 300);
+                const link = document.createElement('a');
+                link.download = 'palette-design.png';
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
             });
         }, 100);
     }
