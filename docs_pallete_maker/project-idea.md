@@ -4,9 +4,10 @@
 
 `pallete-maker` is a lightweight personal web app for creating and exporting color palettes. It lets a user:
 
-- pick a base color via a color picker or hex input
-- automatically generate a harmonious palette of up to 10 colors using LCH-based harmony rules (complementary, triadic, analogous, etc.)
-- preview colors on a responsive grid with HEX/RGB/HSL values
+- browse a fixed palette of 51 curated colors and pick a base color
+- automatically see which colors are compatible based on an internal harmony algorithm (group + temperature rules)
+- assemble a palette of up to 14 colors (11 chromatic + 3 achromatic)
+- preview the selection in a bottom drawer, sorted achromatics-first
 - export the palette as a PNG image via html2canvas
 
 ## Current Product State
@@ -32,9 +33,9 @@ The repository now follows the standard delivery path:
 
 ## Next Product Goal
 
-After infra stabilization, the next implementation phase should:
+After PM Harmony delivery, the next implementation phase may:
 
-- improve mobile adaptation for the palette grid
 - add named palette save/load (local storage)
-- improve harmony algorithm options and preview
+- improve mobile grid layout for the 51-color picker
+- add color name search / filter
 - prepare the repo for potential migration to a modular frontend
