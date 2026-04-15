@@ -90,36 +90,36 @@
       }
 
       .circle-wrapper {
-        width: 54px;
-        height: 54px;
+        width: 88px;
+        height: 88px;
         border-radius: 50%;
         border: 1.5px solid #e5e5e5;
         display: flex;
         align-items: center;
         justify-content: center;
         background: white;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
         flex-shrink: 0;
       }
       .color-inner {
-        width: 44px;
-        height: 44px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
-        border: 2px solid white;
+        border: 3px solid white;
       }
 
       .color-name {
-        font-size: 8.5px;
+        font-size: 10px;
         font-weight: 600;
         color: #111;
         text-align: center;
         line-height: 1.25;
         letter-spacing: 0.01em;
-        max-width: 64px;
+        max-width: 96px;
       }
       .hex-label {
-        font-size: 7.5px;
+        font-size: 9px;
         font-weight: 400;
         color: #aaa;
         text-transform: uppercase;
@@ -134,12 +134,12 @@
         pointer-events: none;
       }
       .is-base .circle-wrapper {
-        border-color: #000;
-        box-shadow: 0 0 0 2px #000;
+        border-color: #4a4a4a;
+        box-shadow: 0 0 0 2.5px #4a4a4a;
       }
       .is-selected .circle-wrapper {
-        border-color: #555;
-        box-shadow: 0 0 0 1.5px #555;
+        border-color: #9a9a9a;
+        box-shadow: 0 0 0 1.5px #9a9a9a;
       }
 
       /* Bottom drawer */
@@ -181,30 +181,35 @@
       /* Picker grid */
       #sourceGrid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px 10px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px 12px;
         max-width: 1200px;
         margin: 0 auto;
       }
       @media (min-width: 480px) {
         #sourceGrid {
-          grid-template-columns: repeat(6, 1fr);
+          grid-template-columns: repeat(4, 1fr);
         }
       }
       @media (min-width: 640px) {
         #sourceGrid {
-          grid-template-columns: repeat(8, 1fr);
+          grid-template-columns: repeat(6, 1fr);
         }
       }
       @media (min-width: 1024px) {
         #sourceGrid {
-          grid-template-columns: repeat(10, 1fr);
+          grid-template-columns: repeat(8, 1fr);
         }
       }
       @media (min-width: 1280px) {
         #sourceGrid {
-          grid-template-columns: repeat(13, 1fr);
+          grid-template-columns: repeat(10, 1fr);
         }
+      }
+
+      /* Bottom drawer container — extra padding so selection rings aren't clipped */
+      #userPalette {
+        padding: 6px 4px 10px;
       }
 
       button:disabled {
@@ -383,8 +388,11 @@
       let isDrawerOpen = true;
 
       // ── Helpers ───────────────────────────────────────────────────
+      // Base = first non-achromatic in the palette. Achromatics never act
+      // as the filter-determining base, so picking White first does not
+      // leave the whole palette "unlocked" forever.
       function getBase() {
-        return userPalette[0] || null;
+        return userPalette.find((c) => !c.isAchromatic) || null;
       }
 
       function countChromatic() {
@@ -455,11 +463,12 @@
       function renderGrid() {
         const grid = document.getElementById("sourceGrid");
         grid.innerHTML = "";
+        const base = getBase();
 
         PM_PALETTE.forEach((color) => {
           const selected = isSelected(color);
           const dimmed = isDimmed(color);
-          const isBase = selected && userPalette[0]?.hex === color.hex;
+          const isBase = selected && base?.hex === color.hex;
 
           const card = document.createElement("div");
           let cls = "color-card";
@@ -492,8 +501,9 @@
         document.getElementById("count").innerText = sorted.length;
         container.innerHTML = "";
 
+        const base = getBase();
         sorted.forEach((color) => {
-          const isBase = color.hex === userPalette[0]?.hex;
+          const isBase = base && color.hex === base.hex;
           const card = document.createElement("div");
           card.style.cssText =
             "display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;gap:4px;";
@@ -504,8 +514,8 @@
             "align-items:center;justify-content:center;background:white;" +
             "margin-bottom:2px;flex-shrink:0;" +
             (isBase
-              ? "border:1.5px solid #000;box-shadow:0 0 0 2px #000;"
-              : "border:1.5px solid #888;box-shadow:0 0 0 1.5px #888;");
+              ? "border:1.5px solid #4a4a4a;box-shadow:0 0 0 2.5px #4a4a4a;"
+              : "border:1.5px solid #c4c4c4;box-shadow:0 0 0 1.5px #c4c4c4;");
 
           const inner = document.createElement("div");
           inner.style.cssText =
