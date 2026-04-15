@@ -11,7 +11,6 @@
     />
     <title>Palette Pro Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;0,900;1,900&display=swap");
@@ -44,7 +43,6 @@
         letter-spacing: -0.05em;
       }
 
-      /* Фиксированные элементы */
       header {
         position: fixed;
         top: 0;
@@ -57,7 +55,6 @@
         padding: 20px;
       }
 
-      /* ИСПРАВЛЕНИЕ: Высота main теперь динамически вычитает текущий размер панели */
       main {
         margin-top: 160px;
         height: calc((var(--vh) * 100) - 160px - var(--drawer-space));
@@ -80,25 +77,30 @@
         }
       }
 
-      /* Дизайн карточек-кружков */
+      /* Color card */
       .color-card {
         display: flex;
         flex-direction: column;
         align-items: center;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: transform 0.15s;
       }
+      .color-card:active {
+        transform: scale(0.9);
+      }
+
       .circle-wrapper {
         width: 54px;
         height: 54px;
         border-radius: 50%;
-        border: 1px solid #e5e5e5;
+        border: 1.5px solid #e5e5e5;
         display: flex;
         align-items: center;
         justify-content: center;
         background: white;
-        margin-bottom: 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+        margin-bottom: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        flex-shrink: 0;
       }
       .color-inner {
         width: 44px;
@@ -107,15 +109,25 @@
         border: 2px solid white;
       }
 
-      .hex-label {
-        font-size: 9px;
-        font-weight: 700;
+      .color-name {
+        font-size: 8.5px;
+        font-weight: 600;
         color: #111;
+        text-align: center;
+        line-height: 1.25;
+        letter-spacing: 0.01em;
+        max-width: 64px;
+      }
+      .hex-label {
+        font-size: 7.5px;
+        font-weight: 400;
+        color: #aaa;
         text-transform: uppercase;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.04em;
+        text-align: center;
       }
 
-      /* Состояния подбора */
+      /* Swatch states */
       .dimmed {
         opacity: 0.08;
         filter: grayscale(1);
@@ -123,10 +135,14 @@
       }
       .is-base .circle-wrapper {
         border-color: #000;
-        box-shadow: 0 0 0 1px #000;
+        box-shadow: 0 0 0 2px #000;
+      }
+      .is-selected .circle-wrapper {
+        border-color: #555;
+        box-shadow: 0 0 0 1.5px #555;
       }
 
-      /* Нижняя панель */
+      /* Bottom drawer */
       #paletteDrawer {
         position: fixed;
         bottom: 0;
@@ -162,17 +178,22 @@
         transform: rotate(180deg);
       }
 
-      /* Сетка для мобильных и десктопа */
+      /* Picker grid */
       #sourceGrid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
+        gap: 14px 10px;
         max-width: 1200px;
         margin: 0 auto;
       }
-      @media (min-width: 640px) {
+      @media (min-width: 480px) {
         #sourceGrid {
           grid-template-columns: repeat(6, 1fr);
+        }
+      }
+      @media (min-width: 640px) {
+        #sourceGrid {
+          grid-template-columns: repeat(8, 1fr);
         }
       }
       @media (min-width: 1024px) {
@@ -182,8 +203,13 @@
       }
       @media (min-width: 1280px) {
         #sourceGrid {
-          grid-template-columns: repeat(12, 1fr);
+          grid-template-columns: repeat(13, 1fr);
         }
+      }
+
+      button:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
       }
     </style>
   </head>
@@ -203,8 +229,8 @@
           <p
             class="text-gray-400 mt-2 md:mt-3 text-[11px] md:text-sm font-medium leading-tight"
           >
-            1. Выберите базу → 2. Соберите гармоничную палитру → 3. Скачайте
-            результат
+            1. Выберите базовый цвет → 2. Добавьте совместимые → 3. Скачайте
+            палитру
           </p>
         </div>
         <div class="flex gap-2 w-full md:w-auto">
@@ -217,7 +243,9 @@
           </button>
           <button
             type="button"
+            id="downloadBtn"
             onclick="exportPalette()"
+            disabled
             class="flex-1 md:flex-none px-6 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest"
           >
             Скачать PNG
@@ -239,7 +267,7 @@
           <h3
             class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400"
           >
-            Ваша палитра (<span id="count">0</span>/10)
+            Ваша палитра (<span id="count">0</span>/14)
           </h3>
         </div>
         <div
@@ -257,489 +285,278 @@
     </div>
 
     <script>
-      // Fix 100vh issues in mobile browsers / Telegram WebView
-      function setVh() {
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty("--vh", `${vh}px`);
-      }
-      window.addEventListener("resize", setVh, { passive: true });
-      setVh();
+      // ── Palette data ─────────────────────────────────────────────
+      const PM_PALETTE = [
+        // Achromatics (3) — compatible with all 51
+        { hex: "#1C1C1C", name: "Black", isAchromatic: true },
+        { hex: "#8C8C8C", name: "Gray", isAchromatic: true },
+        { hex: "#F0F0F0", name: "White", isAchromatic: true },
+        // Brights warm (6)
+        { hex: "#E82535", name: "Scarlet", group: "bright", temp: "warm" },
+        { hex: "#E84B20", name: "Vermillion", group: "bright", temp: "warm" },
+        { hex: "#E87820", name: "Tangerine", group: "bright", temp: "warm" },
+        { hex: "#E8AA20", name: "Amber", group: "bright", temp: "warm" },
+        { hex: "#E8D520", name: "Canary", group: "bright", temp: "warm" },
+        { hex: "#7EC820", name: "Chartreuse", group: "bright", temp: "warm" },
+        // Brights cool (6)
+        { hex: "#20A84E", name: "Emerald", group: "bright", temp: "cool" },
+        { hex: "#10A896", name: "Teal", group: "bright", temp: "cool" },
+        { hex: "#186AE8", name: "Cobalt", group: "bright", temp: "cool" },
+        { hex: "#3828E8", name: "Indigo", group: "bright", temp: "cool" },
+        { hex: "#8820E8", name: "Violet", group: "bright", temp: "cool" },
+        { hex: "#D020AA", name: "Fuchsia", group: "bright", temp: "cool" },
+        // Pastels warm (7)
+        { hex: "#F5B5BB", name: "Blush", group: "pastel", temp: "warm" },
+        { hex: "#F5C5B0", name: "Peach", group: "pastel", temp: "warm" },
+        { hex: "#F5D5B0", name: "Apricot", group: "pastel", temp: "warm" },
+        { hex: "#E8D5B5", name: "Beige", group: "pastel", temp: "warm" },
+        { hex: "#FAF0E6", name: "Off-white", group: "pastel", temp: "warm" },
+        { hex: "#DCEEB0", name: "Pale Lime", group: "pastel", temp: "warm" },
+        { hex: "#EEB8E5", name: "Orchid", group: "pastel", temp: "warm" },
+        // Pastels cool (5)
+        { hex: "#B0EEC5", name: "Mint", group: "pastel", temp: "cool" },
+        { hex: "#B0EEDE", name: "Aqua", group: "pastel", temp: "cool" },
+        { hex: "#B0CDEE", name: "Sky", group: "pastel", temp: "cool" },
+        { hex: "#C0B8EE", name: "Periwinkle", group: "pastel", temp: "cool" },
+        { hex: "#DCB8EE", name: "Lavender", group: "pastel", temp: "cool" },
+        // Desaturated warm (7)
+        { hex: "#B86068", name: "Brick", group: "desaturated", temp: "warm" },
+        { hex: "#C07860", name: "Coral", group: "desaturated", temp: "warm" },
+        {
+          hex: "#C08A65",
+          name: "Terracotta",
+          group: "desaturated",
+          temp: "warm",
+        },
+        { hex: "#C0A268", name: "Sand", group: "desaturated", temp: "warm" },
+        { hex: "#B8B268", name: "Straw", group: "desaturated", temp: "warm" },
+        { hex: "#88A865", name: "Sage", group: "desaturated", temp: "warm" },
+        {
+          hex: "#B860A2",
+          name: "Antique Rose",
+          group: "desaturated",
+          temp: "warm",
+        },
+        // Desaturated cool (5)
+        { hex: "#60A878", name: "Fern", group: "desaturated", temp: "cool" },
+        {
+          hex: "#50A095",
+          name: "Dusty Teal",
+          group: "desaturated",
+          temp: "cool",
+        },
+        { hex: "#5082B8", name: "Slate", group: "desaturated", temp: "cool" },
+        {
+          hex: "#6860B8",
+          name: "Dusty Indigo",
+          group: "desaturated",
+          temp: "cool",
+        },
+        { hex: "#9860B8", name: "Mauve", group: "desaturated", temp: "cool" },
+        // Darks warm (7)
+        { hex: "#8C1820", name: "Burgundy", group: "dark", temp: "warm" },
+        { hex: "#8C3015", name: "Rust", group: "dark", temp: "warm" },
+        {
+          hex: "#8C5018",
+          name: "Burnt Orange",
+          group: "dark",
+          temp: "warm",
+        },
+        { hex: "#8C6C15", name: "Ochre", group: "dark", temp: "warm" },
+        { hex: "#787815", name: "Olive Gold", group: "dark", temp: "warm" },
+        { hex: "#4A7A18", name: "Olive", group: "dark", temp: "warm" },
+        { hex: "#781860", name: "Mulberry", group: "dark", temp: "warm" },
+        // Darks cool (5)
+        { hex: "#187838", name: "Forest", group: "dark", temp: "cool" },
+        { hex: "#187870", name: "Pine", group: "dark", temp: "cool" },
+        { hex: "#182878", name: "Navy", group: "dark", temp: "cool" },
+        { hex: "#201878", name: "Midnight", group: "dark", temp: "cool" },
+        { hex: "#5A1878", name: "Plum", group: "dark", temp: "cool" },
+      ];
 
-      // Синхронизация отступа снизу под нижнюю панель
-      function updateDrawerSpace() {
-        const drawer = document.getElementById("paletteDrawer");
-        if (!drawer) return;
-        const rect = drawer.getBoundingClientRect();
-        const isClosed = drawer.classList.contains("drawer-closed");
-        const visible = isClosed ? 25 : rect.height;
-        document.documentElement.style.setProperty(
-          "--drawer-space",
-          `${Math.max(visible, 25)}px`,
-        );
-      }
-      window.addEventListener("resize", updateDrawerSpace, { passive: true });
+      const MAX_TOTAL = 14;
+      const MAX_CHROMATIC = 11;
 
-      // Начальная инициализация пространства
-      setTimeout(updateDrawerSpace, 100);
-
-      const colorGroups = {
-        achromatics: [
-          "#000000",
-          "#0D0D0D",
-          "#1A1A1A",
-          "#262626",
-          "#333333",
-          "#404040",
-          "#4D4D4D",
-          "#595959",
-          "#666666",
-          "#737373",
-          "#808080",
-          "#8C8C8C",
-          "#999999",
-          "#A6A6A6",
-          "#B3B3B3",
-          "#BFBFBF",
-          "#CCCCCC",
-          "#D9D9D9",
-          "#E5E5E5",
-          "#F0F0F0",
-          "#F5F5F5",
-          "#FAFAFA",
-          "#FFFFFF",
-          "#EFEFEF",
-        ],
-
-        warm_neutrals: [
-          "#F7F1E8",
-          "#F2EADF",
-          "#EFE2D3",
-          "#EADACB",
-          "#E6D5C3",
-          "#E1CDBA",
-          "#DCC7B2",
-          "#D6BEA7",
-          "#C9AE96",
-          "#C2A48B",
-          "#B9977B",
-          "#B08C70",
-          "#A47F61",
-          "#9A7457",
-          "#8B6548",
-          "#805B3F",
-          "#70503A",
-          "#654836",
-          "#5A3F2B",
-          "#4F3625",
-          "#EAD7C5",
-          "#DFCBB8",
-          "#D4BFAB",
-          "#CAB39E",
-          "#BFA791",
-          "#B49B85",
-          "#A98F79",
-          "#9E836E",
-          "#937862",
-          "#886D57",
-          "#7D624C",
-          "#725742",
-          "#674C38",
-          "#5C412F",
-          "#513726",
-          "#472D1D",
-          "#3C2416",
-          "#F3E8DC",
-          "#E9DDCF",
-          "#DFD2C2",
-          "#D5C7B6",
-          "#CBBCAA",
-          "#C1B19E",
-          "#B7A692",
-          "#AD9B87",
-        ],
-
-        cool_neutrals: [
-          "#F2F4F7",
-          "#ECEFF4",
-          "#E7ECF2",
-          "#E1E7EE",
-          "#D8DEE6",
-          "#D1D8E0",
-          "#C7CED8",
-          "#BEC6D1",
-          "#AEB7C4",
-          "#A4AFBD",
-          "#9AA6B6",
-          "#8E99A8",
-          "#828F9E",
-          "#778494",
-          "#6F7B8A",
-          "#636F7E",
-          "#4E5966",
-          "#45505C",
-          "#3C464F",
-          "#333C44",
-          "#2A313A",
-          "#242A31",
-          "#1E2329",
-          "#171B20",
-          "#E6EBF0",
-          "#DBE1E8",
-          "#D0D7E0",
-          "#C6CDDA",
-          "#BCC3D3",
-          "#B2B9CC",
-          "#A8AFC5",
-          "#9EA5BE",
-          "#949BB7",
-          "#8A91B0",
-          "#8087A9",
-          "#767DA2",
-          "#6C739B",
-          "#626994",
-          "#58608D",
-          "#4E5686",
-          "#444C7F",
-          "#3A4278",
-          "#303871",
-          "#262E6A",
-          "#1C2463",
-          "#121A5C",
-        ],
-
-        earth: [
-          "#283618",
-          "#344E41",
-          "#3A5A40",
-          "#4F6F52",
-          "#606C38",
-          "#6B7A42",
-          "#7F8F4E",
-          "#8FA55B",
-          "#DDA15E",
-          "#D19A56",
-          "#C98C45",
-          "#BC6C25",
-          "#A85E23",
-          "#8C4A1F",
-          "#7F4F24",
-          "#936639",
-          "#A68A64",
-          "#B6A178",
-          "#582F0E",
-          "#6A3A13",
-          "#7C4518",
-          "#8F511E",
-          "#A25D24",
-          "#B5692A",
-          "#3E2723",
-          "#4E342E",
-          "#5D4037",
-          "#6D4C41",
-          "#795548",
-          "#8D6E63",
-          "#A1887F",
-          "#BCAAA4",
-          "#D7CCC8",
-          "#EFEBE9",
-          "#2F3E46",
-          "#354F52",
-          "#52796F",
-          "#84A98C",
-          "#CAD2C5",
-          "#6B705C",
-          "#A5A58D",
-          "#B7B7A4",
-          "#DDBEA9",
-          "#FFE8D6",
-          "#CB997E",
-          "#DD6E42",
-          "#E07A5F",
-          "#F4A261",
-        ],
-
-        jewel: [
-          "#0B1320",
-          "#1B263B",
-          "#415A77",
-          "#778DA9",
-          "#0B4F6C",
-          "#145374",
-          "#1D3557",
-          "#264653",
-          "#2E294E",
-          "#3A0F2E",
-          "#4A154B",
-          "#5A1A6A",
-          "#5B2333",
-          "#6D2E46",
-          "#7A1E3A",
-          "#8B1E3F",
-          "#14532D",
-          "#1B5E20",
-          "#1E6F5C",
-          "#2F7F6F",
-          "#0F172A",
-          "#1E293B",
-          "#312E81",
-          "#3730A3",
-          "#4C1D95",
-          "#581C87",
-          "#701A75",
-          "#831843",
-          "#4A0404",
-          "#7F1D1D",
-          "#991B1B",
-          "#B91C1C",
-          "#064E3B",
-          "#065F46",
-          "#047857",
-          "#059669",
-          "#0A2540",
-          "#102A43",
-          "#243A5E",
-          "#334E68",
-          "#486581",
-          "#627D98",
-          "#829AB1",
-          "#BCCCDC",
-        ],
-
-        brights: [
-          "#E63946",
-          "#D62828",
-          "#C1121F",
-          "#9B2226",
-          "#F77F00",
-          "#FCBF49",
-          "#E9C46A",
-          "#FFD166",
-          "#2A9D8F",
-          "#219EBC",
-          "#00B4D8",
-          "#48CAE4",
-          "#457B9D",
-          "#3A86FF",
-          "#4361EE",
-          "#4CC9F0",
-          "#8338EC",
-          "#7209B7",
-          "#560BAD",
-          "#480CA8",
-          "#F72585",
-          "#FF006E",
-          "#FB5607",
-          "#FFBE0B",
-          "#8AC926",
-          "#6A994E",
-          "#38B000",
-          "#70E000",
-          "#06D6A0",
-          "#1B9AAA",
-          "#118AB2",
-          "#073B4C",
-          "#FF595E",
-          "#FF924C",
-          "#FFCA3A",
-          "#CDB4DB",
-          "#B5179E",
-          "#A4133C",
-          "#EF476F",
-          "#FFD23F",
-          "#06AED5",
-          "#086788",
-          "#F0C808",
-          "#FFF3B0",
-        ],
-
-        pastels: [
-          "#FAD2E1",
-          "#F4C2D7",
-          "#EECAD5",
-          "#E4B7C6",
-          "#E2ECE9",
-          "#D6EADF",
-          "#CBE4DE",
-          "#BEE1E6",
-          "#EAF4F4",
-          "#DDECF2",
-          "#D6E2E9",
-          "#CFE0E8",
-          "#DFE7FD",
-          "#CDDAFD",
-          "#C1D3FE",
-          "#B6CCFE",
-          "#FFF1E6",
-          "#FFE5D9",
-          "#FFD7BA",
-          "#FEC89A",
-          "#FDE2E4",
-          "#FADADD",
-          "#F8C0C8",
-          "#F5A9B8",
-          "#EAD7C5",
-          "#E0CFC1",
-          "#D6C6BC",
-          "#CDBDB7",
-          "#E8EDDF",
-          "#DDE5D1",
-          "#CCD5AE",
-          "#FAEDCD",
-          "#F1FAEE",
-          "#EAF6F6",
-          "#E3F2FD",
-          "#E1F5FE",
-          "#E0FBFC",
-          "#CCDBFD",
-          "#DEE2FF",
-          "#EDF2FB",
-          "#F8EDEB",
-          "#FCD5CE",
-          "#FFCAD4",
-          "#FFE4E1",
-        ],
-      };
-
-      const paletteData = [];
-      const seen = new Set();
-      const pushHex = (hex) => {
-        if (!hex) return;
-        const up = hex.toUpperCase();
-        if (!seen.has(up)) {
-          seen.add(up);
-          paletteData.push({ hex: up });
-        }
-      };
-
-      Object.values(colorGroups).flat().forEach(pushHex);
-
-      const TARGET = 600;
-      const Ls = [22, 32, 42, 52, 62, 72, 82, 90];
-      const Cs = [10, 22, 34, 46, 58, 70];
-      const Hstep = 10;
-
-      const passOrder = [{ cMax: 34 }, { cMax: 58 }, { cMax: 999 }];
-
-      for (const pass of passOrder) {
-        for (let h = 0; h < 360; h += Hstep) {
-          for (const l of Ls) {
-            for (const c of Cs) {
-              if (c > pass.cMax) continue;
-              const col = chroma.lch(l, c, h);
-              if (!col.clipped()) pushHex(col.hex());
-              if (paletteData.length >= TARGET) break;
-            }
-            if (paletteData.length >= TARGET) break;
-          }
-          if (paletteData.length >= TARGET) break;
-        }
-        if (paletteData.length >= TARGET) break;
-      }
-
-      if (paletteData.length < TARGET) {
-        for (let h = 0; h < 360 && paletteData.length < TARGET; h += 6) {
-          [0.15, 0.35, 0.55, 0.75].forEach((s) => {
-            [0.25, 0.4, 0.55, 0.7, 0.85].forEach((l) => {
-              if (paletteData.length < TARGET)
-                pushHex(chroma.hsl(h, s, l).hex());
-            });
-          });
-        }
-      }
-
-      let selectedBaseColor = null;
+      // ── State ─────────────────────────────────────────────────────
+      // userPalette[0] is always the base color
       let userPalette = [];
       let isDrawerOpen = true;
 
+      // ── Helpers ───────────────────────────────────────────────────
+      function getBase() {
+        return userPalette[0] || null;
+      }
+
+      function countChromatic() {
+        return userPalette.filter((c) => !c.isAchromatic).length;
+      }
+
+      function isSelected(color) {
+        return userPalette.some((c) => c.hex === color.hex);
+      }
+
+      /**
+       * Compatibility rule:
+       *   achromatics always compatible;
+       *   chromatics must share temperature AND
+       *   either same group or desaturated↔dark pair.
+       */
+      function isCompatible(base, target) {
+        if (!base) return true;
+        if (base.isAchromatic || target.isAchromatic) return true;
+        if (base.temp !== target.temp) return false;
+        if (base.group === target.group) return true;
+        const g1 = base.group,
+          g2 = target.group;
+        return (
+          (g1 === "desaturated" && g2 === "dark") ||
+          (g1 === "dark" && g2 === "desaturated")
+        );
+      }
+
+      /**
+       * A swatch is dimmed when it cannot be added:
+       *   - incompatible with current base
+       *   - total limit reached
+       *   - chromatic limit reached (for chromatic colors)
+       * Already-selected swatches are never dimmed.
+       */
+      function isDimmed(color) {
+        if (isSelected(color)) return false;
+        const base = getBase();
+        if (base && !isCompatible(base, color)) return true;
+        if (userPalette.length >= MAX_TOTAL) return true;
+        if (!color.isAchromatic && countChromatic() >= MAX_CHROMATIC)
+          return true;
+        return false;
+      }
+
+      // ── Interaction ───────────────────────────────────────────────
+      function handleClick(color) {
+        if (isSelected(color)) {
+          // Remove; new base = userPalette[0] after splice (Variant A)
+          userPalette = userPalette.filter((c) => c.hex !== color.hex);
+        } else if (!isDimmed(color)) {
+          userPalette.push(color);
+        }
+        renderAll();
+      }
+
+      // Achromatics first (by PM_PALETTE order), then chromatics by insertion
+      function getSortedPalette() {
+        const achro = userPalette
+          .filter((c) => c.isAchromatic)
+          .sort((a, b) => PM_PALETTE.indexOf(a) - PM_PALETTE.indexOf(b));
+        const chrom = userPalette.filter((c) => !c.isAchromatic);
+        return [...achro, ...chrom];
+      }
+
+      // ── Render ────────────────────────────────────────────────────
       function renderGrid() {
         const grid = document.getElementById("sourceGrid");
         grid.innerHTML = "";
 
-        paletteData.forEach((color) => {
-          const isMatch = checkHarmony(color);
+        PM_PALETTE.forEach((color) => {
+          const selected = isSelected(color);
+          const dimmed = isDimmed(color);
+          const isBase = selected && userPalette[0]?.hex === color.hex;
+
           const card = document.createElement("div");
-          const isBase = selectedBaseColor?.hex === color.hex;
-          card.className = `color-card ${!isMatch && selectedBaseColor ? "dimmed" : ""} ${isBase ? "is-base" : ""}`;
+          let cls = "color-card";
+          if (dimmed) cls += " dimmed";
+          else if (isBase) cls += " is-base";
+          else if (selected) cls += " is-selected";
+          card.className = cls;
 
-          card.innerHTML = `
-                <div class="circle-wrapper">
-                    <div class="color-inner" style="background-color: ${color.hex}"></div>
-                </div>
-                <div class="hex-label">${color.hex}</div>
-            `;
+          card.innerHTML =
+            '<div class="circle-wrapper">' +
+            '<div class="color-inner" style="background-color:' +
+            color.hex +
+            '"></div>' +
+            "</div>" +
+            '<div class="color-name">' +
+            color.name +
+            "</div>" +
+            '<div class="hex-label">' +
+            color.hex +
+            "</div>";
 
-          card.onclick = () => {
-            if (!selectedBaseColor) {
-              selectedBaseColor = color;
-              addToPalette(color);
-            } else if (isMatch) {
-              addToPalette(color);
-            }
-            renderGrid();
-          };
+          card.addEventListener("click", () => handleClick(color));
           grid.appendChild(card);
         });
       }
 
-      function hueDiff(a, b) {
-        if (!isFinite(a) || !isFinite(b)) return 999;
-        const d = Math.abs(a - b) % 360;
-        return d > 180 ? 360 - d : d;
-      }
-
-      function checkHarmony(targetColor) {
-        if (!selectedBaseColor) return true;
-        const base = chroma(selectedBaseColor.hex);
-        const target = chroma(targetColor.hex);
-        const [bL, bC, bH] = base.lch();
-        const [tL, tC, tH] = target.lch();
-        const isAchromatic = tC < 8;
-        const isNearNeutral = tC < 18 && tL > 70;
-        const similarTone = Math.abs(bL - tL) < 18;
-        const similarHue = hueDiff(bH, tH) < 18 && tC >= 8;
-        const isContrast = chroma.contrast(base, target) >= 4.5;
-        return (
-          isAchromatic ||
-          isNearNeutral ||
-          similarTone ||
-          similarHue ||
-          isContrast
-        );
-      }
-
-      function addToPalette(color) {
-        if (
-          userPalette.length < 10 &&
-          !userPalette.find((c) => c.hex === color.hex)
-        ) {
-          userPalette.push(color);
-          updatePaletteUI();
-        }
-      }
-
       function updatePaletteUI() {
         const container = document.getElementById("userPalette");
-        document.getElementById("count").innerText = userPalette.length;
+        const sorted = getSortedPalette();
+        document.getElementById("count").innerText = sorted.length;
         container.innerHTML = "";
 
-        userPalette.forEach((color, index) => {
+        sorted.forEach((color) => {
+          const isBase = color.hex === userPalette[0]?.hex;
           const card = document.createElement("div");
-          card.className = "color-card flex-shrink-0";
-          card.innerHTML = `
-                <div class="circle-wrapper" style="width: 46px; height: 46px;">
-                    <div class="color-inner" style="width: 36px; height: 36px; background-color: ${color.hex}"></div>
-                </div>
-                <div class="hex-label" style="font-size: 7px;">${color.hex}</div>
-            `;
-          card.onclick = () => {
-            userPalette.splice(index, 1);
-            if (userPalette.length === 0) selectedBaseColor = null;
-            updatePaletteUI();
-            renderGrid();
-          };
+          card.style.cssText =
+            "display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;gap:4px;";
+
+          const wrapper = document.createElement("div");
+          wrapper.style.cssText =
+            "width:46px;height:46px;border-radius:50%;display:flex;" +
+            "align-items:center;justify-content:center;background:white;" +
+            "margin-bottom:2px;flex-shrink:0;" +
+            (isBase
+              ? "border:1.5px solid #000;box-shadow:0 0 0 2px #000;"
+              : "border:1.5px solid #888;box-shadow:0 0 0 1.5px #888;");
+
+          const inner = document.createElement("div");
+          inner.style.cssText =
+            "width:36px;height:36px;border-radius:50%;border:2px solid white;" +
+            "background-color:" +
+            color.hex +
+            ";";
+
+          const nameEl = document.createElement("div");
+          nameEl.style.cssText =
+            "font-size:7px;font-weight:600;color:#111;text-align:center;" +
+            "line-height:1.2;max-width:52px;letter-spacing:0.01em;";
+          nameEl.textContent = color.name;
+
+          const hexEl = document.createElement("div");
+          hexEl.style.cssText =
+            "font-size:6.5px;font-weight:400;color:#aaa;text-transform:uppercase;" +
+            "letter-spacing:0.04em;text-align:center;";
+          hexEl.textContent = color.hex;
+
+          wrapper.appendChild(inner);
+          card.appendChild(wrapper);
+          card.appendChild(nameEl);
+          card.appendChild(hexEl);
+
+          card.addEventListener("click", () => handleClick(color));
           container.appendChild(card);
         });
+
+        // Enable/disable download button
+        document.getElementById("downloadBtn").disabled =
+          userPalette.length === 0;
+
         updateDrawerSpace();
+      }
+
+      function renderAll() {
+        renderGrid();
+        updatePaletteUI();
+      }
+
+      // ── Drawer ────────────────────────────────────────────────────
+      function updateDrawerSpace() {
+        const drawer = document.getElementById("paletteDrawer");
+        if (!drawer) return;
+        const isClosed = drawer.classList.contains("drawer-closed");
+        const visible = isClosed ? 25 : drawer.getBoundingClientRect().height;
+        document.documentElement.style.setProperty(
+          "--drawer-space",
+          `${Math.max(visible, 25)}px`,
+        );
       }
 
       function toggleDrawer() {
@@ -751,40 +568,49 @@
         updateDrawerSpace();
       }
 
+      // ── Actions ───────────────────────────────────────────────────
       function clearPalette() {
         userPalette = [];
-        selectedBaseColor = null;
-        updatePaletteUI();
-        renderGrid();
+        renderAll();
       }
 
       function exportPalette() {
-        if (userPalette.length === 0)
-          return alert("Выберите хотя бы один цвет");
+        if (userPalette.length === 0) return;
+        const sorted = getSortedPalette();
         const area = document.getElementById("exportArea");
         area.innerHTML = "";
-        const cols = Math.ceil(Math.sqrt(userPalette.length));
+        const cols = Math.min(sorted.length, 7);
         area.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-        userPalette.forEach((color) => {
+        sorted.forEach((color) => {
           const card = document.createElement("div");
-          card.className = "color-card";
-          card.style.width = "180px";
-          card.innerHTML = `
-                <div class="circle-wrapper" style="width: 130px; height: 130px; border-width: 2px;">
-                    <div class="color-inner" style="width: 115px; height: 115px; border-width: 4px; background-color: ${color.hex}"></div>
-                </div>
-                <div class="hex-label" style="font-size: 18px; margin-top: 10px;">${color.hex}</div>
-            `;
+          card.style.cssText =
+            "display:flex;flex-direction:column;align-items:center;width:180px;gap:6px;";
+          card.innerHTML =
+            '<div style="width:130px;height:130px;border-radius:50%;' +
+            "border:2px solid #e5e5e5;display:flex;align-items:center;" +
+            'justify-content:center;background:white;">' +
+            '<div style="width:115px;height:115px;border-radius:50%;' +
+            "border:4px solid white;background-color:" +
+            color.hex +
+            ';"></div>' +
+            "</div>" +
+            '<div style="font-size:14px;font-weight:600;color:#111;' +
+            'text-align:center;font-family:Inter,sans-serif;">' +
+            color.name +
+            "</div>" +
+            '<div style="font-size:12px;font-weight:400;color:#aaa;' +
+            'text-transform:uppercase;letter-spacing:0.05em;font-family:Inter,sans-serif;">' +
+            color.hex +
+            "</div>";
           area.appendChild(card);
         });
 
         setTimeout(() => {
           html2canvas(area, { scale: 2 }).then((canvas) => {
-            const dataUrl = canvas.toDataURL("image/png");
             const link = document.createElement("a");
-            link.download = "palette-design.png";
-            link.href = dataUrl;
+            link.download = "palette.png";
+            link.href = canvas.toDataURL("image/png");
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -792,7 +618,19 @@
         }, 100);
       }
 
-      renderGrid();
+      // ── Init ──────────────────────────────────────────────────────
+      function setVh() {
+        document.documentElement.style.setProperty(
+          "--vh",
+          `${window.innerHeight * 0.01}px`,
+        );
+      }
+      window.addEventListener("resize", setVh, { passive: true });
+      window.addEventListener("resize", updateDrawerSpace, { passive: true });
+      setVh();
+      setTimeout(updateDrawerSpace, 100);
+
+      renderAll();
     </script>
   </body>
 </html>
