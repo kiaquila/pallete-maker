@@ -207,9 +207,36 @@
         }
       }
 
-      /* Bottom drawer container — extra padding so selection rings aren't clipped */
+      /* Bottom drawer — warm/cool/universal sections */
       #userPalette {
+        display: flex;
+        flex-direction: row;
+        gap: 28px;
+        overflow-x: auto;
         padding: 6px 4px 10px;
+        align-items: flex-start;
+        min-height: 120px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .palette-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .section-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #9a9a9a;
+        padding: 0 2px 2px;
+      }
+      .section-swatches {
+        display: flex;
+        flex-direction: row;
+        gap: 14px;
+        flex-shrink: 0;
       }
 
       button:disabled {
@@ -275,10 +302,7 @@
             Ваша палитра (<span id="count">0</span>/14)
           </h3>
         </div>
-        <div
-          id="userPalette"
-          class="flex gap-3 overflow-x-auto pb-2 items-start min-h-[100px]"
-        ></div>
+        <div id="userPalette"></div>
       </div>
     </div>
 
@@ -404,15 +428,15 @@
       }
 
       /**
-       * Compatibility rule:
+       * Compatibility rule (soft temperature):
        *   achromatics always compatible;
-       *   chromatics must share temperature AND
-       *   either same group or desaturated↔dark pair.
+       *   chromatics must share the same group, OR form the
+       *   desaturated↔dark cross-pair. Temperature is NOT a hard filter —
+       *   it only drives warm/cool sectioning in the final palette.
        */
       function isCompatible(base, target) {
         if (!base) return true;
         if (base.isAchromatic || target.isAchromatic) return true;
-        if (base.temp !== target.temp) return false;
         if (base.group === target.group) return true;
         const g1 = base.group,
           g2 = target.group;
@@ -450,13 +474,21 @@
         renderAll();
       }
 
-      // Achromatics first (by PM_PALETTE order), then chromatics by insertion
-      function getSortedPalette() {
-        const achro = userPalette
+      // Group the selected palette into Warm / Cool / Universal sections.
+      // - Warm: chromatics with temp === 'warm' (insertion order)
+      // - Cool: chromatics with temp === 'cool' (insertion order)
+      // - Universal: achromatics sorted by PM_PALETTE order (Black → Gray → White)
+      function getGrouped() {
+        const warm = userPalette.filter(
+          (c) => !c.isAchromatic && c.temp === "warm",
+        );
+        const cool = userPalette.filter(
+          (c) => !c.isAchromatic && c.temp === "cool",
+        );
+        const universal = userPalette
           .filter((c) => c.isAchromatic)
           .sort((a, b) => PM_PALETTE.indexOf(a) - PM_PALETTE.indexOf(b));
-        const chrom = userPalette.filter((c) => !c.isAchromatic);
-        return [...achro, ...chrom];
+        return { warm, cool, universal };
       }
 
       // ── Render ────────────────────────────────────────────────────
@@ -495,59 +527,88 @@
         });
       }
 
+      // Build one drawer card (46px wrapper, 36px inner) for a given color
+      function buildDrawerCard(color, isBase) {
+        const card = document.createElement("div");
+        card.style.cssText =
+          "display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;gap:4px;";
+
+        const wrapper = document.createElement("div");
+        wrapper.style.cssText =
+          "width:46px;height:46px;border-radius:50%;display:flex;" +
+          "align-items:center;justify-content:center;background:white;" +
+          "margin-bottom:2px;flex-shrink:0;" +
+          (isBase
+            ? "border:1.5px solid #4a4a4a;box-shadow:0 0 0 2.5px #4a4a4a;"
+            : "border:1.5px solid #c4c4c4;box-shadow:0 0 0 1.5px #c4c4c4;");
+
+        const inner = document.createElement("div");
+        inner.style.cssText =
+          "width:36px;height:36px;border-radius:50%;border:2px solid white;" +
+          "background-color:" +
+          color.hex +
+          ";";
+
+        const nameEl = document.createElement("div");
+        nameEl.style.cssText =
+          "font-size:7px;font-weight:600;color:#111;text-align:center;" +
+          "line-height:1.2;max-width:52px;letter-spacing:0.01em;";
+        nameEl.textContent = color.name;
+
+        const hexEl = document.createElement("div");
+        hexEl.style.cssText =
+          "font-size:6.5px;font-weight:400;color:#aaa;text-transform:uppercase;" +
+          "letter-spacing:0.04em;text-align:center;";
+        hexEl.textContent = color.hex;
+
+        wrapper.appendChild(inner);
+        card.appendChild(wrapper);
+        card.appendChild(nameEl);
+        card.appendChild(hexEl);
+
+        card.addEventListener("click", () => handleClick(color));
+        return card;
+      }
+
       function updatePaletteUI() {
         const container = document.getElementById("userPalette");
-        const sorted = getSortedPalette();
-        document.getElementById("count").innerText = sorted.length;
+        const { warm, cool, universal } = getGrouped();
+        const total = userPalette.length;
+        document.getElementById("count").innerText = total;
         container.innerHTML = "";
 
         const base = getBase();
-        sorted.forEach((color) => {
-          const isBase = base && color.hex === base.hex;
-          const card = document.createElement("div");
-          card.style.cssText =
-            "display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;gap:4px;";
 
-          const wrapper = document.createElement("div");
-          wrapper.style.cssText =
-            "width:46px;height:46px;border-radius:50%;display:flex;" +
-            "align-items:center;justify-content:center;background:white;" +
-            "margin-bottom:2px;flex-shrink:0;" +
-            (isBase
-              ? "border:1.5px solid #4a4a4a;box-shadow:0 0 0 2.5px #4a4a4a;"
-              : "border:1.5px solid #c4c4c4;box-shadow:0 0 0 1.5px #c4c4c4;");
+        const buildSection = (label, colors) => {
+          if (colors.length === 0) return null;
+          const section = document.createElement("div");
+          section.className = "palette-section";
 
-          const inner = document.createElement("div");
-          inner.style.cssText =
-            "width:36px;height:36px;border-radius:50%;border:2px solid white;" +
-            "background-color:" +
-            color.hex +
-            ";";
+          const labelEl = document.createElement("div");
+          labelEl.className = "section-label";
+          labelEl.textContent = label;
+          section.appendChild(labelEl);
 
-          const nameEl = document.createElement("div");
-          nameEl.style.cssText =
-            "font-size:7px;font-weight:600;color:#111;text-align:center;" +
-            "line-height:1.2;max-width:52px;letter-spacing:0.01em;";
-          nameEl.textContent = color.name;
+          const row = document.createElement("div");
+          row.className = "section-swatches";
+          colors.forEach((color) => {
+            const isBase = base && color.hex === base.hex;
+            row.appendChild(buildDrawerCard(color, isBase));
+          });
+          section.appendChild(row);
+          return section;
+        };
 
-          const hexEl = document.createElement("div");
-          hexEl.style.cssText =
-            "font-size:6.5px;font-weight:400;color:#aaa;text-transform:uppercase;" +
-            "letter-spacing:0.04em;text-align:center;";
-          hexEl.textContent = color.hex;
-
-          wrapper.appendChild(inner);
-          card.appendChild(wrapper);
-          card.appendChild(nameEl);
-          card.appendChild(hexEl);
-
-          card.addEventListener("click", () => handleClick(color));
-          container.appendChild(card);
-        });
+        [
+          buildSection("Warm", warm),
+          buildSection("Cool", cool),
+          buildSection("Universal", universal),
+        ]
+          .filter(Boolean)
+          .forEach((s) => container.appendChild(s));
 
         // Enable/disable download button
-        document.getElementById("downloadBtn").disabled =
-          userPalette.length === 0;
+        document.getElementById("downloadBtn").disabled = total === 0;
 
         updateDrawerSpace();
       }
@@ -586,35 +647,66 @@
 
       function exportPalette() {
         if (userPalette.length === 0) return;
-        const sorted = getSortedPalette();
+        const { warm, cool, universal } = getGrouped();
         const area = document.getElementById("exportArea");
         area.innerHTML = "";
-        const cols = Math.min(sorted.length, 7);
-        area.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        area.style.cssText =
+          "display:flex;flex-direction:row;gap:56px;padding:60px;" +
+          "background:white;align-items:flex-start;";
 
-        sorted.forEach((color) => {
-          const card = document.createElement("div");
-          card.style.cssText =
-            "display:flex;flex-direction:column;align-items:center;width:180px;gap:6px;";
-          card.innerHTML =
-            '<div style="width:130px;height:130px;border-radius:50%;' +
-            "border:2px solid #e5e5e5;display:flex;align-items:center;" +
-            'justify-content:center;background:white;">' +
-            '<div style="width:115px;height:115px;border-radius:50%;' +
-            "border:4px solid white;background-color:" +
-            color.hex +
-            ';"></div>' +
-            "</div>" +
-            '<div style="font-size:14px;font-weight:600;color:#111;' +
-            'text-align:center;font-family:Inter,sans-serif;">' +
-            color.name +
-            "</div>" +
-            '<div style="font-size:12px;font-weight:400;color:#aaa;' +
-            'text-transform:uppercase;letter-spacing:0.05em;font-family:Inter,sans-serif;">' +
-            color.hex +
-            "</div>";
-          area.appendChild(card);
-        });
+        const buildExportSection = (label, colors) => {
+          if (colors.length === 0) return null;
+          const section = document.createElement("div");
+          section.style.cssText =
+            "display:flex;flex-direction:column;gap:24px;flex-shrink:0;";
+
+          const labelEl = document.createElement("div");
+          labelEl.style.cssText =
+            "font-size:16px;font-weight:700;letter-spacing:0.22em;" +
+            "text-transform:uppercase;color:#9a9a9a;" +
+            "font-family:Inter,Arial,sans-serif;padding:0 4px;";
+          labelEl.textContent = label;
+          section.appendChild(labelEl);
+
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;flex-direction:row;gap:28px;";
+
+          colors.forEach((color) => {
+            const card = document.createElement("div");
+            card.style.cssText =
+              "display:flex;flex-direction:column;align-items:center;width:170px;gap:8px;";
+            card.innerHTML =
+              '<div style="width:130px;height:130px;border-radius:50%;' +
+              "border:2px solid #e5e5e5;display:flex;align-items:center;" +
+              'justify-content:center;background:white;">' +
+              '<div style="width:115px;height:115px;border-radius:50%;' +
+              "border:4px solid white;background-color:" +
+              color.hex +
+              ';"></div>' +
+              "</div>" +
+              '<div style="font-size:14px;font-weight:600;color:#111;' +
+              'text-align:center;font-family:Inter,Arial,sans-serif;">' +
+              color.name +
+              "</div>" +
+              '<div style="font-size:12px;font-weight:400;color:#aaa;' +
+              "text-transform:uppercase;letter-spacing:0.05em;" +
+              'font-family:Inter,Arial,sans-serif;">' +
+              color.hex +
+              "</div>";
+            row.appendChild(card);
+          });
+
+          section.appendChild(row);
+          return section;
+        };
+
+        [
+          buildExportSection("Warm", warm),
+          buildExportSection("Cool", cool),
+          buildExportSection("Universal", universal),
+        ]
+          .filter(Boolean)
+          .forEach((s) => area.appendChild(s));
 
         setTimeout(() => {
           html2canvas(area, { scale: 2 }).then((canvas) => {
