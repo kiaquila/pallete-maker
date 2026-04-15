@@ -26,8 +26,10 @@ touching product code.
 The picker grid displays all 51 colors of the fixed palette:
 
 - order: 3 achromatics → 12 Brights → 12 Pastels → 12 Desaturated → 12 Darks
-- each swatch shows a color circle, the color name, and the HEX code
-- responsive columns: 4 (mobile) → 6 → 8 → 10 → 13 (wide desktop)
+- each swatch shows an 88px color circle, the color name, and the HEX code
+- responsive columns: 3 (mobile ≥375) → 4 (≥480) → 6 (≥640) → 8 (≥1024) → 10 (≥1280);
+  column counts are tuned for the 88px swatch size so the grid never overflows
+  the viewport on any supported breakpoint
 - color selection state is ephemeral (no persistence yet)
 
 ## PM Harmony Algorithm
