@@ -306,13 +306,6 @@
       </div>
     </div>
 
-    <div id="exportContainer" style="position: absolute; left: -9999px">
-      <div
-        id="exportArea"
-        style="display: grid; gap: 30px; padding: 60px; background: white"
-      ></div>
-    </div>
-
     <script>
       // ── Palette data ─────────────────────────────────────────────
       const PM_PALETTE = [
@@ -648,11 +641,16 @@
       function exportPalette() {
         if (userPalette.length === 0) return;
         const { warm, cool, universal } = getGrouped();
-        const area = document.getElementById("exportArea");
-        area.innerHTML = "";
-        area.style.cssText =
+
+        // PNG export safety: build the render subtree in a fresh detached
+        // node per call, attach offscreen, render, then remove. No persistent
+        // export container in the visible DOM.
+        const stage = document.createElement("div");
+        stage.style.cssText =
+          "position:absolute;left:-9999px;top:0;" +
           "display:flex;flex-direction:row;gap:56px;padding:60px;" +
-          "background:white;align-items:flex-start;";
+          "background:white;align-items:flex-start;" +
+          "font-family:Inter,Arial,sans-serif;";
 
         const buildExportSection = (label, colors) => {
           if (colors.length === 0) return null;
@@ -706,18 +704,22 @@
           buildExportSection("Universal", universal),
         ]
           .filter(Boolean)
-          .forEach((s) => area.appendChild(s));
+          .forEach((s) => stage.appendChild(s));
 
-        setTimeout(() => {
-          html2canvas(area, { scale: 2 }).then((canvas) => {
+        document.body.appendChild(stage);
+
+        html2canvas(stage, { scale: 2 })
+          .then((canvas) => {
             const link = document.createElement("a");
             link.download = "palette.png";
             link.href = canvas.toDataURL("image/png");
             document.body.appendChild(link);
             link.click();
             link.remove();
+          })
+          .finally(() => {
+            stage.remove();
           });
-        }, 100);
       }
 
       // ── Init ──────────────────────────────────────────────────────

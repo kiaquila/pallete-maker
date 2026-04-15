@@ -124,7 +124,10 @@ isCompatible(base, target):
    - **Universal** — ахроматы в порядке Black → Gray → White
      Пустые секции не отображаются.
 6. PNG-экспорт через html2canvas; файл `palette.png`. Секционирование
-   в экспорте идентично drawer — три ряда Warm / Cool / Universal с лейблами.
+   в экспорте идентично drawer — одна горизонтальная полоса с тремя
+   секциями (Warm / Cool / Universal) и uppercase-лейблами над каждой.
+   Рендер-поддерево создаётся в свежем detached-узле per-call и
+   удаляется после экспорта (PNG export safety).
 
 ---
 
