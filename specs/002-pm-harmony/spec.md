@@ -49,7 +49,7 @@ Amber `#E8AA20`, Canary `#E8D520`, Chartreuse `#7EC820`
 Indigo `#3828E8`, Violet `#8820E8`, Fuchsia `#D020AA`
 
 **Pastels warm:** Blush `#F5B5BB`, Peach `#F5C5B0`, Apricot `#F5D5B0`,
-Beige `#E8D5B5`, Off-white `#FAF0E6`, Pale Lime `#DCEEB0`, Orchid `#EEB8E5`
+Beige `#E8D5B5`, Off-white `#FAF0E6`, Primrose `#F7EDA5`, Orchid `#EEB8E5`
 
 **Pastels cool:** Mint `#B0EEC5`, Aqua `#B0EEDE`, Sky `#B0CDEE`,
 Periwinkle `#C0B8EE`, Lavender `#DCB8EE`
