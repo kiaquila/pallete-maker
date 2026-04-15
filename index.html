@@ -426,10 +426,13 @@
        *   chromatics must share the same group, OR form the
        *   desaturated↔dark cross-pair. Temperature is NOT a hard filter —
        *   it only drives warm/cool sectioning in the final palette.
+       *
+       * Invariant: `base` is always non-achromatic (see `getBase()`), so we
+       * only need to check `target.isAchromatic`.
        */
       function isCompatible(base, target) {
         if (!base) return true;
-        if (base.isAchromatic || target.isAchromatic) return true;
+        if (target.isAchromatic) return true;
         if (base.group === target.group) return true;
         const g1 = base.group,
           g2 = target.group;
@@ -708,18 +711,22 @@
 
         document.body.appendChild(stage);
 
-        html2canvas(stage, { scale: 2 })
-          .then((canvas) => {
-            const link = document.createElement("a");
-            link.download = "palette.png";
-            link.href = canvas.toDataURL("image/png");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-          })
-          .finally(() => {
-            stage.remove();
-          });
+        // Defer html2canvas one frame so the browser finishes layout + font
+        // resolution before capture. Avoids missing styles on slow devices.
+        setTimeout(() => {
+          html2canvas(stage, { scale: 2 })
+            .then((canvas) => {
+              const link = document.createElement("a");
+              link.download = "palette.png";
+              link.href = canvas.toDataURL("image/png");
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            })
+            .finally(() => {
+              stage.remove();
+            });
+        }, 50);
       }
 
       // ── Init ──────────────────────────────────────────────────────
