@@ -5,7 +5,7 @@
 The current application is a static single-file frontend:
 
 - `index.html` — full app shell, markup, styles (inline + Tailwind), and logic
-- CDN dependencies: chroma-js 2.4.2 (harmony), html2canvas 1.4.1 (PNG export), Tailwind CSS, Inter font
+- CDN dependencies: html2canvas 1.4.1 (PNG export), Tailwind CSS, Inter font
 
 There is no `src/` directory yet. All JS/CSS lives inline in `index.html`.
 Future refactor may extract them to `src/styles/` and `src/scripts/`.
@@ -21,22 +21,35 @@ Frontend work follows the repository memory contract:
 UI changes should start by updating the active feature folder before
 touching product code.
 
-## Palette Grid
+## Palette Picker Grid
 
-The palette grid displays up to 10 color swatches:
+The picker grid displays all 51 colors of the fixed palette:
 
-- each swatch shows the color, HEX, and optional RGB/HSL values
-- the grid adapts to mobile with a column layout
+- order: 3 achromatics → 12 Brights → 12 Pastels → 12 Desaturated → 12 Darks
+- each swatch shows a color circle, the color name, and the HEX code
+- responsive columns: 4 (mobile) → 6 → 8 → 10 → 13 (wide desktop)
 - color selection state is ephemeral (no persistence yet)
 
-## Harmony Logic
+## PM Harmony Algorithm
 
-Color harmony is computed with chroma-js LCH:
+Compatibility is determined by two attributes on each chromatic color:
 
-- base color is selected by the user via color picker or hex input
-- harmony rules (complementary, triadic, analogous, split-complementary, etc.) generate additional hues
-- LCH lightness and chroma are preserved from the base color across the palette
-- `checkHarmony` / `hueDiff` logic enforces minimum perceptual distance between swatches
+- **group** (`bright` | `pastel` | `desaturated` | `dark`) — saturation/lightness tier
+- **temp** (`warm` | `cool`) — temperature based on hue (warm = red-violet → yellow; cool = yellow-green → violet; yellow-green classified as warm)
+
+**Rule:** two chromatic colors are compatible when they share the same `temp`
+AND either (a) belong to the same `group`, or (b) form the `desaturated ↔ dark` pair.
+
+**Achromatics** (Black `#1C1C1C`, Gray `#8C8C8C`, White `#F0F0F0`) are compatible with all 51 colors.
+
+**Limits:**
+
+- MAX_CHROMATIC = 11 (chromatic slots)
+- MAX_TOTAL = 14 (11 chromatic + up to 3 achromatic)
+- Download enabled from 1 color selected
+
+**Base color:** first color added to the palette; determines the compatibility filter.
+On removal, the next remaining color (`userPalette[0]`) becomes the new base (Variant A).
 
 ## Export
 

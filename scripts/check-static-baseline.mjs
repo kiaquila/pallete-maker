@@ -64,13 +64,6 @@ if (!/<meta[^>]+name=["']viewport["'][^>]*>/i.test(html)) {
   process.exit(1);
 }
 
-if (!html.includes("chroma.min.js")) {
-  console.error(
-    "index.html is expected to include the chroma-js CDN dependency.",
-  );
-  process.exit(1);
-}
-
 if (!html.includes("html2canvas.min.js")) {
   console.error(
     "index.html is expected to include the html2canvas CDN dependency.",
