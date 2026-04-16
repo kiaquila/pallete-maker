@@ -45,7 +45,7 @@
 - `/team` — несколько координированных агентов на общем списке задач
 - `/trace`, `/debug` — диагностика на основе цепочки доказательств (evidence-chain)
 - `/ask` — консилиум Claude/Codex/Gemini
-- subagents: `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explore`, `designer`, `writer`
+- subagents: `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explorer`, `designer`, `writer`
 
 Пропускай предложение для тривиальных задач (переименование, однострочный фикс, ответ на вопрос, быстрая проверка статуса). Не шумить на мелочах — принцип минимального вмешательства.
 

@@ -131,7 +131,7 @@ Non-trivial triggers (any one):
 - Long-running autonomous work ("don't stop until done")
 - Debugging with unclear cause, tracing, or competing hypotheses
 
-Representative modes / agents to consider (Claude Code users have OMC modes like `/plan`, `/ralph`, `/ultrawork`, `/autopilot`, `/team`, `/trace`, `/debug`, `/ask` and subagents such as `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explore`, `designer`, `writer`). Codex / Gemini / other agents should propose their equivalent capabilities (planning modes, parallel task runners, review councils, etc.) before starting non-trivial work.
+Representative modes / agents to consider (Claude Code users have OMC modes like `/plan`, `/ralph`, `/ultrawork`, `/autopilot`, `/team`, `/trace`, `/debug`, `/ask` and subagents such as `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explorer`, `designer`, `writer`). Codex / Gemini / other agents should propose their equivalent capabilities (planning modes, parallel task runners, review councils, etc.) before starting non-trivial work.
 
 Skip the proposal for trivial tasks: rename, one-line fix, simple question, quick status check. Minimal-friction principle — do not nag on small things.
 
