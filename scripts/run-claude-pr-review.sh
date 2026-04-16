@@ -26,7 +26,7 @@ prompt=$(printf '%s\n\n### Changed files\n\n%s\n\n### Diff\n\n```diff\n%s\n```' 
 
 # Invoke Claude CLI in non-interactive print mode
 stderr_log=$(mktemp /tmp/claude-review-stderr.XXXXXX)
-review=$(printf '%s' "$prompt" | timeout 600 "$claude_bin" -p --output-format text \
+review=$(printf '%s' "$prompt" | "$claude_bin" -p --output-format text \
   2>"$stderr_log")
 exit_code=$?
 
