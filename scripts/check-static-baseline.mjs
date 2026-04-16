@@ -25,6 +25,10 @@ const requiredFiles = [
   "docs_pallete_maker/project/devops/delivery-playbook.md",
   "docs_pallete_maker/project/devops/review-contract.md",
   "docs_pallete_maker/project/devops/vercel-cd.md",
+  "src/scripts/harmony.mjs",
+  "src/styles/tailwind.css",
+  "src/styles/input.css",
+  "tailwind.config.cjs",
   "scripts/check-feature-memory.mjs",
   "scripts/set-implementation-agent.mjs",
   "scripts/new-worktree.mjs",
@@ -59,15 +63,35 @@ if (missing.length > 0 || missingDirs.length > 0) {
 
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 
-if (!/<meta[^>]+name=["']viewport["'][^>]*>/i.test(html)) {
-  console.error("index.html must include a viewport meta tag.");
-  process.exit(1);
-}
+// Declarative HTML content assertions.
+// Add entries here instead of hardcoding new checks below.
+// Each entry: { test: (html) => boolean, message: string }
+const htmlAssertions = [
+  {
+    test: (h) => /<meta[^>]+name=["']viewport["'][^>]*>/i.test(h),
+    message: "index.html must include a viewport meta tag.",
+  },
+  {
+    // Matches local or CDN reference — resilient to URL/path changes.
+    test: (h) => /html2canvas/i.test(h),
+    message: "index.html must reference html2canvas (local script or CDN).",
+  },
+  {
+    // All external scripts must carry an SRI integrity attribute.
+    test: (h) => /integrity="sha384-/i.test(h),
+    message:
+      'External CDN scripts must include an SRI integrity attribute (integrity="sha384-...").',
+  },
+];
 
-if (!html.includes("html2canvas.min.js")) {
-  console.error(
-    "index.html is expected to include the html2canvas CDN dependency.",
-  );
+const failures = htmlAssertions
+  .filter(({ test }) => !test(html))
+  .map(({ message }) => message);
+
+if (failures.length > 0) {
+  for (const msg of failures) {
+    console.error(msg);
+  }
   process.exit(1);
 }
 

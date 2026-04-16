@@ -7,11 +7,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Palette Pro Studio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="src/styles/tailwind.css" />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+      integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H"
+      crossorigin="anonymous"
+    ></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;0,900;1,900&display=swap");
 
@@ -26,6 +30,10 @@
       :root {
         --vh: 1vh;
         --drawer-space: 180px;
+        --header-h: 160px;
+        --header-h-mobile: 180px;
+        --swatch-outer: 88px;
+        --swatch-inner: 72px;
       }
       html,
       body {
@@ -48,7 +56,7 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 160px;
+        height: var(--header-h);
         background: white;
         z-index: 100;
         border-bottom: 2px solid #000;
@@ -56,24 +64,24 @@
       }
 
       main {
-        margin-top: 160px;
-        height: calc((var(--vh) * 100) - 160px - var(--drawer-space));
+        margin-top: var(--header-h);
+        height: calc((var(--vh) * 100) - var(--header-h) - var(--drawer-space));
         overflow-y: auto;
         padding: 20px;
-        -webkit-overflow-scrolling: touch;
       }
 
       @media (max-width: 768px) {
         header {
-          height: 180px;
+          height: var(--header-h-mobile);
           padding: 15px;
         }
         main {
-          margin-top: 180px;
-          height: calc((var(--vh) * 100) - 180px - var(--drawer-space));
+          margin-top: var(--header-h-mobile);
+          height: calc(
+            (var(--vh) * 100) - var(--header-h-mobile) - var(--drawer-space)
+          );
           overflow-y: auto;
           padding: 15px;
-          -webkit-overflow-scrolling: touch;
         }
       }
 
@@ -84,14 +92,17 @@
         align-items: center;
         cursor: pointer;
         transition: transform 0.15s;
+        background: none;
+        border: none;
+        padding: 0;
       }
       .color-card:active {
         transform: scale(0.9);
       }
 
       .circle-wrapper {
-        width: 88px;
-        height: 88px;
+        width: var(--swatch-outer);
+        height: var(--swatch-outer);
         border-radius: 50%;
         border: 1.5px solid #e5e5e5;
         display: flex;
@@ -103,8 +114,8 @@
         flex-shrink: 0;
       }
       .color-inner {
-        width: 72px;
-        height: 72px;
+        width: var(--swatch-inner);
+        height: var(--swatch-inner);
         border-radius: 50%;
         border: 3px solid white;
       }
@@ -173,6 +184,7 @@
         justify-content: center;
         cursor: pointer;
         border-radius: 10px 10px 0 0;
+        padding: 0;
       }
       .rotated {
         transform: rotate(180deg);
@@ -216,7 +228,10 @@
         padding: 6px 4px 10px;
         align-items: flex-start;
         min-height: 120px;
-        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      #userPalette::-webkit-scrollbar {
+        display: none;
       }
       .palette-section {
         display: flex;
@@ -239,7 +254,7 @@
         flex-shrink: 0;
       }
 
-      button:disabled {
+      header button:disabled {
         opacity: 0.35;
         cursor: not-allowed;
       }
@@ -268,7 +283,7 @@
         <div class="flex gap-2 w-full md:w-auto">
           <button
             type="button"
-            onclick="clearPalette()"
+            id="resetBtn"
             class="flex-1 md:flex-none px-4 py-2 border border-gray-300 text-[10px] font-black uppercase"
           >
             Сброс
@@ -276,7 +291,6 @@
           <button
             type="button"
             id="downloadBtn"
-            onclick="exportPalette()"
             disabled
             class="flex-1 md:flex-none px-6 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest"
           >
@@ -291,269 +305,131 @@
     </main>
 
     <div id="paletteDrawer" class="p-4 md:p-6">
-      <div id="toggleBtn" onclick="toggleDrawer()">
-        <span id="arrow" class="text-[10px] font-bold">∨</span>
-      </div>
+      <button
+        type="button"
+        id="toggleBtn"
+        aria-expanded="true"
+        aria-controls="userPalette"
+        aria-label="Свернуть палитру"
+      >
+        <span id="arrow" class="text-[10px] font-bold">&#x2228;</span>
+      </button>
       <div class="max-w-7xl mx-auto">
         <div class="flex justify-between items-center mb-4">
           <h3
             class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400"
           >
-            Ваша палитра (<span id="count">0</span>/14)
+            Ваша палитра (<span id="count" aria-live="polite">0</span>/14)
           </h3>
         </div>
         <div id="userPalette"></div>
       </div>
     </div>
 
-    <script>
-      // ── Palette data ─────────────────────────────────────────────
-      const PM_PALETTE = [
-        // Achromatics (3) — compatible with all 51
-        { hex: "#1C1C1C", name: "Black", isAchromatic: true },
-        { hex: "#8C8C8C", name: "Gray", isAchromatic: true },
-        { hex: "#F0F0F0", name: "White", isAchromatic: true },
-        // Brights warm (6)
-        { hex: "#E82535", name: "Scarlet", group: "bright", temp: "warm" },
-        { hex: "#E84B20", name: "Vermillion", group: "bright", temp: "warm" },
-        { hex: "#E87820", name: "Tangerine", group: "bright", temp: "warm" },
-        { hex: "#E8AA20", name: "Amber", group: "bright", temp: "warm" },
-        { hex: "#E8D520", name: "Canary", group: "bright", temp: "warm" },
-        { hex: "#7EC820", name: "Chartreuse", group: "bright", temp: "warm" },
-        // Brights cool (6)
-        { hex: "#20A84E", name: "Emerald", group: "bright", temp: "cool" },
-        { hex: "#10A896", name: "Teal", group: "bright", temp: "cool" },
-        { hex: "#186AE8", name: "Cobalt", group: "bright", temp: "cool" },
-        { hex: "#3828E8", name: "Indigo", group: "bright", temp: "cool" },
-        { hex: "#8820E8", name: "Violet", group: "bright", temp: "cool" },
-        { hex: "#D020AA", name: "Fuchsia", group: "bright", temp: "cool" },
-        // Pastels warm (7)
-        { hex: "#F5B5BB", name: "Blush", group: "pastel", temp: "warm" },
-        { hex: "#F5C5B0", name: "Peach", group: "pastel", temp: "warm" },
-        { hex: "#F5D5B0", name: "Apricot", group: "pastel", temp: "warm" },
-        { hex: "#E8D5B5", name: "Beige", group: "pastel", temp: "warm" },
-        { hex: "#FAF0E6", name: "Off-white", group: "pastel", temp: "warm" },
-        { hex: "#F7EDA5", name: "Primrose", group: "pastel", temp: "warm" },
-        { hex: "#EEB8E5", name: "Orchid", group: "pastel", temp: "warm" },
-        // Pastels cool (5)
-        { hex: "#B0EEC5", name: "Mint", group: "pastel", temp: "cool" },
-        { hex: "#B0EEDE", name: "Aqua", group: "pastel", temp: "cool" },
-        { hex: "#B0CDEE", name: "Sky", group: "pastel", temp: "cool" },
-        { hex: "#C0B8EE", name: "Periwinkle", group: "pastel", temp: "cool" },
-        { hex: "#DCB8EE", name: "Lavender", group: "pastel", temp: "cool" },
-        // Desaturated warm (7)
-        { hex: "#B86068", name: "Brick", group: "desaturated", temp: "warm" },
-        { hex: "#C07860", name: "Coral", group: "desaturated", temp: "warm" },
-        {
-          hex: "#C08A65",
-          name: "Terracotta",
-          group: "desaturated",
-          temp: "warm",
-        },
-        { hex: "#C0A268", name: "Sand", group: "desaturated", temp: "warm" },
-        { hex: "#B8B268", name: "Straw", group: "desaturated", temp: "warm" },
-        { hex: "#88A865", name: "Sage", group: "desaturated", temp: "warm" },
-        {
-          hex: "#B860A2",
-          name: "Antique Rose",
-          group: "desaturated",
-          temp: "warm",
-        },
-        // Desaturated cool (5)
-        { hex: "#60A878", name: "Fern", group: "desaturated", temp: "cool" },
-        {
-          hex: "#50A095",
-          name: "Dusty Teal",
-          group: "desaturated",
-          temp: "cool",
-        },
-        { hex: "#5082B8", name: "Slate", group: "desaturated", temp: "cool" },
-        {
-          hex: "#6860B8",
-          name: "Dusty Indigo",
-          group: "desaturated",
-          temp: "cool",
-        },
-        { hex: "#9860B8", name: "Mauve", group: "desaturated", temp: "cool" },
-        // Darks warm (7)
-        { hex: "#8C1820", name: "Burgundy", group: "dark", temp: "warm" },
-        { hex: "#8C3015", name: "Rust", group: "dark", temp: "warm" },
-        {
-          hex: "#8C5018",
-          name: "Burnt Orange",
-          group: "dark",
-          temp: "warm",
-        },
-        { hex: "#8C6C15", name: "Ochre", group: "dark", temp: "warm" },
-        { hex: "#787815", name: "Olive Gold", group: "dark", temp: "warm" },
-        { hex: "#4A7A18", name: "Olive", group: "dark", temp: "warm" },
-        { hex: "#781860", name: "Mulberry", group: "dark", temp: "warm" },
-        // Darks cool (5)
-        { hex: "#187838", name: "Forest", group: "dark", temp: "cool" },
-        { hex: "#187870", name: "Pine", group: "dark", temp: "cool" },
-        { hex: "#182878", name: "Navy", group: "dark", temp: "cool" },
-        { hex: "#201878", name: "Midnight", group: "dark", temp: "cool" },
-        { hex: "#5A1878", name: "Plum", group: "dark", temp: "cool" },
-      ];
-
-      const MAX_TOTAL = 14;
-      const MAX_CHROMATIC = 11;
+    <script type="module">
+      import {
+        PM_PALETTE,
+        MAX_TOTAL,
+        MAX_CHROMATIC,
+        PM_INDEX,
+        getBase,
+        countChromatic,
+        isSelected,
+        isCompatible,
+        isDimmed,
+        getGrouped,
+      } from "./src/scripts/harmony.mjs";
 
       // ── State ─────────────────────────────────────────────────────
       // userPalette[0] is always the base color
       let userPalette = [];
-      let isDrawerOpen = true;
 
-      // ── Helpers ───────────────────────────────────────────────────
-      // Base = first non-achromatic in the palette. Achromatics never act
-      // as the filter-determining base, so picking White first does not
-      // leave the whole palette "unlocked" forever.
-      function getBase() {
-        return userPalette.find((c) => !c.isAchromatic) || null;
-      }
-
-      function countChromatic() {
-        return userPalette.filter((c) => !c.isAchromatic).length;
-      }
-
-      function isSelected(color) {
-        return userPalette.some((c) => c.hex === color.hex);
-      }
-
-      /**
-       * Compatibility rule (soft temperature):
-       *   achromatics always compatible;
-       *   chromatics must share the same group, OR form the
-       *   desaturated↔dark cross-pair. Temperature is NOT a hard filter —
-       *   it only drives warm/cool sectioning in the final palette.
-       *
-       * Invariant: `base` is always non-achromatic (see `getBase()`), so we
-       * only need to check `target.isAchromatic`.
-       */
-      function isCompatible(base, target) {
-        if (!base) return true;
-        if (target.isAchromatic) return true;
-        if (base.group === target.group) return true;
-        const g1 = base.group,
-          g2 = target.group;
-        return (
-          (g1 === "desaturated" && g2 === "dark") ||
-          (g1 === "dark" && g2 === "desaturated")
-        );
-      }
-
-      /**
-       * A swatch is dimmed when it cannot be added:
-       *   - incompatible with current base
-       *   - total limit reached
-       *   - chromatic limit reached (for chromatic colors)
-       * Already-selected swatches are never dimmed.
-       */
-      function isDimmed(color) {
-        if (isSelected(color)) return false;
-        const base = getBase();
-        if (base && !isCompatible(base, color)) return true;
-        if (userPalette.length >= MAX_TOTAL) return true;
-        if (!color.isAchromatic && countChromatic() >= MAX_CHROMATIC)
-          return true;
-        return false;
-      }
+      // ── DOM refs — cached once (module scripts run after HTML parsing) ─
+      const DOM = {
+        grid: document.getElementById("sourceGrid"),
+        palette: document.getElementById("userPalette"),
+        count: document.getElementById("count"),
+        resetBtn: document.getElementById("resetBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        drawer: document.getElementById("paletteDrawer"),
+        toggleBtn: document.getElementById("toggleBtn"),
+        arrow: document.getElementById("arrow"),
+      };
 
       // ── Interaction ───────────────────────────────────────────────
       function handleClick(color) {
-        if (isSelected(color)) {
+        if (isSelected(userPalette, color)) {
           // Remove; new base = userPalette[0] after splice (Variant A)
           userPalette = userPalette.filter((c) => c.hex !== color.hex);
-        } else if (!isDimmed(color)) {
+        } else if (!isDimmed(userPalette, color)) {
           userPalette.push(color);
         }
         renderAll();
       }
 
-      // Group the selected palette into Warm / Cool / Universal sections.
-      // - Warm: chromatics with temp === 'warm' (insertion order)
-      // - Cool: chromatics with temp === 'cool' (insertion order)
-      // - Universal: achromatics sorted by PM_PALETTE order (Black → Gray → White)
-      function getGrouped() {
-        const warm = userPalette.filter(
-          (c) => !c.isAchromatic && c.temp === "warm",
-        );
-        const cool = userPalette.filter(
-          (c) => !c.isAchromatic && c.temp === "cool",
-        );
-        const universal = userPalette
-          .filter((c) => c.isAchromatic)
-          .sort((a, b) => PM_PALETTE.indexOf(a) - PM_PALETTE.indexOf(b));
-        return { warm, cool, universal };
-      }
-
-      // ── Render ────────────────────────────────────────────────────
-      function renderGrid() {
-        const grid = document.getElementById("sourceGrid");
-        grid.innerHTML = "";
-        const base = getBase();
-
-        PM_PALETTE.forEach((color) => {
-          const selected = isSelected(color);
-          const dimmed = isDimmed(color);
-          const isBase = selected && base?.hex === color.hex;
-
-          const card = document.createElement("div");
-          let cls = "color-card";
-          if (dimmed) cls += " dimmed";
-          else if (isBase) cls += " is-base";
-          else if (selected) cls += " is-selected";
-          card.className = cls;
-
-          card.innerHTML =
-            '<div class="circle-wrapper">' +
-            '<div class="color-inner" style="background-color:' +
-            color.hex +
-            '"></div>' +
-            "</div>" +
-            '<div class="color-name">' +
-            color.name +
-            "</div>" +
-            '<div class="hex-label">' +
-            color.hex +
-            "</div>";
-
-          card.addEventListener("click", () => handleClick(color));
-          grid.appendChild(card);
-        });
-      }
-
-      // Build one drawer card (46px wrapper, 36px inner) for a given color
-      function buildDrawerCard(color, isBase) {
+      // ── Shared swatch builder ─────────────────────────────────────
+      /**
+       * Builds a color swatch DOM node (outer circle + inner circle + name + hex).
+       * Caller adds interactivity (click handler, cursor) as needed.
+       *
+       * @param {{ hex: string, name: string }} color
+       * @param {{
+       *   outerSize: string,
+       *   innerSize: string,
+       *   innerBorder: string,
+       *   borderStyle: string,
+       *   boxShadow: string,
+       *   nameFontSize: string,
+       *   hexFontSize: string,
+       *   maxWidth: string,
+       *   gap: string
+       * }} opts
+       */
+      function buildColorSwatch(color, opts) {
         const card = document.createElement("div");
         card.style.cssText =
-          "display:flex;flex-direction:column;align-items:center;cursor:pointer;flex-shrink:0;gap:4px;";
+          "display:flex;flex-direction:column;align-items:center;" +
+          "flex-shrink:0;gap:" +
+          opts.gap +
+          ";";
 
         const wrapper = document.createElement("div");
         wrapper.style.cssText =
-          "width:46px;height:46px;border-radius:50%;display:flex;" +
-          "align-items:center;justify-content:center;background:white;" +
-          "margin-bottom:2px;flex-shrink:0;" +
-          (isBase
-            ? "border:1.5px solid #4a4a4a;box-shadow:0 0 0 2.5px #4a4a4a;"
-            : "border:1.5px solid #c4c4c4;box-shadow:0 0 0 1.5px #c4c4c4;");
+          "width:" +
+          opts.outerSize +
+          ";height:" +
+          opts.outerSize +
+          ";border-radius:50%;display:flex;" +
+          "align-items:center;justify-content:center;background:white;flex-shrink:0;" +
+          (opts.borderStyle ? "border:" + opts.borderStyle + ";" : "") +
+          (opts.boxShadow ? "box-shadow:" + opts.boxShadow + ";" : "");
 
         const inner = document.createElement("div");
         inner.style.cssText =
-          "width:36px;height:36px;border-radius:50%;border:2px solid white;" +
-          "background-color:" +
+          "width:" +
+          opts.innerSize +
+          ";height:" +
+          opts.innerSize +
+          ";border-radius:50%;border:" +
+          opts.innerBorder +
+          ";background-color:" +
           color.hex +
           ";";
 
         const nameEl = document.createElement("div");
         nameEl.style.cssText =
-          "font-size:7px;font-weight:600;color:#111;text-align:center;" +
-          "line-height:1.2;max-width:52px;letter-spacing:0.01em;";
+          "font-size:" +
+          opts.nameFontSize +
+          ";font-weight:600;color:#111;text-align:center;" +
+          "line-height:1.2;letter-spacing:0.01em;" +
+          (opts.maxWidth ? "max-width:" + opts.maxWidth + ";" : "");
         nameEl.textContent = color.name;
 
         const hexEl = document.createElement("div");
         hexEl.style.cssText =
-          "font-size:6.5px;font-weight:400;color:#aaa;text-transform:uppercase;" +
+          "font-size:" +
+          opts.hexFontSize +
+          ";font-weight:400;color:#aaa;text-transform:uppercase;" +
           "letter-spacing:0.04em;text-align:center;";
         hexEl.textContent = color.hex;
 
@@ -562,18 +438,85 @@
         card.appendChild(nameEl);
         card.appendChild(hexEl);
 
-        card.addEventListener("click", () => handleClick(color));
         return card;
       }
 
-      function updatePaletteUI() {
-        const container = document.getElementById("userPalette");
-        const { warm, cool, universal } = getGrouped();
-        const total = userPalette.length;
-        document.getElementById("count").innerText = total;
-        container.innerHTML = "";
+      // ── Render ────────────────────────────────────────────────────
+      function renderGrid() {
+        DOM.grid.innerHTML = "";
+        const base = getBase(userPalette);
 
-        const base = getBase();
+        PM_PALETTE.forEach((color) => {
+          const selected = isSelected(userPalette, color);
+          const dimmed = isDimmed(userPalette, color);
+          const isBase = selected && base?.hex === color.hex;
+
+          const card = document.createElement("button");
+          card.type = "button";
+          card.setAttribute("aria-label", color.name + " " + color.hex);
+
+          let cls = "color-card";
+          if (dimmed) {
+            cls += " dimmed";
+            card.setAttribute("aria-disabled", "true");
+            card.setAttribute("tabindex", "-1");
+          } else if (isBase) {
+            cls += " is-base";
+          } else if (selected) {
+            cls += " is-selected";
+          }
+          card.className = cls;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "circle-wrapper";
+
+          const inner = document.createElement("div");
+          inner.className = "color-inner";
+          inner.style.backgroundColor = color.hex;
+          wrapper.appendChild(inner);
+
+          const nameEl = document.createElement("div");
+          nameEl.className = "color-name";
+          nameEl.textContent = color.name;
+
+          const hexEl = document.createElement("div");
+          hexEl.className = "hex-label";
+          hexEl.textContent = color.hex;
+
+          card.appendChild(wrapper);
+          card.appendChild(nameEl);
+          card.appendChild(hexEl);
+
+          card.addEventListener("click", () => handleClick(color));
+          DOM.grid.appendChild(card);
+        });
+      }
+
+      // Build one drawer card (46px wrapper, 36px inner) for a given color
+      function buildDrawerCard(color, isBase) {
+        const swatch = buildColorSwatch(color, {
+          outerSize: "46px",
+          innerSize: "36px",
+          innerBorder: "2px solid white",
+          borderStyle: "1.5px solid " + (isBase ? "#4a4a4a" : "#c4c4c4"),
+          boxShadow: "0 0 0 " + (isBase ? "2.5px #4a4a4a" : "1.5px #c4c4c4"),
+          nameFontSize: "7px",
+          hexFontSize: "6.5px",
+          maxWidth: "52px",
+          gap: "4px",
+        });
+        swatch.style.cursor = "pointer";
+        swatch.addEventListener("click", () => handleClick(color));
+        return swatch;
+      }
+
+      function updatePaletteUI() {
+        const { warm, cool, universal } = getGrouped(userPalette);
+        const total = userPalette.length;
+        DOM.count.textContent = total;
+        DOM.palette.innerHTML = "";
+
+        const base = getBase(userPalette);
 
         const buildSection = (label, colors) => {
           if (colors.length === 0) return null;
@@ -601,10 +544,9 @@
           buildSection("Universal", universal),
         ]
           .filter(Boolean)
-          .forEach((s) => container.appendChild(s));
+          .forEach((s) => DOM.palette.appendChild(s));
 
-        // Enable/disable download button
-        document.getElementById("downloadBtn").disabled = total === 0;
+        DOM.downloadBtn.disabled = total === 0;
 
         updateDrawerSpace();
       }
@@ -616,10 +558,11 @@
 
       // ── Drawer ────────────────────────────────────────────────────
       function updateDrawerSpace() {
-        const drawer = document.getElementById("paletteDrawer");
-        if (!drawer) return;
-        const isClosed = drawer.classList.contains("drawer-closed");
-        const visible = isClosed ? 25 : drawer.getBoundingClientRect().height;
+        if (!DOM.drawer) return;
+        const isClosed = DOM.drawer.classList.contains("drawer-closed");
+        const visible = isClosed
+          ? 25
+          : DOM.drawer.getBoundingClientRect().height;
         document.documentElement.style.setProperty(
           "--drawer-space",
           `${Math.max(visible, 25)}px`,
@@ -627,11 +570,13 @@
       }
 
       function toggleDrawer() {
-        const drawer = document.getElementById("paletteDrawer");
-        const arrow = document.getElementById("arrow");
-        isDrawerOpen = !isDrawerOpen;
-        drawer.classList.toggle("drawer-closed", !isDrawerOpen);
-        arrow.classList.toggle("rotated", !isDrawerOpen);
+        const isClosed = DOM.drawer.classList.toggle("drawer-closed");
+        DOM.arrow.classList.toggle("rotated", isClosed);
+        DOM.toggleBtn.setAttribute("aria-expanded", String(!isClosed));
+        DOM.toggleBtn.setAttribute(
+          "aria-label",
+          isClosed ? "Развернуть палитру" : "Свернуть палитру",
+        );
         updateDrawerSpace();
       }
 
@@ -643,7 +588,11 @@
 
       function exportPalette() {
         if (userPalette.length === 0) return;
-        const { warm, cool, universal } = getGrouped();
+        const { warm, cool, universal } = getGrouped(userPalette);
+
+        const btn = DOM.downloadBtn;
+        btn.disabled = true;
+        btn.textContent = "Экспорт...";
 
         // PNG export safety: build the render subtree in a fresh detached
         // node per call, attach offscreen, render, then remove. No persistent
@@ -673,28 +622,19 @@
           row.style.cssText = "display:flex;flex-direction:row;gap:28px;";
 
           colors.forEach((color) => {
-            const card = document.createElement("div");
-            card.style.cssText =
-              "display:flex;flex-direction:column;align-items:center;width:170px;gap:8px;";
-            card.innerHTML =
-              '<div style="width:130px;height:130px;border-radius:50%;' +
-              "border:2px solid #e5e5e5;display:flex;align-items:center;" +
-              'justify-content:center;background:white;">' +
-              '<div style="width:115px;height:115px;border-radius:50%;' +
-              "border:4px solid white;background-color:" +
-              color.hex +
-              ';"></div>' +
-              "</div>" +
-              '<div style="font-size:14px;font-weight:600;color:#111;' +
-              'text-align:center;font-family:Inter,Arial,sans-serif;">' +
-              color.name +
-              "</div>" +
-              '<div style="font-size:12px;font-weight:400;color:#aaa;' +
-              "text-transform:uppercase;letter-spacing:0.05em;" +
-              'font-family:Inter,Arial,sans-serif;">' +
-              color.hex +
-              "</div>";
-            row.appendChild(card);
+            const swatch = buildColorSwatch(color, {
+              outerSize: "130px",
+              innerSize: "115px",
+              innerBorder: "4px solid white",
+              borderStyle: "2px solid #e5e5e5",
+              boxShadow: "",
+              nameFontSize: "14px",
+              hexFontSize: "12px",
+              maxWidth: "",
+              gap: "8px",
+            });
+            swatch.style.width = "170px";
+            row.appendChild(swatch);
           });
 
           section.appendChild(row);
@@ -711,21 +651,28 @@
 
         document.body.appendChild(stage);
 
-        // Defer html2canvas one frame so the browser finishes layout + font
+        // Defer capture one frame so the browser finishes layout + font
         // resolution before capture. Avoids missing styles on slow devices.
         setTimeout(() => {
-          html2canvas(stage, { scale: 2 })
-            .then((canvas) => {
-              const link = document.createElement("a");
-              link.download = "palette.png";
-              link.href = canvas.toDataURL("image/png");
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-            })
-            .finally(() => {
-              stage.remove();
-            });
+          document.fonts.ready.then(() => {
+            html2canvas(stage, { scale: 2 })
+              .then((canvas) => {
+                const link = document.createElement("a");
+                link.download = "palette.png";
+                link.href = canvas.toDataURL("image/png");
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              })
+              .catch(() => {
+                // Export failed silently; button state is restored in finally
+              })
+              .finally(() => {
+                stage.remove();
+                btn.disabled = userPalette.length === 0;
+                btn.textContent = "Скачать PNG";
+              });
+          });
         }, 50);
       }
 
@@ -738,6 +685,9 @@
       }
       window.addEventListener("resize", setVh, { passive: true });
       window.addEventListener("resize", updateDrawerSpace, { passive: true });
+      DOM.resetBtn.addEventListener("click", clearPalette);
+      DOM.downloadBtn.addEventListener("click", exportPalette);
+      DOM.toggleBtn.addEventListener("click", toggleDrawer);
       setVh();
       setTimeout(updateDrawerSpace, 100);
 

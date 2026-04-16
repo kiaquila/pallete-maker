@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "agent:set": "node scripts/set-implementation-agent.mjs",
+    "build:css": "tailwindcss -i src/styles/input.css -o src/styles/tailwind.css --minify --config tailwind.config.cjs",
     "build": "node scripts/build-static.mjs",
     "check:feature-memory": "node scripts/check-feature-memory.mjs",
     "check:repo": "node scripts/check-static-baseline.mjs",
     "check:html": "html-validate index.html",
-    "format:check": "prettier --check \"index.html\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_pallete_maker/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
-    "ci": "pnpm run check:repo && pnpm run check:html && pnpm run build && pnpm run format:check",
+    "format:check": "prettier --check \"index.html\" \"src/**/*.mjs\" \"tests/**/*.mjs\" \"tailwind.config.cjs\" \"src/styles/input.css\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_pallete_maker/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
+    "test": "node --test tests/harmony.test.mjs",
+    "ci": "pnpm run check:repo && pnpm run check:html && pnpm run build && pnpm run format:check && pnpm run test",
     "pr:publish": "node scripts/publish-branch.mjs",
     "review:switch": "node scripts/switch-review-agent.mjs",
     "worker:start": "node scripts/start-implementation-worker.mjs",
@@ -18,7 +20,8 @@
   },
   "devDependencies": {
     "html-validate": "^10.11.3",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "tailwindcss": "^3.4.19"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
