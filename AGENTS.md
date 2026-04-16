@@ -120,7 +120,7 @@ Avoid adding more fixed-size offsets and viewport hacks unless strictly necessar
 
 ### 7. Auto-routing for orchestration capabilities
 
-Before executing a non-trivial task, evaluate whether any orchestration capability available to you (oh-my-claudecode modes, subagents, multi-agent council, parallel execution, verification loops, etc.) is a better fit than a single-pass implementation. If one is, **propose it to the user in one short sentence with justification before starting**. Do not auto-launch; wait for user consent.
+Before executing a non-trivial task, evaluate whether any orchestration capability available to you (oh-my-claudecode (OMC) modes, subagents, multi-agent council, parallel execution, verification loops, etc.) is a better fit than a single-pass implementation. If one is, **propose it to the user in one short sentence with justification before starting**. Do not auto-launch; wait for user consent.
 
 Non-trivial triggers (any one):
 
