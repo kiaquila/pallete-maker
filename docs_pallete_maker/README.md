@@ -16,12 +16,11 @@
 2. `docs_pallete_maker/project-idea.md`
 3. `docs_pallete_maker/project/frontend/frontend-docs.md`
 4. `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
-5. `docs_pallete_maker/project/devops/ai-runner.md`
-6. `docs_pallete_maker/project/devops/ai-pr-workflow.md`
-7. `docs_pallete_maker/project/devops/macos-local-runners.md`
-8. `specs/<feature-id>/spec.md`
-9. `specs/<feature-id>/plan.md`
-10. `specs/<feature-id>/tasks.md`
+5. `docs_pallete_maker/project/devops/ai-pr-workflow.md`
+6. `docs_pallete_maker/project/devops/review-trigger-automation.md`
+7. `specs/<feature-id>/spec.md`
+8. `specs/<feature-id>/plan.md`
+9. `specs/<feature-id>/tasks.md`
 
 ## Structure
 

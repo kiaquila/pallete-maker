@@ -57,7 +57,6 @@
 - Frontend: `docs_pallete_maker/project/frontend/frontend-docs.md`
 - Orchestration: `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
 - PR loop: `docs_pallete_maker/project/devops/ai-pr-workflow.md`
-- Local runners: `docs_pallete_maker/project/devops/macos-local-runners.md`
-- AI runner: `docs_pallete_maker/project/devops/ai-runner.md`
 - Review contract: `docs_pallete_maker/project/devops/review-contract.md`
+- Review trigger automation: `docs_pallete_maker/project/devops/review-trigger-automation.md`
 - Vercel CD: `docs_pallete_maker/project/devops/vercel-cd.md`
