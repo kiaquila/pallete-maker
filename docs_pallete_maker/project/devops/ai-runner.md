@@ -19,12 +19,13 @@ Local macOS helper scripts may also store the current selection under:
 
 ## Backend Requirements
 
-- `claude` is the default implementation agent. The user runs it from a local
-  Claude Code terminal session, and no additional GitHub secret is required
-  for the default implementation path. When `claude` is used as a third-tier
-  review backend through the `@claude` GitHub app, `ANTHROPIC_API_KEY` must be
-  configured in repository secrets.
-- `gemini` is the default review backend and runs natively on GitHub pull
+- `claude` is the default implementation agent and the preferred review backend.
+  Review runs on a self-hosted macOS runner via `claude -p` (print mode). The
+  runner must be registered with labels `self-hosted`, `macOS`, `ai-runner` and
+  the `claude` CLI must be authenticated (`claude auth`). No `ANTHROPIC_API_KEY`
+  secret is required — the CLI uses the local Max subscription session.
+  Set `CLAUDE_CLI_PATH` repository variable if the binary is not on `$PATH`.
+- `gemini` is the fallback review backend and runs natively on GitHub pull
   requests via the Gemini Code Assist GitHub App without additional setup.
 - `codex` is the optional review and implementation backend. Native Codex PR
   review needs no repository secret; Codex implementation requires the Codex
@@ -35,28 +36,28 @@ with an explanatory comment instead of silently skipping.
 
 ## Backend Trigger Constraints
 
-None of the supported review backends accept bot-posted trigger comments
-on `pull_request` events. This matrix is the single source of truth for
-why `ai-review.yml` keeps `trigger_mode=skip` on every `pull_request`
-event regardless of the selected backend.
+This matrix is the single source of truth for the trigger behaviour of
+each review backend. Gemini and Codex use the gate-based path with
+`trigger_mode=skip` on `pull_request` events. Claude uses the self-hosted
+local runner path and triggers automatically without any human comment.
 
-| Backend                                | Auto-review on `opened` / `ready_for_review` | Auto-review on `synchronize` | Accepts bot-posted trigger comment                                                                                 | Manual recovery path                                                                 |
-| -------------------------------------- | -------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Gemini (`gemini-code-assist[bot]`)     | yes when the GitHub App is installed         | no                           | **no** — silently ignored, the gate times out after 20 minutes                                                     | trusted human posts `/gemini review` (responses arrive within ~2 minutes)            |
-| Codex (`chatgpt-codex-connector[bot]`) | yes (Codex Cloud auto-reviews on PR open)    | no                           | **no** — connector replies "trigger did not come from a connected human Codex account" and the gate fails fast     | trusted human posts `@codex review`, or run `pnpm run review:switch -- --to <other>` |
-| Claude (`claude[bot]`)                 | no                                           | no                           | **no** — `claude-review.yml` gates on `author_association in (OWNER, MEMBER, COLLABORATOR)` and drops bot comments | trusted human posts `@claude review once`                                            |
+| Backend                                | Auto-review on `opened` / `ready_for_review` | Auto-review on `synchronize`     | Trigger mechanism                                                                                     | Manual recovery path                                                                |
+| -------------------------------------- | -------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Gemini (`gemini-code-assist[bot]`)     | yes when the GitHub App is installed         | no                               | gate-based: trusted human posts `/gemini review`; bot-posted trigger silently ignored                 | `pnpm run review:switch -- --to gemini`                                             |
+| Codex (`chatgpt-codex-connector[bot]`) | yes (Codex Cloud auto-reviews on PR open)    | no                               | gate-based: trusted human posts `@codex review`; bot-posted trigger rejected by connector             | `pnpm run review:switch -- --to codex`                                              |
+| Claude (self-hosted CLI)               | **yes** — local runner picks up `opened`     | **yes** — picks up `synchronize` | **automatic**: `ai-review-local` job runs `claude -p` directly; no trigger comment needed or accepted | push a new commit, or `pnpm run review:switch -- --to claude` to rerun the last job |
 
 Consequences for orchestration design:
 
-- Auto-retrigger on `synchronize` is not achievable from within a stock
-  GitHub Actions workflow.
+- Claude review auto-triggers on both `opened` and `synchronize` events —
+  every push to a PR is reviewed automatically without any manual step.
 - Gemini Code Assist's on-open auto-review covers the initial PR review.
-  Every subsequent push needs a manual trigger or a backend switch.
-- The `pnpm run review:switch` helper is the canonical one-shot
-  recovery path: it flips `AI_REVIEW_AGENT`, posts the correct native
-  trigger comment on behalf of the current user (via `gh` CLI, so the
-  comment is human-authored and trusted), and reruns the most recent
-  failed `AI Review` job on the current head SHA.
+  Every subsequent push to a gemini-reviewed PR needs a manual trigger or
+  a backend switch.
+- The `pnpm run review:switch` helper is the canonical one-shot recovery
+  path: it flips `AI_REVIEW_AGENT`, posts the correct native trigger comment
+  for gemini or codex (skipped for claude since the runner auto-picks up
+  the push), and reruns the most recent failed `AI Review` job.
 
 ## Review Gate
 
@@ -67,10 +68,9 @@ Consequences for orchestration design:
   `Critical`, `High`, `Medium`, and `Low` severity markers.
 - Codex path waits for native GitHub PR review output from
   `chatgpt-codex-connector[bot]`.
-- Claude path waits for a top-level `claude[bot]` comment containing:
-  - `AI_REVIEW_AGENT: claude`
-  - `AI_REVIEW_SHA: <head sha>`
-  - `AI_REVIEW_OUTCOME: pass|advisory|block`
+- Claude path bypasses the gate entirely. The `ai-review-local` job runs
+  `claude -p` directly on the self-hosted runner, posts the review as a PR
+  comment, and the job succeeds or fails based on the CLI exit code.
 
 ## Feature Memory Gate
 
