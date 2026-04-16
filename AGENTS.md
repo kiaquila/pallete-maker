@@ -118,6 +118,23 @@ contract.
 
 Avoid adding more fixed-size offsets and viewport hacks unless strictly necessary. Prefer layout systems that can survive later migration to a modular frontend app.
 
+### 7. Auto-routing for orchestration capabilities
+
+Before executing a non-trivial task, evaluate whether any orchestration capability available to you (oh-my-claudecode (OMC) modes, subagents, multi-agent council, parallel execution, verification loops, etc.) is a better fit than a single-pass implementation. If one is, **propose it to the user in one short sentence with justification before starting**. Do not auto-launch; wait for user consent.
+
+Non-trivial triggers (any one):
+
+- Multi-file change, refactor, or migration
+- Codebase research where the answer is not obvious
+- Task that benefits from a verification / QA cycle
+- Parallelizable work (several independent subtasks)
+- Long-running autonomous work ("don't stop until done")
+- Debugging with unclear cause, tracing, or competing hypotheses
+
+Representative modes / agents to consider (Claude Code users have OMC modes like `/plan`, `/ralph`, `/ultrawork`, `/autopilot`, `/team`, `/trace`, `/debug`, `/ask` and subagents such as `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explorer`, `designer`, `writer`). Codex / Gemini / other agents should propose their equivalent capabilities (planning modes, parallel task runners, review councils, etc.) before starting non-trivial work.
+
+Skip the proposal for trivial tasks: rename, one-line fix, simple question, quick status check. Minimal-friction principle — do not nag on small things.
+
 ## Reading Route — Implementing a Change
 
 1. `.specify/memory/constitution.md`
