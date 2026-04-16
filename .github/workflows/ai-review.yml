@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       trigger_mode:
-        description: Review gate trigger mode
+        description: Review gate trigger mode (gemini/codex only; ignored for claude)
         required: false
         type: string
 
@@ -37,17 +37,19 @@ concurrency:
 
 jobs:
   ai-review:
+    # Gate-based path: gemini and codex (and unset default → gemini)
     if: >
-      github.event_name == 'workflow_dispatch' ||
       (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.draft == false &&
+        github.event_name == 'workflow_dispatch' ||
         (
-          vars.AI_REVIEW_AGENT == '' ||
-          vars.AI_REVIEW_AGENT == 'gemini' ||
-          vars.AI_REVIEW_AGENT == 'codex' ||
-          vars.AI_REVIEW_AGENT == 'claude'
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false
         )
+      ) &&
+      (
+        vars.AI_REVIEW_AGENT == '' ||
+        vars.AI_REVIEW_AGENT == 'gemini' ||
+        vars.AI_REVIEW_AGENT == 'codex'
       )
     name: AI Review
     runs-on: ubuntu-latest
@@ -79,20 +81,12 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
           else
-            # None of the supported review backends accept bot-posted
-            # trigger comments on pull_request events:
-            # - Gemini Code Assist silently ignores bot-posted
-            #   /gemini review and never emits a review; the gate
-            #   times out waiting for it.
-            # - Codex Cloud replies "trigger did not come from a
-            #   connected human Codex account" and fails fast.
-            # - claude-review.yml gates on OWNER/MEMBER/COLLABORATOR
-            #   author_association, so bot-posted @claude review once
-            #   never dispatches the actual reviewer.
-            # Gate therefore stays in skip mode on every pull_request
-            # event. Gemini Code Assist's on-open auto-review covers
-            # initial PR review; manual recovery on synchronize uses
-            # pnpm run review:switch or a trusted human trigger.
+            # Gemini and Codex do not accept bot-posted trigger comments
+            # on pull_request events, so the gate stays in skip mode.
+            # Gemini Code Assist auto-reviews on PR open; manual recovery
+            # uses pnpm run review:switch or a trusted human trigger.
+            # Claude is handled by the ai-review-local job (self-hosted
+            # runner) and never reaches this gate path.
             # See docs_pallete_maker/project/devops/ai-runner.md
             # §Backend Trigger Constraints for the full matrix.
             trigger_mode="skip"
@@ -125,3 +119,42 @@ jobs:
           AI_REVIEW_WAIT_MS: "1200000"
           AI_REVIEW_POLL_MS: "15000"
         run: node scripts/ai-review-gate.mjs
+
+  ai-review-local:
+    # Local CLI path: claude via self-hosted macOS runner.
+    # Triggers automatically on every pull_request push — no trigger comment needed.
+    if: >
+      vars.AI_REVIEW_AGENT == 'claude' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false
+        )
+      )
+    name: AI Review
+    runs-on: [self-hosted, macOS, ai-runner]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve PR context
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_REVIEW_PR_NUMBER: ${{ inputs.pr_number }}
+        run: node scripts/resolve-pr-context.mjs
+
+      - name: Run local Claude review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_REVIEW_AGENT: claude
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          PR_BASE_REF: ${{ steps.pr.outputs.base_ref }}
+          PR_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          CLAUDE_CLI_PATH: ${{ vars.CLAUDE_CLI_PATH }}
+        run: bash scripts/run-ai-pr-review.sh
