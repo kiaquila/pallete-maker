@@ -71,7 +71,7 @@ The current PR head SHA is merge-ready only when:
 
 ## Related Docs
 
-- `docs_pallete_maker/project/devops/macos-local-runners.md`
 - `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
+- `docs_pallete_maker/project/devops/review-trigger-automation.md`
 - `docs_pallete_maker/project/devops/vercel-cd.md`
 - `docs_pallete_maker/project/devops/delivery-playbook.md`

@@ -81,14 +81,13 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             trigger_mode="${{ inputs.trigger_mode || 'skip' }}"
           else
-            # Gemini and Codex do not accept bot-posted trigger comments
-            # on pull_request events, so the gate stays in skip mode.
-            # Gemini Code Assist auto-reviews on PR open; manual recovery
-            # uses pnpm run review:switch or a trusted human trigger.
-            # Claude is handled by the ai-review-local job (self-hosted
-            # runner) and never reaches this gate path.
-            # See docs_pallete_maker/project/devops/ai-runner.md
-            # §Backend Trigger Constraints for the full matrix.
+            # All three backends (gemini, codex, claude) reject bot-posted
+            # trigger comments on pull_request events, so the gate stays in
+            # skip mode. Gemini Code Assist auto-reviews on PR open; manual
+            # recovery uses `pnpm run review:switch` or a trusted human
+            # trigger comment. See docs_pallete_maker/project/devops/
+            # review-trigger-automation.md for the full constraint matrix
+            # and proposed automation.
             trigger_mode="skip"
           fi
 
@@ -102,7 +101,7 @@ jobs:
             echo "- trigger mode: \`$trigger_mode\`"
             echo "- event: \`${{ github.event_name }}\`"
             echo ""
-            echo "See docs_pallete_maker/project/devops/ai-runner.md §Backend Trigger Constraints for why no backend auto-retriggers on pull_request events."
+            echo "See docs_pallete_maker/project/devops/review-trigger-automation.md for why no backend auto-retriggers on pull_request events."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Mark native review start
@@ -119,42 +118,3 @@ jobs:
           AI_REVIEW_WAIT_MS: "1200000"
           AI_REVIEW_POLL_MS: "15000"
         run: node scripts/ai-review-gate.mjs
-
-  ai-review-local:
-    # Local CLI path: claude via self-hosted macOS runner.
-    # Triggers automatically on every pull_request push — no trigger comment needed.
-    if: >
-      vars.AI_REVIEW_AGENT == 'claude' &&
-      (
-        github.event_name == 'workflow_dispatch' ||
-        (
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.draft == false
-        )
-      )
-    name: AI Review (local)
-    runs-on: [self-hosted, macOS, ai-runner]
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Resolve PR context
-        id: pr
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AI_REVIEW_PR_NUMBER: ${{ inputs.pr_number }}
-        run: node scripts/resolve-pr-context.mjs
-
-      - name: Run local Claude review
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AI_REVIEW_AGENT: claude
-          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
-          PR_BASE_REF: ${{ steps.pr.outputs.base_ref }}
-          PR_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
-          CLAUDE_CLI_PATH: ${{ vars.CLAUDE_CLI_PATH }}
-        run: bash scripts/run-ai-pr-review.sh

@@ -22,7 +22,7 @@ variable, posts the correct native trigger comment as the current `gh`
 user (human-authored, therefore trusted), and reruns the most recent
 failed `AI Review` job.
 
-See `docs_pallete_maker/project/devops/ai-runner.md` for the full matrix.
+See `docs_pallete_maker/project/devops/review-trigger-automation.md` for the full matrix and proposed automation.
 
 ## Gemini Review
 
@@ -42,7 +42,9 @@ See `docs_pallete_maker/project/devops/ai-runner.md` for the full matrix.
 
 ## Claude Review
 
-- Third-tier review backend, used only when `AI_REVIEW_AGENT=claude`
+- Third-tier optional review backend, used when `AI_REVIEW_AGENT=claude`
+- Triggered by a human posting `@claude review once` on the PR
+- Handled by the `claude-review.yml` workflow using `ANTHROPIC_API_KEY`
 - Final result is a top-level comment, not a formal GitHub review state
 - The comment must start with:
 
