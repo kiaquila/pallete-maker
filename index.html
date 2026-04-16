@@ -319,7 +319,10 @@
           <h3
             class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400"
           >
-            Your Palette (<span id="count" aria-live="polite">0</span>/15)
+            Your Palette (<span id="count" aria-live="polite">0</span>/<span
+              id="maxCount"
+            ></span
+            >)
           </h3>
         </div>
         <div id="userPalette"></div>
@@ -349,6 +352,7 @@
         grid: document.getElementById("sourceGrid"),
         palette: document.getElementById("userPalette"),
         count: document.getElementById("count"),
+        maxCount: document.getElementById("maxCount"),
         resetBtn: document.getElementById("resetBtn"),
         downloadBtn: document.getElementById("downloadBtn"),
         drawer: document.getElementById("paletteDrawer"),
@@ -702,6 +706,7 @@
       DOM.resetBtn.addEventListener("click", clearPalette);
       DOM.downloadBtn.addEventListener("click", exportPalette);
       DOM.toggleBtn.addEventListener("click", toggleDrawer);
+      DOM.maxCount.textContent = MAX_TOTAL;
       setVh();
       setTimeout(updateDrawerSpace, 100);
 
