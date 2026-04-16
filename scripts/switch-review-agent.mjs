@@ -48,10 +48,12 @@ if (!validAgents.has(options.to)) {
   throw new Error(`--to must be one of: codex, gemini, claude\n\n${usage}`);
 }
 
+// claude uses a self-hosted local runner that auto-triggers from push events;
+// no trigger comment is needed or accepted.
 const triggerBodies = {
   codex: "@codex review",
   gemini: "/gemini review",
-  claude: "@claude review once",
+  claude: null,
 };
 
 const run = (command, commandArgs) =>
@@ -87,18 +89,16 @@ run("gh", [
 console.log(`Repository variable AI_REVIEW_AGENT set to ${options.to}.`);
 
 // Step 2: post the native trigger comment on the target PR.
-if (options.comment) {
-  run("gh", [
-    "pr",
-    "comment",
-    options.pr,
-    "--body",
-    triggerBodies[options.to],
-    ...repoArgs,
-  ]);
-  console.log(`Posted "${triggerBodies[options.to]}" on PR #${options.pr}.`);
+const triggerBody = triggerBodies[options.to];
+if (!options.comment || triggerBody === null) {
+  const reason =
+    triggerBody === null
+      ? `${options.to} uses a self-hosted local runner; no trigger comment needed`
+      : "--no-comment was used";
+  console.log(`Skipped native trigger comment: ${reason}.`);
 } else {
-  console.log("Skipped native trigger comment because --no-comment was used.");
+  run("gh", ["pr", "comment", options.pr, "--body", triggerBody, ...repoArgs]);
+  console.log(`Posted "${triggerBody}" on PR #${options.pr}.`);
 }
 
 // Step 3: rerun the most recent failed AI Review run at the current head SHA.
