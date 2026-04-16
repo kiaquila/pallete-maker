@@ -19,7 +19,7 @@
 - Продуктовые изменения начинаются с активной папки `specs/<feature-id>/`
 - Один implementation loop = один worktree, одна ветка и один PR
 - При изменении поведения UI, workflow или build/deploy обновляй `specs/` и `docs_pallete_maker/`
-- Никогда не мержить PR до завершения ВСЕХ checks (включая AI Review), даже если GitHub показывает MERGEABLE/UNSTABLE. Ждать пока все checks станут COMPLETED.
+- Никогда не мержить PR до завершения ВСЕХ checks (включая AI Review), даже если GitHub показывает MERGEABLE/UNSTABLE. Ждать пока все checks станут COMPLETED и SUCCESSFUL.
 - Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
 - При review фокусируйся на mobile grid reflow, harmony rules correctness, PNG export safety, RU-строках и maintainability
 
