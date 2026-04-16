@@ -35,6 +35,66 @@ const BURGUNDY = PM_PALETTE.find((c) => c.name === "Burgundy"); // dark warm
 const FERN = PM_PALETTE.find((c) => c.name === "Fern"); // desaturated cool
 const FOREST = PM_PALETTE.find((c) => c.name === "Forest"); // dark cool
 
+const BRIGHT_ORDER = [
+  "Scarlet",
+  "Vermillion",
+  "Tangerine",
+  "Amber",
+  "Canary",
+  "Chartreuse",
+  "Emerald",
+  "Teal",
+  "Cobalt",
+  "Indigo",
+  "Violet",
+  "Fuchsia",
+];
+
+const PASTEL_ORDER = [
+  "Blush",
+  "Nectarine",
+  "Beige",
+  "Off-White",
+  "Primrose",
+  "Pistachio",
+  "Mint",
+  "Aqua",
+  "Sky",
+  "Periwinkle",
+  "Lavender",
+  "Orchid",
+];
+
+const DESATURATED_ORDER = [
+  "Brick",
+  "Coral",
+  "Terracotta",
+  "Sand",
+  "Straw",
+  "Sage",
+  "Fern",
+  "Dusty Teal",
+  "Slate",
+  "Dusty Indigo",
+  "Mauve",
+  "Antique Rose",
+];
+
+const DARK_ORDER = [
+  "Burgundy",
+  "Rust",
+  "Burnt Orange",
+  "Ochre",
+  "Olive Gold",
+  "Olive",
+  "Forest",
+  "Pine",
+  "Navy",
+  "Midnight",
+  "Plum",
+  "Mulberry",
+];
+
 // ── PM_PALETTE sanity ─────────────────────────────────────────────────────────
 
 describe("PM_PALETTE", () => {
@@ -45,6 +105,10 @@ describe("PM_PALETTE", () => {
   it("contains exactly 3 achromatics", () => {
     const achros = PM_PALETTE.filter((c) => c.isAchromatic);
     assert.equal(achros.length, 3);
+  });
+
+  it("uses a true white achromatic swatch", () => {
+    assert.equal(WHITE.hex, "#FFFFFF");
   });
 
   it("PM_INDEX covers every entry", () => {
@@ -60,6 +124,21 @@ describe("PM_PALETTE", () => {
       assert.ok(c.group, `${c.name} missing group`);
       assert.ok(c.temp === "warm" || c.temp === "cool", `${c.name} bad temp`);
     });
+  });
+
+  it("keeps every chromatic group aligned to the bright hue order", () => {
+    const namesForGroup = (group) =>
+      PM_PALETTE.filter((c) => c.group === group).map((c) => c.name);
+
+    assert.deepEqual(namesForGroup("bright"), BRIGHT_ORDER);
+    assert.deepEqual(namesForGroup("pastel"), PASTEL_ORDER);
+    assert.deepEqual(namesForGroup("desaturated"), DESATURATED_ORDER);
+    assert.deepEqual(namesForGroup("dark"), DARK_ORDER);
+  });
+
+  it("uses the updated selection limits", () => {
+    assert.equal(MAX_CHROMATIC, 12);
+    assert.equal(MAX_TOTAL, 15);
   });
 });
 
@@ -187,8 +266,11 @@ describe("isDimmed", () => {
   });
 
   it("dims any unselected color when total limit is reached", () => {
-    // Build a full 14-color palette: 3 achromatics + 11 chroms of same group
-    const brights = PM_PALETTE.filter((c) => c.group === "bright").slice(0, 11);
+    // Build a full 15-color palette: 3 achromatics + 12 chroms of same group
+    const brights = PM_PALETTE.filter((c) => c.group === "bright").slice(
+      0,
+      MAX_CHROMATIC,
+    );
     const full = [BLACK, GRAY, WHITE, ...brights];
     assert.equal(full.length, MAX_TOTAL);
 
