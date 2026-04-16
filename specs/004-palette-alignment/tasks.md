@@ -18,4 +18,4 @@
 ## Docs
 
 - [x] Update `docs_pallete_maker/project/frontend/frontend-docs.md`
-- [ ] Open a PR with verification notes
+- [x] Open a PR with verification notes
