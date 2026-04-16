@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -132,13 +132,13 @@ jobs:
           github.event.pull_request.draft == false
         )
       )
-    name: AI Review
+    name: AI Review (local)
     runs-on: [self-hosted, macOS, ai-runner]
     timeout-minutes: 15
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
