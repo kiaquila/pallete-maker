@@ -46,7 +46,7 @@ pallete-maker/
 │   ├── publish-branch.mjs              # Push branch and open or reuse PR
 │   ├── resolve-pr-context.mjs          # Pull request context resolver for workflows
 │   ├── ai-review-gate.mjs              # Review gate for Codex/Claude/Gemini
-│   └── switch-review-agent.mjs         # One-shot review backend switcher
+│   └── switch-review-agent.mjs         # One-shot review backend switcher (posts human trigger comment for all three agents)
 ├── docs_pallete_maker/
 │   ├── README.md                       # Durable docs index
 │   ├── adr/                            # Architecture decision records

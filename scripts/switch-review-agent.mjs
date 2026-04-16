@@ -48,12 +48,13 @@ if (!validAgents.has(options.to)) {
   throw new Error(`--to must be one of: codex, gemini, claude\n\n${usage}`);
 }
 
-// claude uses a self-hosted local runner that auto-triggers from push events;
-// no trigger comment is needed or accepted.
+// All three review backends are triggered by a human-authored comment on
+// the PR. See docs_pallete_maker/project/devops/review-trigger-automation.md
+// for why bot-posted comments are rejected.
 const triggerBodies = {
   codex: "@codex review",
   gemini: "/gemini review",
-  claude: null,
+  claude: "@claude review once",
 };
 
 const run = (command, commandArgs) =>
@@ -90,12 +91,8 @@ console.log(`Repository variable AI_REVIEW_AGENT set to ${options.to}.`);
 
 // Step 2: post the native trigger comment on the target PR.
 const triggerBody = triggerBodies[options.to];
-if (!options.comment || triggerBody === null) {
-  const reason =
-    triggerBody === null
-      ? `${options.to} uses a self-hosted local runner; no trigger comment needed`
-      : "--no-comment was used";
-  console.log(`Skipped native trigger comment: ${reason}.`);
+if (!options.comment) {
+  console.log("Skipped native trigger comment: --no-comment was used.");
 } else {
   run("gh", ["pr", "comment", options.pr, "--body", triggerBody, ...repoArgs]);
   console.log(`Posted "${triggerBody}" on PR #${options.pr}.`);
