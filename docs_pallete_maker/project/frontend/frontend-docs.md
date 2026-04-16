@@ -35,11 +35,16 @@ UI changes should start by updating the active feature folder before touching pr
 The picker grid displays all 51 colors of the fixed palette:
 
 - order: 3 achromatics → 12 Brights → 12 Pastels → 12 Desaturated → 12 Darks
+- within each chromatic group, the hue order mirrors the bright palette
+  sequence exactly: Scarlet → Vermillion → Tangerine → Amber → Canary →
+  Chartreuse → Emerald → Teal → Cobalt → Indigo → Violet → Fuchsia
 - each swatch is a `<button>` element (88px, `--swatch-outer` CSS var) showing a color circle, name, and HEX
 - dimmed (incompatible) cards carry `aria-disabled="true"` and `tabindex="-1"`
 - responsive columns: 3 (mobile ≥375) → 4 (≥480) → 6 (≥640) → 8 (≥1024) → 10 (≥1280)
 - color selection state is ephemeral (no persistence)
 - DOM refs are cached on init in a `DOM` object; full grid rebuild on each state change
+- the achromatic White swatch uses `#FFFFFF` with a subtle neutral inner outline
+  so it remains visible against the white page background
 
 ## PM Harmony Algorithm
 
@@ -52,11 +57,26 @@ Lives in `src/scripts/harmony.mjs`. Compatibility is determined by two attribute
 
 **Why soft temperature:** under a strict temperature filter, cool-side bases access at most 5–6 Itten hues. Dropping the filter gives ≥12 hues per base while the warm/cool aesthetic is preserved via visual grouping.
 
-**Achromatics** (Black `#1C1C1C`, Gray `#8C8C8C`, White `#F0F0F0`) are compatible with all 51 colors.
+**Achromatics** (Black `#1C1C1C`, Gray `#8C8C8C`, White `#FFFFFF`) are compatible with all 51 colors.
 
-**Limits:** MAX_CHROMATIC = 11, MAX_TOTAL = 14, download enabled from 1 color.
+**Limits:** MAX_CHROMATIC = 12, MAX_TOTAL = 15, download enabled from 1 color.
 
 **Base color:** first non-achromatic added; determines the compatibility filter. On removal of the base, the next remaining non-achromatic becomes the new base (Variant A).
+
+### Group Alignment
+
+All non-bright chromatic groups are aligned slot-for-slot with the bright
+palette:
+
+- **Pastels** use a lighter 12-slot sequence:
+  Blush, Nectarine, Beige, Off-White, Primrose, Pistachio, Mint, Aqua, Sky,
+  Periwinkle, Lavender, Orchid
+- **Desaturated** use a muted 12-slot sequence:
+  Brick, Coral, Terracotta, Sand, Straw, Sage, Fern, Dusty Teal, Slate,
+  Dusty Indigo, Mauve, Antique Rose
+- **Darks** use a darker 12-slot sequence:
+  Burgundy, Rust, Burnt Orange, Ochre, Olive Gold, Olive, Forest, Pine, Navy,
+  Midnight, Plum, Mulberry
 
 ## Final Palette Sectioning
 
@@ -76,8 +96,14 @@ PNG export uses html2canvas (CDN, SRI-protected):
 
 - an offscreen detached stage is built per-call with `buildColorSwatch` using export-size opts (130px circles)
 - `document.fonts.ready` is awaited before capture to ensure Inter font is loaded
-- export button shows loading state ("Экспорт...") during render; restored in `.finally()`
+- export button shows loading state ("Exporting...") during render; restored in `.finally()`
 - `.catch()` handles failures silently; button re-enables regardless
+
+## UI Language
+
+- runtime UI copy is English (`Reset`, `Download PNG`, `Your Palette`, English
+  drawer toggle labels, English helper text in the header)
+- color names remain English palette labels in both the grid and exported PNG
 
 ## Accessibility
 

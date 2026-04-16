@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="theme-color" content="#ffffff" />
@@ -276,8 +276,8 @@
           <p
             class="text-gray-400 mt-2 md:mt-3 text-[11px] md:text-sm font-medium leading-tight"
           >
-            1. Выберите базовый цвет → 2. Добавьте совместимые → 3. Скачайте
-            палитру
+            1. Pick a base color → 2. Add matching colors → 3. Download your
+            palette
           </p>
         </div>
         <div class="flex gap-2 w-full md:w-auto">
@@ -286,7 +286,7 @@
             id="resetBtn"
             class="flex-1 md:flex-none px-4 py-2 border border-gray-300 text-[10px] font-black uppercase"
           >
-            Сброс
+            Reset
           </button>
           <button
             type="button"
@@ -294,7 +294,7 @@
             disabled
             class="flex-1 md:flex-none px-6 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest"
           >
-            Скачать PNG
+            Download PNG
           </button>
         </div>
       </div>
@@ -310,7 +310,7 @@
         id="toggleBtn"
         aria-expanded="true"
         aria-controls="userPalette"
-        aria-label="Свернуть палитру"
+        aria-label="Collapse palette"
       >
         <span id="arrow" class="text-[10px] font-bold">&#x2228;</span>
       </button>
@@ -319,7 +319,7 @@
           <h3
             class="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400"
           >
-            Ваша палитра (<span id="count" aria-live="polite">0</span>/14)
+            Your Palette (<span id="count" aria-live="polite">0</span>/15)
           </h3>
         </div>
         <div id="userPalette"></div>
@@ -356,6 +356,19 @@
         arrow: document.getElementById("arrow"),
       };
 
+      const TRUE_WHITE_HEX = "#FFFFFF";
+      const WHITE_SWATCH_OUTLINE = "#d9d9d9";
+
+      function isPureWhite(color) {
+        return color.hex.toUpperCase() === TRUE_WHITE_HEX;
+      }
+
+      function getSwatchInnerBorder(borderWidth, color) {
+        return `${borderWidth} solid ${
+          isPureWhite(color) ? WHITE_SWATCH_OUTLINE : "#FFFFFF"
+        }`;
+      }
+
       // ── Interaction ───────────────────────────────────────────────
       function handleClick(color) {
         if (isSelected(userPalette, color)) {
@@ -376,7 +389,7 @@
        * @param {{
        *   outerSize: string,
        *   innerSize: string,
-       *   innerBorder: string,
+       *   innerBorderWidth: string,
        *   borderStyle: string,
        *   boxShadow: string,
        *   nameFontSize: string,
@@ -411,7 +424,7 @@
           ";height:" +
           opts.innerSize +
           ";border-radius:50%;border:" +
-          opts.innerBorder +
+          getSwatchInnerBorder(opts.innerBorderWidth, color) +
           ";background-color:" +
           color.hex +
           ";";
@@ -473,6 +486,7 @@
           const inner = document.createElement("div");
           inner.className = "color-inner";
           inner.style.backgroundColor = color.hex;
+          inner.style.border = getSwatchInnerBorder("3px", color);
           wrapper.appendChild(inner);
 
           const nameEl = document.createElement("div");
@@ -497,7 +511,7 @@
         const swatch = buildColorSwatch(color, {
           outerSize: "46px",
           innerSize: "36px",
-          innerBorder: "2px solid white",
+          innerBorderWidth: "2px",
           borderStyle: "1.5px solid " + (isBase ? "#4a4a4a" : "#c4c4c4"),
           boxShadow: "0 0 0 " + (isBase ? "2.5px #4a4a4a" : "1.5px #c4c4c4"),
           nameFontSize: "7px",
@@ -575,7 +589,7 @@
         DOM.toggleBtn.setAttribute("aria-expanded", String(!isClosed));
         DOM.toggleBtn.setAttribute(
           "aria-label",
-          isClosed ? "Развернуть палитру" : "Свернуть палитру",
+          isClosed ? "Expand palette" : "Collapse palette",
         );
         updateDrawerSpace();
       }
@@ -592,7 +606,7 @@
 
         const btn = DOM.downloadBtn;
         btn.disabled = true;
-        btn.textContent = "Экспорт...";
+        btn.textContent = "Exporting...";
 
         // PNG export safety: build the render subtree in a fresh detached
         // node per call, attach offscreen, render, then remove. No persistent
@@ -625,7 +639,7 @@
             const swatch = buildColorSwatch(color, {
               outerSize: "130px",
               innerSize: "115px",
-              innerBorder: "4px solid white",
+              innerBorderWidth: "4px",
               borderStyle: "2px solid #e5e5e5",
               boxShadow: "",
               nameFontSize: "14px",
@@ -670,7 +684,7 @@
               .finally(() => {
                 stage.remove();
                 btn.disabled = userPalette.length === 0;
-                btn.textContent = "Скачать PNG";
+                btn.textContent = "Download PNG";
               });
           });
         }, 50);

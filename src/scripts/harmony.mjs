@@ -10,7 +10,7 @@ export const PM_PALETTE = [
   // Achromatics (3) — compatible with all 51
   { hex: "#1C1C1C", name: "Black", isAchromatic: true },
   { hex: "#8C8C8C", name: "Gray", isAchromatic: true },
-  { hex: "#F0F0F0", name: "White", isAchromatic: true },
+  { hex: "#FFFFFF", name: "White", isAchromatic: true },
   // Brights warm (6)
   { hex: "#E82535", name: "Scarlet", group: "bright", temp: "warm" },
   { hex: "#E84B20", name: "Vermillion", group: "bright", temp: "warm" },
@@ -25,52 +25,52 @@ export const PM_PALETTE = [
   { hex: "#3828E8", name: "Indigo", group: "bright", temp: "cool" },
   { hex: "#8820E8", name: "Violet", group: "bright", temp: "cool" },
   { hex: "#D020AA", name: "Fuchsia", group: "bright", temp: "cool" },
-  // Pastels warm (7)
+  // Pastels warm (6) — aligned to the bright hue order
   { hex: "#F5B5BB", name: "Blush", group: "pastel", temp: "warm" },
-  { hex: "#F5C5B0", name: "Peach", group: "pastel", temp: "warm" },
-  { hex: "#F5D5B0", name: "Apricot", group: "pastel", temp: "warm" },
+  { hex: "#F5CDB0", name: "Nectarine", group: "pastel", temp: "warm" },
   { hex: "#E8D5B5", name: "Beige", group: "pastel", temp: "warm" },
-  { hex: "#FAF0E6", name: "Off-white", group: "pastel", temp: "warm" },
+  { hex: "#FAF0E6", name: "Off-White", group: "pastel", temp: "warm" },
   { hex: "#F7EDA5", name: "Primrose", group: "pastel", temp: "warm" },
-  { hex: "#EEB8E5", name: "Orchid", group: "pastel", temp: "warm" },
-  // Pastels cool (5)
+  { hex: "#D8EEB0", name: "Pistachio", group: "pastel", temp: "warm" },
+  // Pastels cool (6)
   { hex: "#B0EEC5", name: "Mint", group: "pastel", temp: "cool" },
   { hex: "#B0EEDE", name: "Aqua", group: "pastel", temp: "cool" },
   { hex: "#B0CDEE", name: "Sky", group: "pastel", temp: "cool" },
   { hex: "#C0B8EE", name: "Periwinkle", group: "pastel", temp: "cool" },
   { hex: "#DCB8EE", name: "Lavender", group: "pastel", temp: "cool" },
-  // Desaturated warm (7)
+  { hex: "#EEB8E5", name: "Orchid", group: "pastel", temp: "cool" },
+  // Desaturated warm (6) — aligned to the bright hue order
   { hex: "#B86068", name: "Brick", group: "desaturated", temp: "warm" },
   { hex: "#C07860", name: "Coral", group: "desaturated", temp: "warm" },
   { hex: "#C08A65", name: "Terracotta", group: "desaturated", temp: "warm" },
   { hex: "#C0A268", name: "Sand", group: "desaturated", temp: "warm" },
   { hex: "#B8B268", name: "Straw", group: "desaturated", temp: "warm" },
   { hex: "#88A865", name: "Sage", group: "desaturated", temp: "warm" },
-  { hex: "#B860A2", name: "Antique Rose", group: "desaturated", temp: "warm" },
-  // Desaturated cool (5)
+  // Desaturated cool (6)
   { hex: "#60A878", name: "Fern", group: "desaturated", temp: "cool" },
   { hex: "#50A095", name: "Dusty Teal", group: "desaturated", temp: "cool" },
   { hex: "#5082B8", name: "Slate", group: "desaturated", temp: "cool" },
   { hex: "#6860B8", name: "Dusty Indigo", group: "desaturated", temp: "cool" },
   { hex: "#9860B8", name: "Mauve", group: "desaturated", temp: "cool" },
-  // Darks warm (7)
+  { hex: "#B860A2", name: "Antique Rose", group: "desaturated", temp: "cool" },
+  // Darks warm (6) — aligned to the bright hue order
   { hex: "#8C1820", name: "Burgundy", group: "dark", temp: "warm" },
   { hex: "#8C3015", name: "Rust", group: "dark", temp: "warm" },
   { hex: "#8C5018", name: "Burnt Orange", group: "dark", temp: "warm" },
   { hex: "#8C6C15", name: "Ochre", group: "dark", temp: "warm" },
   { hex: "#787815", name: "Olive Gold", group: "dark", temp: "warm" },
   { hex: "#4A7A18", name: "Olive", group: "dark", temp: "warm" },
-  { hex: "#781860", name: "Mulberry", group: "dark", temp: "warm" },
-  // Darks cool (5)
+  // Darks cool (6)
   { hex: "#187838", name: "Forest", group: "dark", temp: "cool" },
   { hex: "#187870", name: "Pine", group: "dark", temp: "cool" },
   { hex: "#182878", name: "Navy", group: "dark", temp: "cool" },
   { hex: "#201878", name: "Midnight", group: "dark", temp: "cool" },
   { hex: "#5A1878", name: "Plum", group: "dark", temp: "cool" },
+  { hex: "#781860", name: "Mulberry", group: "dark", temp: "cool" },
 ];
 
-export const MAX_TOTAL = 14;
-export const MAX_CHROMATIC = 11;
+export const MAX_TOTAL = 15;
+export const MAX_CHROMATIC = 12;
 
 /** Lookup map for O(1) palette-order sort (used in getGrouped). */
 export const PM_INDEX = new Map(PM_PALETTE.map((c, i) => [c.hex, i]));
