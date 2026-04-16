@@ -280,24 +280,25 @@ describe("isDimmed", () => {
   });
 
   it("dims unselected chromatics when chromatic limit is reached", () => {
-    // 11 bright chroms — chromatic cap hit, but total < 14
-    const brights = PM_PALETTE.filter((c) => c.group === "bright").slice(
+    // 6 desaturated + 6 dark = 12 chromatics (cross-compatible pair).
+    // Using this mix ensures remaining colors exist to assert against,
+    // since brights == 12 == MAX_CHROMATIC leaving nothing to find.
+    const desat = PM_PALETTE.filter((c) => c.group === "desaturated").slice(
       0,
-      MAX_CHROMATIC,
+      6,
     );
-    assert.equal(brights.length, MAX_CHROMATIC);
+    const dark = PM_PALETTE.filter((c) => c.group === "dark").slice(0, 6);
+    const palette = [...desat, ...dark];
+    assert.equal(palette.length, MAX_CHROMATIC);
 
-    const nextBright = PM_PALETTE.find(
-      (c) => c.group === "bright" && !brights.includes(c),
+    // A remaining desaturated is compatible but chromatic cap is hit → dimmed
+    const remaining = PM_PALETTE.find(
+      (c) => c.group === "desaturated" && !palette.includes(c),
     );
-    const palette = brights;
+    assert.ok(remaining, "expected a remaining desaturated color");
+    assert.equal(isDimmed(palette, remaining), true);
 
-    // Chromatic: dimmed (chromatic limit)
-    if (nextBright) {
-      assert.equal(isDimmed(palette, nextBright), true);
-    }
-
-    // Achromatic: not dimmed (limit is chromatic-only)
+    // Achromatic: not dimmed (chromatic cap does not apply to achromatics)
     assert.equal(isDimmed(palette, BLACK), false);
   });
 });
