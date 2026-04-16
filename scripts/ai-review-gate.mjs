@@ -286,58 +286,44 @@ const matchesClaudeComment = (comment) => {
   );
 };
 
+/**
+ * Generic latest-item picker.
+ * Filters items with matchFn, sorts descending by timestampFn, returns first or null.
+ *
+ * @param {object[]} items
+ * @param {(item: object) => boolean} matchFn
+ * @param {(item: object) => number} timestampFn
+ * @returns {object|null}
+ */
+const pickLatest = (items, matchFn, timestampFn) =>
+  items.filter(matchFn).sort((a, b) => timestampFn(b) - timestampFn(a))[0] ||
+  null;
+
+const reviewTimestamp = (r) => new Date(r.submitted_at || 0).getTime();
+const commentTimestamp = (c) =>
+  new Date(c.updated_at || c.created_at || 0).getTime();
+
 const pickLatestCodexReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesCodexReview(review))
-    .sort(
-      (a, b) =>
-        new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
-    )[0] || null;
+  pickLatest(
+    reviews,
+    (r) => r.submitted_at && matchesCodexReview(r),
+    reviewTimestamp,
+  );
 
 const pickLatestGeminiReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesGeminiReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
+  pickLatest(
+    reviews,
+    (r) => r.submitted_at && matchesGeminiReview(r),
+    reviewTimestamp,
+  );
 
 const pickLatestClaudeComment = (comments) =>
-  comments
-    .filter((comment) => matchesClaudeComment(comment))
-    .sort(
-      (a, b) =>
-        new Date(b.updated_at || b.created_at || 0).getTime() -
-        new Date(a.updated_at || a.created_at || 0).getTime(),
-    )[0] || null;
+  pickLatest(comments, matchesClaudeComment, commentTimestamp);
 
-const findLatestCurrentHeadClaudeComment = (comments) =>
-  comments
-    .filter((comment) => matchesClaudeComment(comment))
-    .sort(
-      (left, right) =>
-        new Date(right.updated_at || right.created_at || 0).getTime() -
-        new Date(left.updated_at || left.created_at || 0).getTime(),
-    )[0] || null;
-
-const findLatestCurrentHeadCodexReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesCodexReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
-
-const findLatestCurrentHeadGeminiReview = (reviews) =>
-  reviews
-    .filter((review) => review.submitted_at && matchesGeminiReview(review))
-    .sort(
-      (left, right) =>
-        new Date(right.submitted_at).getTime() -
-        new Date(left.submitted_at).getTime(),
-    )[0] || null;
+// findLatestCurrentHead* had identical logic — aliases kept for call-site readability.
+const findLatestCurrentHeadCodexReview = pickLatestCodexReview;
+const findLatestCurrentHeadGeminiReview = pickLatestGeminiReview;
+const findLatestCurrentHeadClaudeComment = pickLatestClaudeComment;
 
 const classifyCodexSetupReply = (comment) => {
   const body = (comment.body || "").trim();
