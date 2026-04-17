@@ -115,7 +115,11 @@ describe("Codex setup-reply classifications", () => {
   });
 });
 
-describe("skip-mode SHA binding preserved in gate source", () => {
+// NOTE: skip-mode SHA-binding anchors intentionally removed in spec 009
+// scope-down. Six consecutive legit Codex P1/P2 findings on in-place
+// patches signalled a structural issue, and the area has been reverted
+// for a proper redesign in spec 010 (see `specs/010-gate-skip-mode-redesign/`).
+describe.skip("skip-mode SHA binding preserved in gate source", () => {
   // Regression anchor for two tightly coupled bugs:
   // 1. 2026-04-17 PR #11: skip-mode filtered by triggerTime → gate
   //    missed pre-dispatch Codex summary comments and timed out 20m.

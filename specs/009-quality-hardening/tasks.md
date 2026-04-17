@@ -10,9 +10,10 @@
 - [x] T008: Add both assets to `requiredFiles` in `scripts/check-static-baseline.mjs` + two HTML link-tag assertions
 - [x] T009: Add `preflight` script to `package.json` (`check-feature-memory.mjs origin/main HEAD && pnpm run ci`)
 - [x] T010: Document `pnpm run preflight` in `CLAUDE.md` under «Важные правила» as required before `git push`
-- [x] T011: Fix `scripts/ai-review-gate.mjs` triggerTime asymmetry — codex branch issue-comment filter now mirrors the review branch's skip-mode asymmetry (both for summary comments and connector-reply classification)
+- [ ] ~~T011: Fix `scripts/ai-review-gate.mjs` triggerTime asymmetry~~ — **SCOPE-DOWNED → spec 010.** After 6 consecutive legit Codex P1/P2 findings on successive in-place patches (triggerTime asymmetry → too-loose skip-mode → committer date → permissions → pagination → empty runs response), the skip-mode branch is reverted to the main version and a proper redesign is handed off to `specs/010-gate-skip-mode-redesign/`.
 - [x] T012: Fix `scripts/switch-review-agent.mjs` 10-run cap — use `gh run list --commit <sha> --limit 50` for server-side SHA filter
 - [x] T013: Verify dedupe for human trigger comments is ALREADY CORRECT in `ensureTriggerComment` (lines 238-244 check trigger keyword + non-reviewer author); no change needed
+- [x] T013a: Spec 010 handoff document created at `specs/010-gate-skip-mode-redesign/` with full iteration history and design requirements
 - [x] T014: Add `tests/ai-review-gate-regressions.test.mjs` with regex-pattern locks and source-anchor assertions; wire into `package.json` `test` script
 - [x] T015: `pnpm run test` passes 51/51 (38 harmony + 13 gate regression)
 - [ ] T016: `pnpm run preflight` passes locally

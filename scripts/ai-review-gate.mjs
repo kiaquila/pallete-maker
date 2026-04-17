@@ -689,81 +689,11 @@ while (Date.now() < deadline) {
     const issueComments = await listPaginated(
       buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
     );
-    // Skip-mode cannot use triggerTime (which is just when this workflow
-    // started — a valid pre-dispatch Codex response for the current head
-    // would be filtered out). Commit author/committer date also isn't
-    // safe: force-push / reset / cherry-pick can set head to a commit
-    // that was authored long ago, letting a stale prior-head
-    // "Didn't find any major issues" summary pass a committer.date
-    // bound and produce a false-green.
-    //
-    // The correct bound is the time the current headSha first became
-    // active on this repo's workflow stream — the creation time of the
-    // earliest Actions run whose head_sha matches. That time is by
-    // construction ≥ the push/force-push moment for headSha, regardless
-    // of how old the underlying commit metadata is. Any Codex summary
-    // authored before that time must refer to a prior head.
-    //
-    // Fall back to commit committer/author date if the runs endpoint
-    // returns nothing (e.g. very first workflow run for this SHA before
-    // it indexes), and finally to 0.
-    const headCommit = await request(
-      `/repos/${owner}/${repo}/commits/${headSha}`,
+    const recentIssueComments = issueComments.filter(
+      (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
     );
-    const headCommitTime = new Date(
-      headCommit.commit?.committer?.date ||
-        headCommit.commit?.author?.date ||
-        0,
-    ).getTime();
-    // The Actions runs lookup needs `actions: read` on the workflow
-    // permissions block. ai-review.yml sets that; if it ever gets
-    // dropped (or the token scope is otherwise limited) the API
-    // returns 403, which would crash the gate before it can classify
-    // any review. Fall back to `headCommitTime` in that case rather
-    // than hard-failing, and surface a warning in the run log so the
-    // degradation (no force-push protection) is visible.
-    // /actions/runs is newest-first, so page 1 contains the most recent
-    // runs, not the earliest. A SHA with >100 runs (reruns + manual
-    // dispatches accumulate fast) would yield a too-recent
-    // `earliestRunTime` and filter out valid Codex summaries. Jump to
-    // the last link and take the oldest run there, falling back to page
-    // 1 when there is only one page. Two API calls at most.
-    let earliestRunTime;
-    try {
-      const firstPagePath = `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`;
-      const firstResponse = await apiFetch(firstPagePath);
-      const lastPagePath = getPaginationPath(
-        firstResponse.headers.get("link"),
-        "last",
-      );
-      const runsResponse =
-        lastPagePath && lastPagePath !== firstPagePath
-          ? await apiFetch(lastPagePath)
-          : firstResponse;
-      const runsData = await runsResponse.json();
-      earliestRunTime = (runsData.workflow_runs || [])
-        .map((run) => new Date(run.created_at || 0).getTime())
-        .filter((t) => t > 0)
-        .sort((a, b) => a - b)[0];
-    } catch (error) {
-      console.warn(
-        `Could not fetch /actions/runs for headSha=${headSha} (likely missing 'actions: read' permission); falling back to committer date for freshness bound. This removes force-push protection. Error: ${error.message}`,
-      );
-      earliestRunTime = undefined;
-    }
-    const headFreshnessTime = Math.max(earliestRunTime || 0, headCommitTime);
-    const candidateIssueComments =
-      triggerMode === "skip"
-        ? issueComments.filter(
-            (comment) =>
-              new Date(comment.created_at || 0).getTime() >= headFreshnessTime,
-          )
-        : issueComments.filter(
-            (comment) =>
-              new Date(comment.created_at || 0).getTime() >= triggerTime,
-          );
     const summaryComment =
-      candidateIssueComments
+      recentIssueComments
         .filter((comment) => matchesCodexSummaryComment(comment))
         .sort(
           (a, b) =>
@@ -797,28 +727,13 @@ while (Date.now() < deadline) {
       }
     }
 
-    // Setup-reply classification (e.g. "create an environment for this
-    // repo") must also be SHA-bound in skip mode. Unfiltered skip-mode
-    // would re-match a historical setup-error comment from a previous
-    // branch/PR on this repo even after the env was fixed, causing
-    // false-fails on unrelated pushes. If the env is currently broken,
-    // a fresh `@codex review` on the new head will generate a NEW
-    // setup-error comment that satisfies the `created_at >= headCommitTime`
-    // window, so persistent repo-state problems still surface without
-    // leaking stale ones across branches.
-    const connectorCandidateComments =
-      triggerMode === "skip"
-        ? issueComments.filter(
-            (comment) =>
-              new Date(comment.created_at || 0).getTime() >= headFreshnessTime,
-          )
-        : issueComments.filter(
-            (comment) =>
-              new Date(comment.created_at || 0).getTime() >= triggerTime,
-          );
     const recentConnectorReply =
-      connectorCandidateComments
-        .filter((comment) => codexReviewerLogins.has(comment.user?.login || ""))
+      issueComments
+        .filter(
+          (comment) =>
+            codexReviewerLogins.has(comment.user?.login || "") &&
+            new Date(comment.created_at || 0).getTime() >= triggerTime,
+        )
         .sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
