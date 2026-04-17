@@ -22,7 +22,7 @@ variable, posts the correct native trigger comment as the current `gh`
 user (human-authored, therefore trusted), and reruns the most recent
 failed `AI Review` job.
 
-See `docs_pallete_maker/project/devops/ai-runner.md` for the full
+See `docs_pallete_maker/project/devops/review-trigger-automation.md` for the full
 backend matrix.
 
 ## Gemini Review

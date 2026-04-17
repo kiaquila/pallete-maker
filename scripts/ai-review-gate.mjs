@@ -27,7 +27,6 @@ const triggeredAt = process.env.AI_REVIEW_TRIGGERED_AT;
 const outputPath = process.env.GITHUB_OUTPUT;
 const summaryPath = process.env.GITHUB_STEP_SUMMARY;
 const claudeReviewerLogins = new Set(["claude[bot]"]);
-const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 const geminiReviewerLogins = new Set(["gemini-code-assist[bot]"]);
 
 if (!token) {

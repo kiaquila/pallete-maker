@@ -1,5 +1,8 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * Regression tests for scripts/ai-review-gate.mjs classification regexes.
@@ -14,6 +17,11 @@ const summaryNoIssuesPattern =
   /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
 const setupEnvironmentPattern = /create an environment for this repo/i;
 const setupAccountPattern = /create a codex account and connect to github/i;
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const gateScriptPath = path.join(repoRoot, "scripts/ai-review-gate.mjs");
 
 describe("Codex summary prefix matches real outputs", () => {
   test("matches 'Codex Review: ... Nice work!'", () => {
@@ -79,6 +87,20 @@ describe("Codex setup-reply classifications", () => {
       setupAccountPattern.test(
         "Please create a Codex account and connect to GitHub to continue.",
       ),
+    );
+  });
+});
+
+describe("ai-review-gate script integrity", () => {
+  test("parses as valid ESM", () => {
+    const result = spawnSync(process.execPath, ["--check", gateScriptPath], {
+      encoding: "utf8",
+    });
+
+    assert.equal(
+      result.status,
+      0,
+      result.stderr || result.stdout || "Expected node --check to succeed",
     );
   });
 });
