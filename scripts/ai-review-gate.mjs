@@ -691,13 +691,22 @@ while (Date.now() < deadline) {
     );
     // Skip-mode cannot use triggerTime (which is just when this workflow
     // started — a valid pre-dispatch Codex response for the current head
-    // would be filtered out). But the summary comment carries no SHA
-    // marker in its body, so unfiltered skip-mode would falsely accept a
-    // "Didn't find any major issues" left by Codex on a previous push.
-    // Bind skip-mode to the current head commit's authored timestamp:
-    // any summary posted after the head commit was created must, by
-    // construction, refer to that head or newer. Outside skip mode the
-    // triggerTime bound is still correct.
+    // would be filtered out). Commit author/committer date also isn't
+    // safe: force-push / reset / cherry-pick can set head to a commit
+    // that was authored long ago, letting a stale prior-head
+    // "Didn't find any major issues" summary pass a committer.date
+    // bound and produce a false-green.
+    //
+    // The correct bound is the time the current headSha first became
+    // active on this repo's workflow stream — the creation time of the
+    // earliest Actions run whose head_sha matches. That time is by
+    // construction ≥ the push/force-push moment for headSha, regardless
+    // of how old the underlying commit metadata is. Any Codex summary
+    // authored before that time must refer to a prior head.
+    //
+    // Fall back to commit committer/author date if the runs endpoint
+    // returns nothing (e.g. very first workflow run for this SHA before
+    // it indexes), and finally to 0.
     const headCommit = await request(
       `/repos/${owner}/${repo}/commits/${headSha}`,
     );
@@ -706,11 +715,19 @@ while (Date.now() < deadline) {
         headCommit.commit?.author?.date ||
         0,
     ).getTime();
+    const runsForHead = await request(
+      `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`,
+    );
+    const earliestRunTime = (runsForHead.workflow_runs || [])
+      .map((run) => new Date(run.created_at || 0).getTime())
+      .filter((t) => t > 0)
+      .sort((a, b) => a - b)[0];
+    const headFreshnessTime = Math.max(earliestRunTime || 0, headCommitTime);
     const candidateIssueComments =
       triggerMode === "skip"
         ? issueComments.filter(
             (comment) =>
-              new Date(comment.created_at || 0).getTime() >= headCommitTime,
+              new Date(comment.created_at || 0).getTime() >= headFreshnessTime,
           )
         : issueComments.filter(
             (comment) =>
@@ -764,7 +781,7 @@ while (Date.now() < deadline) {
       triggerMode === "skip"
         ? issueComments.filter(
             (comment) =>
-              new Date(comment.created_at || 0).getTime() >= headCommitTime,
+              new Date(comment.created_at || 0).getTime() >= headFreshnessTime,
           )
         : issueComments.filter(
             (comment) =>

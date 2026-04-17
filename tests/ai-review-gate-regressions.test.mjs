@@ -133,36 +133,58 @@ describe("skip-mode SHA binding preserved in gate source", () => {
     );
   });
 
-  test("skip-mode summary-comment filter uses headCommitTime", () => {
+  test("gate queries Actions runs by head_sha for push-time binding", () => {
+    // Codex P1 #3 on PR #12: commit committer/author date is frozen at
+    // authoring time and can be older than prior-head Codex comments
+    // after force-push/reset/cherry-pick. Freshness bound must use the
+    // push/workflow-run time, which is why gate queries
+    // /actions/runs?head_sha={sha} and takes the earliest run.
     assert.ok(
-      gateSource.includes("headCommitTime"),
-      "gate must bind skip-mode summary filter to head commit's timestamp",
+      gateSource.includes(
+        "/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}",
+      ),
+      "gate must fetch earliest Actions run for headSha to obtain push-time",
+    );
+  });
+
+  test("skip-mode summary-comment filter uses headFreshnessTime", () => {
+    assert.ok(
+      gateSource.includes("headFreshnessTime"),
+      "gate must bind skip-mode summary filter to the push-time-aware freshness bound",
+    );
+  });
+
+  test("headFreshnessTime = max(earliestRunTime, headCommitTime)", () => {
+    assert.ok(
+      /headFreshnessTime\s*=\s*Math\.max\(\s*earliestRunTime[\s\S]*?headCommitTime/.test(
+        gateSource,
+      ),
+      "headFreshnessTime must combine earliest run time and commit metadata",
     );
   });
 
   test("non-skip branch still uses triggerTime", () => {
     assert.ok(
-      /triggerMode === "skip"[\s\S]*?headCommitTime[\s\S]*?triggerTime/.test(
+      /triggerMode === "skip"[\s\S]*?headFreshnessTime[\s\S]*?triggerTime/.test(
         gateSource,
       ),
       "gate must keep triggerTime bound on the non-skip branch",
     );
   });
 
-  test("setup-reply branch also binds skip-mode to headCommitTime", () => {
-    // Codex P1 #2 on PR #12: unfiltered skip-mode for connector-reply
-    // comments let stale "create an environment" messages from prior
-    // branches false-fail unrelated PRs. The fix binds setup-reply
-    // matching to headCommitTime, same as summary-comment branch.
-    // Regression: count headCommitTime-bound skip-mode filter clauses
-    // — summary-comment + connector-reply → two independent uses.
-    const skipModeHeadCommitTimeUses = gateSource.match(
-      /triggerMode === "skip"[\s\S]*?created_at[\s\S]*?>= headCommitTime/g,
+  test("setup-reply branch also binds skip-mode to headFreshnessTime", () => {
+    // Codex P1 #2 + #3 on PR #12: unfiltered skip-mode + committer-date
+    // alone both leak stale comments. The fix binds both summary-comment
+    // and setup-reply branches to the push-time-aware headFreshnessTime.
+    // Regression: count skip-mode → headFreshnessTime clauses — two
+    // independent uses.
+    const skipModeFreshnessUses = gateSource.match(
+      /triggerMode === "skip"[\s\S]*?created_at[\s\S]*?>= headFreshnessTime/g,
     );
     assert.ok(
-      skipModeHeadCommitTimeUses && skipModeHeadCommitTimeUses.length >= 2,
-      `gate must bind skip-mode to headCommitTime for BOTH summary-comment and connector-reply branches (found ${
-        (skipModeHeadCommitTimeUses || []).length
+      skipModeFreshnessUses && skipModeFreshnessUses.length >= 2,
+      `gate must bind skip-mode to headFreshnessTime for BOTH summary-comment and connector-reply branches (found ${
+        (skipModeFreshnessUses || []).length
       } uses)`,
     );
   });
