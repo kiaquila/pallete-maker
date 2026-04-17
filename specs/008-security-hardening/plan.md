@@ -8,7 +8,7 @@ Single PR, five surface areas, all declarative config. No runtime code touched.
 2. **OSV scan** — new workflow `osv-scan.yml`, uses `google/osv-scanner-action/osv-scanner-action@<sha>` pointing to v2.3.5, scans `pnpm-lock.yaml`, table format for PR log readability.
 3. **Dependabot** — new `.github/dependabot.yml`, two ecosystems (`github-actions`, `npm`), Monday 07:00 Europe/Moscow, cooldown per semver level.
 4. **SHA-pinning** — resolve `anthropics/claude-code-action@v1` via `gh api repos/anthropics/claude-code-action/git/refs/tags/v1` → annotated tag → commit SHA `c3d45e8e…`. Apply in `claude-agent.yml:111` and `claude-review.yml:106`. Keep `# v1` trailing comment.
-5. **Docs** — append *Security Headers* and *Supply-chain Hygiene* sections to `vercel-cd.md`.
+5. **Docs** — append _Security Headers_ and _Supply-chain Hygiene_ sections to `vercel-cd.md`.
 
 ## Risks
 
