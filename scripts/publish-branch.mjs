@@ -9,6 +9,7 @@ const options = {
   body: "",
   base: "main",
   repo: "",
+  draft: false,
 };
 
 for (let index = 0; index < args.length; index += 1) {
@@ -34,6 +35,9 @@ for (let index = 0; index < args.length; index += 1) {
     case "--repo":
       options.repo = (args[index + 1] || "").trim();
       index += 1;
+      break;
+    case "--draft":
+      options.draft = true;
       break;
     default:
       throw new Error(`Unknown argument: ${current}`);
@@ -89,7 +93,7 @@ const url = run(
   [
     "pr",
     "create",
-    "--draft",
+    ...(options.draft ? ["--draft"] : []),
     "--base",
     options.base,
     "--head",
