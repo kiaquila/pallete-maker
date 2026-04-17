@@ -22,7 +22,8 @@ variable, posts the correct native trigger comment as the current `gh`
 user (human-authored, therefore trusted), and reruns the most recent
 failed `AI Review` job.
 
-See `docs_pallete_maker/project/devops/review-trigger-automation.md` for the full matrix and proposed automation.
+See `docs_pallete_maker/project/devops/ai-runner.md` for the full
+backend matrix.
 
 ## Gemini Review
 
@@ -39,6 +40,13 @@ See `docs_pallete_maker/project/devops/review-trigger-automation.md` for the ful
 - Inline findings must carry `P0` to `P3`
 - `P3`-only findings are advisory
 - `P0` to `P2` findings block merge
+- In `trigger_mode=skip`, formal reviews with `commit_id === headSha`
+  stay authoritative.
+- Summary-only / setup-error comments are accepted only when they land
+  after the current head's PR timeline activation event, and after the
+  newest same-head human `@codex review` trigger if one exists.
+- If the timeline lookup is unavailable, the gate logs a warning and
+  fails closed by waiting for formal review only.
 
 ## Claude Review
 
