@@ -164,6 +164,30 @@ describe("skip-mode SHA binding preserved in gate source", () => {
     );
   });
 
+  test("Actions runs lookup walks to the last page for oldest run", () => {
+    // Codex P2 #5 on PR #12: GitHub REST /actions/runs is newest-first,
+    // so page 1 holds the LATEST runs. A SHA with >100 runs (reruns +
+    // manual dispatches accumulate fast) would yield a too-recent
+    // `earliestRunTime` from a single-page lookup. Gate must jump to
+    // the rel="last" link when pagination exists and take the earliest
+    // created_at from THAT page.
+    assert.ok(
+      gateSource.includes(
+        'getPaginationPath(\n        firstResponse.headers.get("link"),\n        "last",\n      )',
+      ) ||
+        gateSource.includes(
+          'getPaginationPath(firstResponse.headers.get("link"), "last")',
+        ),
+      "gate must extract rel=last for the runs pagination tail",
+    );
+    assert.ok(
+      /lastPagePath[\s\S]*?lastPagePath !== firstPagePath[\s\S]*?apiFetch\(lastPagePath\)/.test(
+        gateSource,
+      ),
+      "gate must actually fetch the last page when it differs from page 1",
+    );
+  });
+
   test("skip-mode summary-comment filter uses headFreshnessTime", () => {
     assert.ok(
       gateSource.includes("headFreshnessTime"),

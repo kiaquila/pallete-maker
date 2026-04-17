@@ -722,12 +722,26 @@ while (Date.now() < deadline) {
     // any review. Fall back to `headCommitTime` in that case rather
     // than hard-failing, and surface a warning in the run log so the
     // degradation (no force-push protection) is visible.
+    // /actions/runs is newest-first, so page 1 contains the most recent
+    // runs, not the earliest. A SHA with >100 runs (reruns + manual
+    // dispatches accumulate fast) would yield a too-recent
+    // `earliestRunTime` and filter out valid Codex summaries. Jump to
+    // the last link and take the oldest run there, falling back to page
+    // 1 when there is only one page. Two API calls at most.
     let earliestRunTime;
     try {
-      const runsForHead = await request(
-        `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`,
+      const firstPagePath = `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`;
+      const firstResponse = await apiFetch(firstPagePath);
+      const lastPagePath = getPaginationPath(
+        firstResponse.headers.get("link"),
+        "last",
       );
-      earliestRunTime = (runsForHead.workflow_runs || [])
+      const runsResponse =
+        lastPagePath && lastPagePath !== firstPagePath
+          ? await apiFetch(lastPagePath)
+          : firstResponse;
+      const runsData = await runsResponse.json();
+      earliestRunTime = (runsData.workflow_runs || [])
         .map((run) => new Date(run.created_at || 0).getTime())
         .filter((t) => t > 0)
         .sort((a, b) => a - b)[0];
