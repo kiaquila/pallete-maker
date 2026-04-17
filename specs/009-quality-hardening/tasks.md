@@ -1,0 +1,23 @@
+# Tasks — 009-quality-hardening
+
+- [x] T001: Add `favicon.svg` at repo root with 5 brightest palette colors (Scarlet, Canary, Emerald, Cobalt, Violet) + white matte rect
+- [x] T002: Generate `apple-touch-icon.png` 180×180 from the SVG via `sips -s format png -Z 180`
+- [x] T003: Wire `<link rel="icon" type="image/svg+xml" href="favicon.svg">` and `<link rel="apple-touch-icon" href="apple-touch-icon.png">` into `index.html`
+- [x] T004: Add `<meta name="mobile-web-app-capable" content="yes">` alongside the deprecated apple variant
+- [x] T005: Update `src/scripts/harmony.mjs` Off-White `#FAF0E6` → `#F5EADC` (milkier cream)
+- [x] T006: Narrow CSP `script-src` in `vercel.json` from `https://cdnjs.cloudflare.com` to `https://cdnjs.cloudflare.com/ajax/libs/html2canvas/`
+- [x] T007: Extend `scripts/build-static.mjs` to copy `favicon.svg` and `apple-touch-icon.png` into `dist/`
+- [x] T008: Add both assets to `requiredFiles` in `scripts/check-static-baseline.mjs` + two HTML link-tag assertions
+- [x] T009: Add `preflight` script to `package.json` (`check-feature-memory.mjs origin/main HEAD && pnpm run ci`)
+- [x] T010: Document `pnpm run preflight` in `CLAUDE.md` under «Важные правила» as required before `git push`
+- [ ] ~~T011: Fix `scripts/ai-review-gate.mjs` triggerTime asymmetry~~ — **SCOPE-DOWNED → spec 010.** After 6 consecutive legit Codex P1/P2 findings on successive in-place patches (triggerTime asymmetry → too-loose skip-mode → committer date → permissions → pagination → empty runs response), the skip-mode branch is reverted to the main version and a proper redesign is handed off to `specs/010-gate-skip-mode-redesign/`.
+- [x] T012: Fix `scripts/switch-review-agent.mjs` 10-run cap — use `gh run list --commit <sha> --limit 50` for server-side SHA filter
+- [x] T013: Verify dedupe for human trigger comments is ALREADY CORRECT in `ensureTriggerComment` (lines 238-244 check trigger keyword + non-reviewer author); no change needed
+- [x] T013a: Spec 010 handoff document created at `specs/010-gate-skip-mode-redesign/` with full iteration history and design requirements
+- [x] T014: Add `tests/ai-review-gate-regressions.test.mjs` with regex-pattern locks and source-anchor assertions; wire into `package.json` `test` script
+- [x] T015: `pnpm run test` passes 51/51 (38 harmony + 13 gate regression)
+- [ ] T016: `pnpm run preflight` passes locally
+- [ ] T017: PR #NN opened against `main`
+- [ ] T018: All PR checks green (CI, PR Guard, OSV Scan, AI Review, Vercel)
+- [ ] T019: Manual browser smoke on preview — new favicon in tab, milkier Off-White visible in pastel-warm group, no CSP violations on golden path
+- [ ] T020: Merge PR after all checks COMPLETED + SUCCESSFUL per `feedback_never_merge_before_review.md`

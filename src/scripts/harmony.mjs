@@ -29,7 +29,7 @@ export const PM_PALETTE = [
   { hex: "#F5B5BB", name: "Blush", group: "pastel", temp: "warm" },
   { hex: "#F5CDB0", name: "Nectarine", group: "pastel", temp: "warm" },
   { hex: "#E8D5B5", name: "Beige", group: "pastel", temp: "warm" },
-  { hex: "#FAF0E6", name: "Off-White", group: "pastel", temp: "warm" },
+  { hex: "#F5EADC", name: "Off-White", group: "pastel", temp: "warm" },
   { hex: "#F7EDA5", name: "Primrose", group: "pastel", temp: "warm" },
   { hex: "#D8EEB0", name: "Pistachio", group: "pastel", temp: "warm" },
   // Pastels cool (6)
