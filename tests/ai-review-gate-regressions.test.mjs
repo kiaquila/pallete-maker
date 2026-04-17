@@ -115,18 +115,37 @@ describe("Codex setup-reply classifications", () => {
   });
 });
 
-describe("skip-mode asymmetry preserved in gate source", () => {
-  // The gate must treat the issue-comment branch the same as the
-  // formal-review branch in skip mode: use `issueComments` directly,
-  // not a triggerTime-filtered subset. Regression anchor for the
-  // 2026-04-17 bug where PR #11 Codex "no issues" comment was
-  // posted before workflow start and missed by the gate.
-  test("issue-comment skip-mode branch uses unfiltered comments", () => {
+describe("skip-mode SHA binding preserved in gate source", () => {
+  // Regression anchor for two tightly coupled bugs:
+  // 1. 2026-04-17 PR #11: skip-mode filtered by triggerTime → gate
+  //    missed pre-dispatch Codex summary comments and timed out 20m.
+  // 2. 2026-04-17 PR #12 Codex P1: unfiltered skip-mode accepted a
+  //    stale "Didn't find any major issues" from a previous commit →
+  //    false-green AI Review on a new push.
+  // Correct behaviour: bind skip-mode summary-comment matching to the
+  // current head commit's committer/author date, so any summary posted
+  // after the head commit was created is authoritative, but prior-push
+  // summaries are excluded.
+  test("gate fetches head commit to get authoring timestamp", () => {
     assert.ok(
-      gateSource.includes(
-        'triggerMode === "skip"\n        ? issueComments\n        : issueComments.filter(',
+      gateSource.includes("/repos/${owner}/${repo}/commits/${headSha}"),
+      "gate must fetch the head commit to obtain a SHA-bound time bound",
+    );
+  });
+
+  test("skip-mode summary-comment filter uses headCommitTime", () => {
+    assert.ok(
+      gateSource.includes("headCommitTime"),
+      "gate must bind skip-mode summary filter to head commit's timestamp",
+    );
+  });
+
+  test("non-skip branch still uses triggerTime", () => {
+    assert.ok(
+      /triggerMode === "skip"[\s\S]*?headCommitTime[\s\S]*?triggerTime/.test(
+        gateSource,
       ),
-      "gate must contain the skip-mode asymmetry for issueComments",
+      "gate must keep triggerTime bound on the non-skip branch",
     );
   });
 });

@@ -689,14 +689,29 @@ while (Date.now() < deadline) {
     const issueComments = await listPaginated(
       buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
     );
-    // Skip-mode matches the formal-review branch above (line 651): the
-    // latest Codex summary comment is authoritative regardless of when
-    // the gate happened to start. Outside skip mode, only consider
-    // comments created after `triggerTime` so stale responses for a
-    // previous SHA are not mistaken for the current review.
+    // Skip-mode cannot use triggerTime (which is just when this workflow
+    // started — a valid pre-dispatch Codex response for the current head
+    // would be filtered out). But the summary comment carries no SHA
+    // marker in its body, so unfiltered skip-mode would falsely accept a
+    // "Didn't find any major issues" left by Codex on a previous push.
+    // Bind skip-mode to the current head commit's authored timestamp:
+    // any summary posted after the head commit was created must, by
+    // construction, refer to that head or newer. Outside skip mode the
+    // triggerTime bound is still correct.
+    const headCommit = await request(
+      `/repos/${owner}/${repo}/commits/${headSha}`,
+    );
+    const headCommitTime = new Date(
+      headCommit.commit?.committer?.date ||
+        headCommit.commit?.author?.date ||
+        0,
+    ).getTime();
     const candidateIssueComments =
       triggerMode === "skip"
-        ? issueComments
+        ? issueComments.filter(
+            (comment) =>
+              new Date(comment.created_at || 0).getTime() >= headCommitTime,
+          )
         : issueComments.filter(
             (comment) =>
               new Date(comment.created_at || 0).getTime() >= triggerTime,
