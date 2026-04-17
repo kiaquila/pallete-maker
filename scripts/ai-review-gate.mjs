@@ -689,11 +689,20 @@ while (Date.now() < deadline) {
     const issueComments = await listPaginated(
       buildIssueCommentsPath(triggerMode === "skip" ? 0 : triggerTime),
     );
-    const recentIssueComments = issueComments.filter(
-      (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
-    );
+    // Skip-mode matches the formal-review branch above (line 651): the
+    // latest Codex summary comment is authoritative regardless of when
+    // the gate happened to start. Outside skip mode, only consider
+    // comments created after `triggerTime` so stale responses for a
+    // previous SHA are not mistaken for the current review.
+    const candidateIssueComments =
+      triggerMode === "skip"
+        ? issueComments
+        : issueComments.filter(
+            (comment) =>
+              new Date(comment.created_at || 0).getTime() >= triggerTime,
+          );
     const summaryComment =
-      recentIssueComments
+      candidateIssueComments
         .filter((comment) => matchesCodexSummaryComment(comment))
         .sort(
           (a, b) =>
@@ -727,13 +736,22 @@ while (Date.now() < deadline) {
       }
     }
 
+    // Setup-reply classification (e.g. "create an environment for this
+    // repo") describes a persistent repo config state, not a per-SHA
+    // event. In skip mode, latest connector reply is authoritative
+    // regardless of triggerTime — mirrors the summary-comment branch
+    // above. In non-skip mode, keep the post-triggerTime filter to
+    // avoid matching stale setup replies from prior branches.
+    const connectorCandidateComments =
+      triggerMode === "skip"
+        ? issueComments
+        : issueComments.filter(
+            (comment) =>
+              new Date(comment.created_at || 0).getTime() >= triggerTime,
+          );
     const recentConnectorReply =
-      issueComments
-        .filter(
-          (comment) =>
-            codexReviewerLogins.has(comment.user?.login || "") &&
-            new Date(comment.created_at || 0).getTime() >= triggerTime,
-        )
+      connectorCandidateComments
+        .filter((comment) => codexReviewerLogins.has(comment.user?.login || ""))
         .sort(
           (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),

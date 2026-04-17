@@ -10,6 +10,8 @@ const requiredFiles = [
   "CLAUDE.md",
   ".specify/memory/constitution.md",
   "index.html",
+  "favicon.svg",
+  "apple-touch-icon.png",
   "package.json",
   "vercel.json",
   ".gemini/config.yaml",
@@ -80,6 +82,19 @@ const htmlAssertions = [
     test: (h) => /integrity="sha384-/i.test(h),
     message:
       'External CDN scripts must include an SRI integrity attribute (integrity="sha384-...").',
+  },
+  {
+    test: (h) => /<link[^>]+rel=["']icon["'][^>]+favicon\.svg["']/i.test(h),
+    message:
+      'index.html must link favicon.svg as the SVG icon (<link rel="icon" type="image/svg+xml" href="favicon.svg">).',
+  },
+  {
+    test: (h) =>
+      /<link[^>]+rel=["']apple-touch-icon["'][^>]+apple-touch-icon\.png["']/i.test(
+        h,
+      ),
+    message:
+      'index.html must link apple-touch-icon.png (<link rel="apple-touch-icon" href="apple-touch-icon.png">).',
   },
 ];
 

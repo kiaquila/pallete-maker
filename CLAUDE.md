@@ -20,6 +20,7 @@
 - Один implementation loop = один worktree, одна ветка и один PR
 - При изменении поведения UI, workflow или build/deploy обновляй `specs/` и `docs_pallete_maker/`
 - Никогда не мержить PR до завершения ВСЕХ проверок (включая `AI Review`), даже если GitHub показывает `MERGEABLE`/`UNSTABLE`. Ждать, пока все проверки станут `COMPLETED` и `SUCCESSFUL`.
+- Перед каждым `git push` прогоняй `pnpm run preflight` — он локально повторяет то, что делают PR Guard и CI (feature-memory gate + baseline + html + build + format + tests). Экономит итерации на публичных чеках.
 - Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
 - При review фокусируйся на mobile grid reflow, harmony rules correctness, PNG export safety, RU-строках и maintainability
 

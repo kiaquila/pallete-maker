@@ -62,4 +62,12 @@ if (existsSync(sourceDir)) {
   cpSync(sourceDir, targetDir, { recursive: true });
 }
 
+// Copy root-level static assets referenced from index.html.
+for (const asset of ["favicon.svg", "apple-touch-icon.png"]) {
+  const from = resolve(root, asset);
+  if (existsSync(from)) {
+    cpSync(from, resolve(distDir, asset));
+  }
+}
+
 console.log(`Built static artifact: ${target}`);

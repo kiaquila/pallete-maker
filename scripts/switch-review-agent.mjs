@@ -110,13 +110,19 @@ if (options.rerun) {
   ]);
   const headSha = JSON.parse(prJson).headRefOid;
 
+  // Server-side filter by commit SHA so the rerun helper stays correct
+  // in busy repos (previously capped client-side at 10 newest runs,
+  // which in high-activity repos could miss the latest failed AI Review
+  // for the current head and silently skip rerun).
   const runsJson = run("gh", [
     "run",
     "list",
     "--workflow",
     "ai-review.yml",
+    "--commit",
+    headSha,
     "--limit",
-    "10",
+    "50",
     "--json",
     "databaseId,conclusion,headSha",
     ...repoArgs,
