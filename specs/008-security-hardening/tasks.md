@@ -7,6 +7,7 @@
 - [x] T005: Append _Security Headers_ and _Supply-chain Hygiene_ sections to `docs_pallete_maker/project/devops/vercel-cd.md`
 - [x] T006: `pnpm run ci` passes locally (38/38 tests, HTML valid, build, format, baseline)
 - [x] T007: Open PR #11 against `main`
-- [ ] T008: All PR #11 checks green (CI, PR Guard, OSV Scan, AI Review, Vercel)
-- [ ] T009: Browser smoke on preview URL — no CSP console violations on golden path (select colors, export PNG)
-- [ ] T010: Merge PR #11 after all checks COMPLETED + SUCCESSFUL per `feedback_never_merge_before_review.md`
+- [x] T008a: baseline-checks / guard / osv-scan / Vercel green on `8a1f50c`
+- [ ] T008b: AI Review green — **BLOCKED on confirmed Gemini hallucinations** (2× HIGH on `cooldown` "not supported" contradicted by official Dependabot docs; 2× MEDIUM claiming files missing that are present in diff). See PR comment for triage evidence. Requires user decision: (A) switch `AI_REVIEW_AGENT` to `codex` or `claude` for this PR and re-run; (B) accept failure and merge with override.
+- [ ] T009: Browser smoke on preview URL — **SKIPPED in automated run**: preview deploy is behind Vercel SSO (curl returns 401). Must be done manually by the user before merge; instructions posted in PR comment.
+- [ ] T010: Merge PR #11 after all checks COMPLETED + SUCCESSFUL per `feedback_never_merge_before_review.md` — requires user decision on T008b first.
