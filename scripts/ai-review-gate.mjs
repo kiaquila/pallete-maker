@@ -752,14 +752,20 @@ while (Date.now() < deadline) {
     }
 
     // Setup-reply classification (e.g. "create an environment for this
-    // repo") describes a persistent repo config state, not a per-SHA
-    // event. In skip mode, latest connector reply is authoritative
-    // regardless of triggerTime — mirrors the summary-comment branch
-    // above. In non-skip mode, keep the post-triggerTime filter to
-    // avoid matching stale setup replies from prior branches.
+    // repo") must also be SHA-bound in skip mode. Unfiltered skip-mode
+    // would re-match a historical setup-error comment from a previous
+    // branch/PR on this repo even after the env was fixed, causing
+    // false-fails on unrelated pushes. If the env is currently broken,
+    // a fresh `@codex review` on the new head will generate a NEW
+    // setup-error comment that satisfies the `created_at >= headCommitTime`
+    // window, so persistent repo-state problems still surface without
+    // leaking stale ones across branches.
     const connectorCandidateComments =
       triggerMode === "skip"
-        ? issueComments
+        ? issueComments.filter(
+            (comment) =>
+              new Date(comment.created_at || 0).getTime() >= headCommitTime,
+          )
         : issueComments.filter(
             (comment) =>
               new Date(comment.created_at || 0).getTime() >= triggerTime,

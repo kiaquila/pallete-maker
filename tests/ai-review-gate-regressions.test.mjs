@@ -148,4 +148,22 @@ describe("skip-mode SHA binding preserved in gate source", () => {
       "gate must keep triggerTime bound on the non-skip branch",
     );
   });
+
+  test("setup-reply branch also binds skip-mode to headCommitTime", () => {
+    // Codex P1 #2 on PR #12: unfiltered skip-mode for connector-reply
+    // comments let stale "create an environment" messages from prior
+    // branches false-fail unrelated PRs. The fix binds setup-reply
+    // matching to headCommitTime, same as summary-comment branch.
+    // Regression: count headCommitTime-bound skip-mode filter clauses
+    // — summary-comment + connector-reply → two independent uses.
+    const skipModeHeadCommitTimeUses = gateSource.match(
+      /triggerMode === "skip"[\s\S]*?created_at[\s\S]*?>= headCommitTime/g,
+    );
+    assert.ok(
+      skipModeHeadCommitTimeUses && skipModeHeadCommitTimeUses.length >= 2,
+      `gate must bind skip-mode to headCommitTime for BOTH summary-comment and connector-reply branches (found ${
+        (skipModeHeadCommitTimeUses || []).length
+      } uses)`,
+    );
+  });
 });
