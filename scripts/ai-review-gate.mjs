@@ -715,13 +715,28 @@ while (Date.now() < deadline) {
         headCommit.commit?.author?.date ||
         0,
     ).getTime();
-    const runsForHead = await request(
-      `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`,
-    );
-    const earliestRunTime = (runsForHead.workflow_runs || [])
-      .map((run) => new Date(run.created_at || 0).getTime())
-      .filter((t) => t > 0)
-      .sort((a, b) => a - b)[0];
+    // The Actions runs lookup needs `actions: read` on the workflow
+    // permissions block. ai-review.yml sets that; if it ever gets
+    // dropped (or the token scope is otherwise limited) the API
+    // returns 403, which would crash the gate before it can classify
+    // any review. Fall back to `headCommitTime` in that case rather
+    // than hard-failing, and surface a warning in the run log so the
+    // degradation (no force-push protection) is visible.
+    let earliestRunTime;
+    try {
+      const runsForHead = await request(
+        `/repos/${owner}/${repo}/actions/runs?head_sha=${headSha}&per_page=100`,
+      );
+      earliestRunTime = (runsForHead.workflow_runs || [])
+        .map((run) => new Date(run.created_at || 0).getTime())
+        .filter((t) => t > 0)
+        .sort((a, b) => a - b)[0];
+    } catch (error) {
+      console.warn(
+        `Could not fetch /actions/runs for headSha=${headSha} (likely missing 'actions: read' permission); falling back to committer date for freshness bound. This removes force-push protection. Error: ${error.message}`,
+      );
+      earliestRunTime = undefined;
+    }
     const headFreshnessTime = Math.max(earliestRunTime || 0, headCommitTime);
     const candidateIssueComments =
       triggerMode === "skip"

@@ -147,6 +147,23 @@ describe("skip-mode SHA binding preserved in gate source", () => {
     );
   });
 
+  test("Actions runs lookup has a permission-safe fallback", () => {
+    // Codex P1 #4 on PR #12: the runs lookup needs `actions: read`,
+    // which is not default. Gate must try/catch the fetch and fall
+    // back to headCommitTime instead of hard-failing so the review
+    // path still functions when the scope is dropped.
+    assert.ok(
+      /try\s*\{[\s\S]*?\/actions\/runs\?head_sha=\$\{headSha\}[\s\S]*?\}\s*catch/.test(
+        gateSource,
+      ),
+      "gate must wrap the /actions/runs fetch in try/catch",
+    );
+    assert.ok(
+      gateSource.includes("falling back to committer date"),
+      "gate must log the fallback so permission regressions are visible",
+    );
+  });
+
   test("skip-mode summary-comment filter uses headFreshnessTime", () => {
     assert.ok(
       gateSource.includes("headFreshnessTime"),
