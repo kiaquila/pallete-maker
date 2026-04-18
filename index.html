@@ -703,7 +703,14 @@
                       document.body.appendChild(link);
                       link.click();
                       link.remove();
-                      if (revoke) URL.revokeObjectURL(href);
+                      // WebKit / Safari starts anchor downloads
+                      // asynchronously — revoking the blob URL right
+                      // after click() can race the download and produce
+                      // an empty file. Defer revocation so the browser
+                      // has time to start reading the blob.
+                      if (revoke) {
+                        setTimeout(() => URL.revokeObjectURL(href), 60000);
+                      }
                     };
                     // iOS Safari ignores `link.download` on data URLs and
                     // shows an empty filename in the share sheet. Blob
