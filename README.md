@@ -1,85 +1,42 @@
 # pallete-maker
 
-Персональный инструмент для создания цветовых палитр: интерактивная сетка до 10 цветов с LCH-гармониями и экспортом PNG.
+Pick from a curated 51-color palette, see which hues are harmonically compatible via LCH rules, and export your selection as PNG.
 
-**Live:** deployed to Vercel via Git integration on every push to `main`.
+[Try it live →](https://pallete-maker.vercel.app)
 
-## Stack
+<!-- screenshot: palette grid UI showing 51-color picker with harmony-compatible colors highlighted -->
 
-- Static single-file web app (`index.html`)
-- Color harmony powered by [chroma-js](https://gka.github.io/chroma.js/) (v2.4.2, via CDN)
-- PNG export via [html2canvas](https://html2canvas.hertzen.com/) (v1.4.1, via CDN)
-- Styling: Tailwind CSS (via CDN)
-- Build: `scripts/build-static.mjs` → `dist/index.html`
-- Hosting: Vercel (Git integration, preview deploys for PRs)
-- CI: GitHub Actions (`baseline-checks`, `guard`, `AI Review`)
+## What it does
+
+A personal color tool for designers and anyone else who wants to build a palette quickly without trial and error. You pick a base color, the app highlights which of the remaining 50 colors work with it using harmonic compatibility rules (same group or desaturated↔dark cross-pairing), then you export your final palette as a PNG. No design software required, no color theory knowledge needed.
+
+The palette comes from a curated set: 3 achromatics (Black, Gray, White) plus 4 families (bright, pastel, desaturated, dark), each split warm and cool. Maximum selection is **15 colors (12 chromatic + 3 achromatic)**. Selected colors are grouped into Warm / Cool / Universal sections in the export.
 
 ## Getting started
 
-This project uses **pnpm** (pinned via `packageManager` in `package.json`).
-The easiest way to get the right version is Node's built-in
-[`corepack`](https://nodejs.org/api/corepack.html):
+Static site, no runtime beyond a browser. Build locally and open:
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
-pnpm run build        # produce dist/index.html
-pnpm run ci           # baseline + html-validate + build + prettier check
+pnpm run build          # produces dist/index.html
+open dist/index.html    # or: pnpm run preflight to also run all checks
 ```
 
-Open `index.html` directly in a browser, or serve `dist/` with any static
-server to preview the build.
+See [AGENTS.md](./AGENTS.md) for the full dev loop (worktrees, specs, AI review) and [`package.json`](./package.json) for all available scripts.
 
-## Scripts
+## Tech + architecture
 
-| Command                         | Purpose                                                |
-| ------------------------------- | ------------------------------------------------------ |
-| `pnpm run build`                | Build static `dist/index.html` for Vercel              |
-| `pnpm run check:repo`           | Repository baseline checks                             |
-| `pnpm run check:html`           | HTML validation via `html-validate`                    |
-| `pnpm run check:feature-memory` | Enforce `specs/<feature-id>/` for product changes      |
-| `pnpm run format:check`         | Prettier check across tracked files                    |
-| `pnpm run ci`                   | Full local CI pipeline                                 |
-| `pnpm run worktree:new`         | Create a new local worktree for an implementation loop |
-| `pnpm run pr:publish`           | Push current branch and open/reuse a PR                |
+Static HTML/CSS/JS, no framework or bundler. Harmony rules are pure functions in [`src/scripts/harmony.mjs`](./src/scripts/harmony.mjs), testable in isolation with no DOM dependency. UI rendering is DOM-native; Tailwind CSS is pre-compiled (not loaded from a CDN). Color math uses [chroma-js](https://gka.github.io/chroma.js/) 2.4.2; PNG export uses [html2canvas](https://html2canvas.hertzen.com/) 1.4.1. Deploys on every push to `main` via Vercel's Git integration, with preview deploys on pull requests.
 
-## Supply chain
+Security baseline: CSP + HSTS + `X-Frame-Options` headers via `vercel.json`; Google OSV Scanner on every PR; Dependabot with a 7-day cooldown; third-party GitHub Actions pinned to commit SHAs.
 
-`pnpm-workspace.yaml` sets `minimumReleaseAge: 10080` (7 days, expressed in
-minutes). Any newly published version of a dependency — direct or transitive
-— must exist on the registry for at least 7 days before pnpm will install it.
-This reduces exposure to supply-chain attacks that rely on freshly published
-compromised versions being pulled in immediately.
+UI strings are in Russian, since the primary audience speaks Russian. This README is English because the development context is international.
 
-## Repository layout
+## Scope
 
-```
-pallete-maker/
-├── index.html                  # App shell (palette grid + export)
-├── scripts/                    # Build and orchestration helpers
-├── specs/<feature-id>/         # Per-feature spec.md / plan.md / tasks.md
-├── docs_pallete_maker/         # Durable docs, ADRs, devops contracts
-├── .specify/memory/            # Constitution and process rules
-├── .github/workflows/          # CI, guard, AI review, deploy policy
-├── vercel.json                 # Vercel build/output configuration
-└── AGENTS.md / CLAUDE.md       # Agent onboarding
-```
-
-## Workflow
-
-- All changes land through pull requests — no direct edits to `main` or in
-  Vercel.
-- Product-code work starts from an active `specs/<feature-id>/` folder and
-  runs in its own worktree / branch / PR.
-- Required checks: `baseline-checks`, `guard`, `AI Review`.
-- Agent policy is repository-driven via `AI_IMPLEMENTATION_AGENT` and
-  `AI_REVIEW_AGENT` (defaults: `claude` for implementation, `gemini` for
-  review).
-
-See [`AGENTS.md`](./AGENTS.md) for the full onboarding route and
-[`docs_pallete_maker/README.md`](./docs_pallete_maker/README.md) for the durable docs
-index.
+Single-maintainer personal project. Not actively seeking contributions. All changes land through pull requests with required checks (baseline, guard, OSV Scan, AI Review).
 
 ## License
 
-Released under the [MIT License](./LICENSE). © 2026 Kristina Aquila.
+MIT. See [LICENSE](./LICENSE). © 2026 Kristina Aquila.
