@@ -1,5 +1,7 @@
 # Vercel CD
 
+> Audience: all agents. Canonical source for: Vercel deploy contract, security headers (CSP/HSTS/XFO), supply-chain hygiene (OSV, Dependabot, SHA-pinned actions). Prereq: `delivery-playbook.md`.
+
 ## Deploy Model
 
 This repository uses **Vercel Git integration** as the canonical CD layer.

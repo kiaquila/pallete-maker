@@ -1,5 +1,7 @@
 # Delivery Playbook
 
+> Audience: all agents. Canonical source for: preview validation checklist, merge rule, production smoke. Prereq: `ai-pr-workflow.md`. Next: `vercel-cd.md` (deploy contract).
+
 This playbook covers preview validation before merge and production smoke after
 merge.
 

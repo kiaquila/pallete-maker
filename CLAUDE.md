@@ -1,6 +1,6 @@
 # pallete-maker
 
-Персональный инструмент для создания цветовых палитр: выбор базового цвета, построение гармоничной палитры до 10 цветов с проверкой LCH-гармоний и экспортом в PNG.
+Персональный инструмент для создания цветовых палитр: выбор базового цвета, построение гармоничной палитры до 15 цветов (12 хроматических + 3 ахроматических) с проверкой LCH-гармоний и экспортом в PNG.
 
 ## Текущий стек
 
@@ -10,7 +10,7 @@
 - Vercel Git integration для preview и production deploy
 - GitHub Actions для CI, guard и AI review orchestration
 - `.specify/`, `docs_pallete_maker/` и `specs/` как repository memory
-- Gemini Code Assist как default review backend
+- Codex как default review backend (см. `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`)
 
 ## Важные правила
 
@@ -25,6 +25,8 @@
 - Локальный pre-push hook: `.claude/hooks/check-feature-memory-on-push.sh` (зарегистрирован в `.claude/settings.local.json` как PreToolUse на Bash) блокирует `git push`, если committed product-path changes требуют `specs/<id>/{spec,plan,tasks}.md` и спека нет. `.claude/` gitignored — на новой машине восстановить вручную из spec 013. Emergency bypass: закомментировать hook в `.claude/settings.local.json` или запушить из обычного терминала.
 - Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
 - При review фокусируйся на mobile grid reflow, harmony rules correctness, PNG export safety, RU-строках и maintainability
+- Не создавай абстракции на один use-case. Если функция используется в одном месте, она не нуждается в конфигурируемости, plugin-интерфейсе или generic-параметрах. Добавляй обобщение только когда появляется второй реальный потребитель.
+- Для multi-step задач без отдельной спеки (рутинные 3-5 шагов: CDN-обновление, refactor одного модуля, миграция конфига) перед началом выпиши план: `шаг -> verify-условие`. Не делай молча и не запускай полный `/plan` ради 3 шагов.
 
 ## OMC orchestration (auto-routing)
 
@@ -62,4 +64,6 @@
 - PR loop: `docs_pallete_maker/project/devops/ai-pr-workflow.md`
 - Review contract: `docs_pallete_maker/project/devops/review-contract.md`
 - Review trigger automation: `docs_pallete_maker/project/devops/review-trigger-automation.md`
+- Delivery playbook: `docs_pallete_maker/project/devops/delivery-playbook.md`
 - Vercel CD: `docs_pallete_maker/project/devops/vercel-cd.md`
+- ADR index: `docs_pallete_maker/adr/README.md`

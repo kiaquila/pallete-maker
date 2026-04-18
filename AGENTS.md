@@ -5,8 +5,10 @@
 ## What Is pallete-maker?
 
 **pallete-maker** is a personal color palette creator. It lets a user pick a
-base color, build a harmonious palette of up to 10 colors using LCH-based
-harmony rules, preview the result on a grid, and export it as a PNG image.
+base color, build a harmonious palette of up to **15 colors (12 chromatic + 3
+achromatic; constants `MAX_TOTAL`, `MAX_CHROMATIC` in `src/scripts/harmony.mjs`)**
+using LCH-based harmony rules, preview the result on a grid, and export it as a
+PNG image.
 
 **Current implementation:** static single-file web app
 **Core dependencies:** chroma-js 2.4.2 (LCH harmony), html2canvas 1.4.1 (PNG export)
@@ -72,10 +74,11 @@ pallete-maker/
   - `AI_REVIEW_AGENT`
 - Default policy for this repository is:
   - implementation: `claude`
-  - review: `gemini`
+  - review: `codex` (switched from `gemini` on 2026-04-17; see `docs_pallete_maker/project/devops/ai-orchestration-protocol.md` for the canonical description)
 - Claude is the default implementation agent because it owns architecture, orchestration, CI/CD health, and repository memory, and is driven from the user's local Claude Code terminal session.
-- Gemini is the default review backend because it runs natively on GitHub pull requests via the Gemini Code Assist GitHub App.
-- Codex is available as an alternative review or implementation backend behind an explicit repository variable override.
+- Codex is the current default review backend via `@codex review` triggers on PR comments.
+- Gemini review stays wired via Gemini Code Assist GitHub App; switch with `pnpm run review:switch -- --to gemini`.
+- Claude review workflow (`claude-review.yml`) is **currently non-operational** (dead code pending cleanup PR; no `ANTHROPIC_API_KEY` configured, local runner rolled back).
 
 ## Review Guidelines
 
@@ -105,8 +108,10 @@ Changes must keep `pnpm run build` producing a deployable `dist/index.html` arti
 
 ### 4. One worker equals one worktree
 
-Do not run parallel implementation work in the main checkout. Use the local
-macOS runner flow from `docs_pallete_maker/project/devops/macos-local-runners.md`.
+Do not run parallel implementation work in the main checkout. Worktrees live
+under `<repoRoot>/.claude/worktrees/<slug>/` and are created via
+`scripts/new-worktree.mjs`. Local orchestration state is gitignored under
+`.claude/`.
 
 ### 5. Gemini review config is repository-owned
 
@@ -118,22 +123,12 @@ contract.
 
 Avoid adding more fixed-size offsets and viewport hacks unless strictly necessary. Prefer layout systems that can survive later migration to a modular frontend app.
 
-### 7. Auto-routing for orchestration capabilities
+### 7. Propose orchestration before non-trivial tasks
 
-Before executing a non-trivial task, evaluate whether any orchestration capability available to you (oh-my-claudecode (OMC) modes, subagents, multi-agent council, parallel execution, verification loops, etc.) is a better fit than a single-pass implementation. If one is, **propose it to the user in one short sentence with justification before starting**. Do not auto-launch; wait for user consent.
+Before a non-trivial task (multi-file change, refactor, research, verification loop, parallelizable work, unclear-cause debugging), propose the best-fit orchestration capability available to you in one short sentence with justification. Wait for user consent. Skip for trivial tasks (rename, one-line fix, quick question).
 
-Non-trivial triggers (any one):
-
-- Multi-file change, refactor, or migration
-- Codebase research where the answer is not obvious
-- Task that benefits from a verification / QA cycle
-- Parallelizable work (several independent subtasks)
-- Long-running autonomous work ("don't stop until done")
-- Debugging with unclear cause, tracing, or competing hypotheses
-
-Representative modes / agents to consider (Claude Code users have OMC modes like `/plan`, `/ralph`, `/ultrawork`, `/autopilot`, `/team`, `/trace`, `/debug`, `/ask` and subagents such as `executor`, `architect`, `critic`, `code-reviewer`, `debugger`, `tracer`, `verifier`, `planner`, `security-reviewer`, `test-engineer`, `explorer`, `designer`, `writer`). Codex / Gemini / other agents should propose their equivalent capabilities (planning modes, parallel task runners, review councils, etc.) before starting non-trivial work.
-
-Skip the proposal for trivial tasks: rename, one-line fix, simple question, quick status check. Minimal-friction principle — do not nag on small things.
+Claude Code specifics (OMC modes, subagents): see `CLAUDE.md § OMC orchestration`.
+Codex / Gemini / other agents: propose your equivalent capabilities (planning modes, parallel runners, review councils) before starting.
 
 ### 8. Always verify active branch and target refs before answering repo-state questions
 
@@ -147,13 +142,16 @@ workflow behavior:
 
 ## Reading Route — Implementing a Change
 
-1. `.specify/memory/constitution.md`
-2. `docs_pallete_maker/README.md`
-3. `docs_pallete_maker/project-idea.md`
-4. `docs_pallete_maker/project/frontend/frontend-docs.md`
-5. `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
-6. `docs_pallete_maker/project/devops/ai-pr-workflow.md`
-7. `specs/<feature-id>/spec.md`
-8. `specs/<feature-id>/plan.md`
-9. `specs/<feature-id>/tasks.md`
-10. Relevant app files and scripts
+This is the canonical reading order. `docs_pallete_maker/README.md` is a topical index (grouped by theme), not a reading order — defer to this list.
+
+1. `.specify/memory/constitution.md` — non-negotiable process rules
+2. `docs_pallete_maker/project-idea.md` — product facts (palette size, product state)
+3. `docs_pallete_maker/project/frontend/frontend-docs.md` — frontend architecture, grid, harmony, export
+4. `docs_pallete_maker/project/devops/ai-orchestration-protocol.md` — agent routing, default policy, review backends
+5. `docs_pallete_maker/project/devops/ai-pr-workflow.md` — PR gates and merge rules
+6. `docs_pallete_maker/project/devops/review-contract.md` — what each review backend produces
+7. `docs_pallete_maker/project/devops/review-trigger-automation.md` — why bot-posted triggers are rejected, active Tier 1
+8. `docs_pallete_maker/project/devops/delivery-playbook.md` — preview + production smoke
+9. `docs_pallete_maker/project/devops/vercel-cd.md` — Vercel deploy contract and security headers
+10. `specs/<feature-id>/spec.md`, `plan.md`, `tasks.md` — active feature
+11. Relevant app files and scripts
