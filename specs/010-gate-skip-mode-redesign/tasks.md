@@ -1,32 +1,30 @@
 # Tasks — 010-gate-skip-mode-redesign
 
-**Status:** handoff-to-Codex. Implementation not started.
+**Status:** implementation in progress.
 
-This file is intentionally left minimal. Codex replaces it with a
-detailed checklist once design is chosen from `plan.md` options A–D.
-
-- [ ] T000: Codex reads `spec.md` + `plan.md`, picks one of the
-      candidate approaches (A/B/C/D), writes the chosen design into
-      `plan.md` replacing the skeleton.
-- [ ] T001: Extract pure helpers from `scripts/ai-review-gate.mjs`
-      into `scripts/ai-review-helpers.mjs`.
-- [ ] T002: Implement new `pickAuthoritativeCodexEvidence(...)` in
-      helpers, called from gate skip-mode branches.
-- [ ] T003: Grant any new REST scopes in
-      `.github/workflows/ai-review.yml`; wrap each new API call in
-      try/catch with a visible warning on failure.
-- [ ] T004: Behavioural tests in `tests/ai-review-helpers.test.mjs`
-      covering every scenario row from `spec.md`:
-  - normal push with post-dispatch Codex summary
-  - pre-dispatch Codex summary (original bug v1)
-  - stale prior-push summary (bug v2)
-  - force-push/cherry-pick where committer.date < prior-head summary
-  - empty `/actions/runs` (or whatever external signal is used)
-  - missing permission scope
-  - setup-error comment surfaced correctly without stale bleed
-- [ ] T005: `pnpm run preflight` passes locally.
-- [ ] T006: PR opened against main referencing `specs/010-*/`.
-- [ ] T007: Three consecutive AI Review runs return zero P0–P2 findings
-      (empirical stability bar before merge).
-- [ ] T008: Claude reviewer APPROVED via `oh-my-claudecode:critic`.
+- [x] T000: Read `spec.md`, choose the redesign, and replace the
+      skeleton `plan.md` with the selected approach.
+- [x] T001: Extract pure Codex helpers from
+      `scripts/ai-review-gate.mjs` into
+      `scripts/ai-review-helpers.mjs`.
+- [x] T002: Implement the new skip-mode selector
+      `pickAuthoritativeCodexSkipModeComment(...)` and call it from the
+      Codex gate path only.
+- [x] T003: Use PR timeline as the external freshness signal and wrap
+      the runtime fetch in a visible fail-closed warning path. Existing
+      workflow scopes already cover timeline reads.
+- [x] T004: Add behavioural tests in
+      `tests/ai-review-helpers.test.mjs` covering:
+  - post-dispatch clean summary
+  - pre-dispatch clean summary
+  - stale prior-push summary
+  - force-push / old-SHA reuse
+  - missing current-head timeline evidence
+  - unavailable timeline evidence
+  - fresh and stale setup-error handling
+- [x] T005: `pnpm run preflight` passes locally.
+- [ ] T006: PR opened against `main` referencing `specs/010-*/`.
+- [ ] T007: Claude review requested on the PR via a human
+      `@claude review once` comment.
+- [ ] T008: Follow up on Claude findings until the branch is green.
 - [ ] T009: Merge.

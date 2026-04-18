@@ -135,6 +135,16 @@ Representative modes / agents to consider (Claude Code users have OMC modes like
 
 Skip the proposal for trivial tasks: rename, one-line fix, simple question, quick status check. Minimal-friction principle — do not nag on small things.
 
+### 8. Always verify active branch and target refs before answering repo-state questions
+
+Before answering questions about repository status, PR state, review outcomes, or
+workflow behavior:
+
+- verify the current checkout branch and cleanliness (`git branch --show-current`,
+  `git status --short --branch`)
+- verify target refs directly (`origin/main` and the relevant PR head ref/SHA)
+- do not rely on stale local branches as evidence for current repository truth
+
 ## Reading Route — Implementing a Change
 
 1. `.specify/memory/constitution.md`
