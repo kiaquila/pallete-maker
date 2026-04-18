@@ -301,6 +301,44 @@ describe("isDimmed", () => {
     // Achromatic: not dimmed (chromatic cap does not apply to achromatics)
     assert.equal(isDimmed(palette, BLACK), false);
   });
+
+  it("blocks 13th chromatic in cross-pair (desat ↔ dark) at the 12 cap", () => {
+    // Reported corner case: because desaturated and dark groups are
+    // cross-compatible (24 colors total in the compatibility set),
+    // selecting from both could theoretically exceed MAX_CHROMATIC=12
+    // if the cap were ever skipped. Lock the invariant: 12 chromatics
+    // from the cross-pair set must dim every remaining chromatic in
+    // either group, while leaving all 3 achromatic slots open.
+    const desat = PM_PALETTE.filter((c) => c.group === "desaturated").slice(
+      0,
+      6,
+    );
+    const dark = PM_PALETTE.filter((c) => c.group === "dark").slice(0, 6);
+    const palette = [...desat, ...dark];
+    assert.equal(countChromatic(palette), MAX_CHROMATIC);
+
+    const remainingDesat = PM_PALETTE.find(
+      (c) => c.group === "desaturated" && !palette.includes(c),
+    );
+    const remainingDark = PM_PALETTE.find(
+      (c) => c.group === "dark" && !palette.includes(c),
+    );
+    assert.ok(
+      remainingDesat && remainingDark,
+      "expected unused cross-pair colors",
+    );
+
+    assert.equal(isDimmed(palette, remainingDesat), true);
+    assert.equal(isDimmed(palette, remainingDark), true);
+
+    for (const achromatic of [BLACK, GRAY, WHITE]) {
+      assert.equal(
+        isDimmed(palette, achromatic),
+        false,
+        `${achromatic.name} must remain selectable when chromatic cap is reached`,
+      );
+    }
+  });
 });
 
 // ── getGrouped ────────────────────────────────────────────────────────────────

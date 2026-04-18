@@ -382,6 +382,17 @@
           // Remove; new base = userPalette[0] after splice (Variant A)
           userPalette = userPalette.filter((c) => c.hex !== color.hex);
         } else if (!isDimmed(userPalette, color)) {
+          // Belt-and-suspenders: never let a chromatic past MAX_CHROMATIC
+          // even if a future change to isDimmed leaks through. The 3
+          // remaining slots above 12 chromatic are reserved for
+          // achromatics only.
+          if (
+            !color.isAchromatic &&
+            countChromatic(userPalette) >= MAX_CHROMATIC
+          ) {
+            return;
+          }
+          if (userPalette.length >= MAX_TOTAL) return;
           userPalette.push(color);
         }
         renderAll();
@@ -493,7 +504,12 @@
           const inner = document.createElement("div");
           inner.className = "color-inner";
           inner.style.backgroundColor = color.hex;
-          inner.style.border = getSwatchInnerBorder("3px", color);
+          // White swatch reads as a flat disc when unselected because the
+          // page background is white. Match the inner ring width to the
+          // outer wrapper border (1.5px) so the disc has one unified edge
+          // instead of competing concentric rings.
+          const innerWidth = isPureWhite(color) && !selected ? "1.5px" : "3px";
+          inner.style.border = getSwatchInnerBorder(innerWidth, color);
           wrapper.appendChild(inner);
 
           const nameEl = document.createElement("div");
@@ -677,14 +693,51 @@
         setTimeout(() => {
           document.fonts.ready.then(() => {
             html2canvas(stage, { scale: 2 })
-              .then((canvas) => {
-                const link = document.createElement("a");
-                link.download = "palette.png";
-                link.href = canvas.toDataURL("image/png");
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-              })
+              .then(
+                (canvas) =>
+                  new Promise((resolve, reject) => {
+                    const triggerDownload = (href, revoke) => {
+                      const link = document.createElement("a");
+                      link.download = "palette.png";
+                      link.href = href;
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      // WebKit / Safari starts anchor downloads
+                      // asynchronously — revoking the blob URL right
+                      // after click() can race the download and produce
+                      // an empty file. Defer revocation so the browser
+                      // has time to start reading the blob.
+                      if (revoke) {
+                        setTimeout(() => URL.revokeObjectURL(href), 60000);
+                      }
+                    };
+                    // iOS Safari ignores `link.download` on data URLs and
+                    // shows an empty filename in the share sheet. Blob
+                    // URLs honour the download attribute on every modern
+                    // mobile + desktop browser. Use toBlob + objectURL
+                    // when available; fall back to toDataURL on older
+                    // browsers/WebViews where toBlob is missing so the
+                    // export path stays functional everywhere.
+                    if (typeof canvas.toBlob === "function") {
+                      canvas.toBlob((blob) => {
+                        if (!blob) {
+                          reject(new Error("toBlob returned null"));
+                          return;
+                        }
+                        triggerDownload(URL.createObjectURL(blob), true);
+                        resolve();
+                      }, "image/png");
+                    } else {
+                      try {
+                        triggerDownload(canvas.toDataURL("image/png"), false);
+                        resolve();
+                      } catch (err) {
+                        reject(err);
+                      }
+                    }
+                  }),
+              )
               .catch(() => {
                 // Export failed silently; button state is restored in finally
               })
