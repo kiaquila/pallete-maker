@@ -37,7 +37,7 @@ concurrency:
 
 jobs:
   ai-review:
-    # Gate-based path: gemini and codex (and unset default → gemini)
+    # Gate-based path: gemini and codex (and unset default → codex)
     if: >
       (
         github.event_name == 'workflow_dispatch' ||
@@ -75,7 +75,7 @@ jobs:
           set -euo pipefail
           selected="${{ vars.AI_REVIEW_AGENT }}"
           if [ -z "$selected" ]; then
-            selected="gemini"
+            selected="codex"
           fi
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -83,11 +83,12 @@ jobs:
           else
             # All three backends (gemini, codex, claude) reject bot-posted
             # trigger comments on pull_request events, so the gate stays in
-            # skip mode. Gemini Code Assist auto-reviews on PR open; manual
-            # recovery uses `pnpm run review:switch` or a trusted human
-            # trigger comment. See docs_pallete_maker/project/devops/
-            # review-trigger-automation.md for the full constraint matrix
-            # and proposed automation.
+            # skip mode. Only Gemini Code Assist auto-reviews on PR open;
+            # codex and claude require a human-authored trigger on every
+            # review (open + synchronize). Manual recovery uses
+            # `pnpm run review:switch` or a trusted human trigger comment.
+            # See docs_pallete_maker/project/devops/review-trigger-automation.md
+            # for the full constraint matrix and proposed automation.
             trigger_mode="skip"
           fi
 
