@@ -53,10 +53,10 @@ through Vercel without relying on hidden session memory.
   Owns architecture, orchestration, CI/CD health, and repository memory, and
   is the default implementation agent. Runs from the user's local Claude Code
   terminal session and can dispatch other local agents via CLI when needed.
-- Gemini
-  Default review backend on GitHub pull requests via Gemini Code Assist.
 - Codex
-  Optional implementation and review agent behind explicit repository variable override.
+  Current default review backend via `@codex review` on PR comments (switched from Gemini on 2026-04-17). See `docs_pallete_maker/project/devops/ai-orchestration-protocol.md` for the full routing contract.
+- Gemini
+  Alternative review backend via Gemini Code Assist GitHub App; switch with `pnpm run review:switch -- --to gemini`.
 - GitHub Actions + Vercel
   Execute required checks, review normalization, previews, and production
   deployment.
@@ -76,8 +76,9 @@ through Vercel without relying on hidden session memory.
 
 ## macOS Local Runner Contract
 
-- Local orchestration is repository-owned and documented in
-  `docs_pallete_maker/project/devops/macos-local-runners.md`.
+- Local orchestration is repository-owned. Helper scripts live in `scripts/`
+  (`new-worktree.mjs`, `set-implementation-agent.mjs`,
+  `start-implementation-worker.mjs`, `publish-branch.mjs`).
 - Local agent selection state is stored under `.claude/` and is gitignored.
 - Local worktrees are created inside `<repoRoot>/.claude/worktrees/<slug>/`
   so they stay inside the repository and do not pollute the user's

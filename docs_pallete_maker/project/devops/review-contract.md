@@ -1,41 +1,19 @@
 # Review Contract
 
-## Backend Trigger Constraints
+> Audience: all agents. **Canonical source** for: per-backend review output format, severity rules, `AI_REVIEW_OUTCOME` schema. Prereq: `ai-orchestration-protocol.md` (agent routing). Sibling: `review-trigger-automation.md` (trigger mechanics).
 
-All three supported review backends require a **human-authored** trigger
-on `pull_request: synchronize` events. Bot-posted trigger comments from
-GitHub Actions (`github-actions[bot]`) are rejected silently or with an
-explicit error by every backend:
+## Backend Trigger Constraints (summary)
 
-- **Gemini** — `gemini-code-assist[bot]` silently ignores bot-posted
-  `/gemini review` comments; the gate times out after 20 minutes.
-- **Codex** — the connector replies "trigger did not come from a
-  connected human Codex account" and the `AI Review` gate fails fast.
-- **Claude** — `claude-review.yml` gates on `author_association in
-(OWNER, MEMBER, COLLABORATOR)` and drops anything authored by a bot.
+All three backends reject bot-posted trigger comments. A human-authored trigger is required:
 
-Gemini Code Assist's on-open auto-review (on `opened` and `ready_for_review`)
-covers the initial review for free, but every new push on an already-open PR
-needs a manual trigger. The canonical recovery path is
-`pnpm run review:switch -- --to <agent>`, which flips the repository
-variable, posts the correct native trigger comment as the current `gh`
-user (human-authored, therefore trusted), and reruns the most recent
-failed `AI Review` job.
+- on **every new push** (`pull_request: synchronize`) for any backend, and
+- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run waits until timeout unless a human posts `@codex review` right after opening the PR.
 
-See `docs_pallete_maker/project/devops/review-trigger-automation.md` for the full
-backend matrix.
+Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Canonical recovery: `pnpm run review:switch -- --to <agent>`.
 
-## Gemini Review
+## Codex Review (current default)
 
-- Default review backend for `pallete-maker`
-- Native GitHub PR review surface from `gemini-code-assist[bot]`
-- Inline findings are expected to carry `Critical`, `High`, `Medium`, or `Low`
-- `Low`-only findings are advisory
-- `Critical`, `High`, and `Medium` findings block merge
-
-## Codex Review
-
-- Optional fallback review backend, used when `AI_REVIEW_AGENT=codex`
+- Current default review backend, used when `AI_REVIEW_AGENT=codex`
 - Native GitHub PR review surface from `chatgpt-codex-connector[bot]`
 - Inline findings must carry `P0` to `P3`
 - `P3`-only findings are advisory
@@ -48,11 +26,23 @@ backend matrix.
 - If the timeline lookup is unavailable, the gate logs a warning and
   fails closed by waiting for formal review only.
 
-## Claude Review
+## Gemini Review
 
-- Third-tier optional review backend, used when `AI_REVIEW_AGENT=claude`
+- Alternative review backend, used when `AI_REVIEW_AGENT=gemini`
+- Native GitHub PR review surface from `gemini-code-assist[bot]`
+- Inline findings are expected to carry `Critical`, `High`, `Medium`, or `Low`
+- `Low`-only findings are advisory
+- `Critical`, `High`, and `Medium` findings block merge
+
+## Claude Review (currently non-operational)
+
+Retained for schema reference only. The `claude-review.yml` workflow is dead
+code pending cleanup; `ANTHROPIC_API_KEY` is not configured and the local
+runner was rolled back. Do not select `AI_REVIEW_AGENT=claude` until restored.
+
+Schema (when operational):
+
 - Triggered by a human posting `@claude review once` on the PR
-- Handled by the `claude-review.yml` workflow using `ANTHROPIC_API_KEY`
 - Final result is a top-level comment, not a formal GitHub review state
 - The comment must start with:
 

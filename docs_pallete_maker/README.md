@@ -1,34 +1,28 @@
 # pallete-maker Docs Map
 
-`docs_pallete_maker/` is the durable memory layer for this repository.
+> Topical index. For the reading order, see `AGENTS.md § Reading Route`.
 
-## What belongs here
+`docs_pallete_maker/` is the durable memory layer for this repository. Entry points are `CLAUDE.md` (Claude-specific) and `AGENTS.md` (universal); this directory holds content they link into.
 
-- stable product context
-- frontend architecture decisions
-- delivery and deployment rules
-- review and orchestration contracts
-- ADRs and operating playbooks
+## Structure by topic
 
-## Main reading order
+**Product**
 
-1. `.specify/memory/constitution.md`
-2. `docs_pallete_maker/project-idea.md`
-3. `docs_pallete_maker/project/frontend/frontend-docs.md`
-4. `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
-5. `docs_pallete_maker/project/devops/ai-pr-workflow.md`
-6. `docs_pallete_maker/project/devops/review-trigger-automation.md`
-7. `specs/<feature-id>/spec.md`
-8. `specs/<feature-id>/plan.md`
-9. `specs/<feature-id>/tasks.md`
+- `project-idea.md` — product facts (palette size, composition, roadmap). **Canonical source** for product facts.
 
-## Structure
+**Frontend**
 
-- `adr/`
-  Architecture decision records and cross-cutting technical choices
-- `project-idea.md`
-  Product goals and current roadmap
-- `project/frontend/`
-  Frontend architecture and UI behavior notes
-- `project/devops/`
-  CI/CD, review, orchestration, and delivery workflow
+- `project/frontend/frontend-docs.md` — grid columns, harmony algorithm, build pipeline, accessibility.
+
+**Delivery & CI**
+
+- `project/devops/ai-orchestration-protocol.md` — agent routing, default review backend, native execution surfaces. **Canonical source** for review policy.
+- `project/devops/ai-pr-workflow.md` — PR gates and merge rules.
+- `project/devops/review-contract.md` — what each backend produces; severity rules.
+- `project/devops/review-trigger-automation.md` — bot-trigger rejection (Tier 1 active; design for Tier 2/3 in ADR).
+- `project/devops/delivery-playbook.md` — preview validation and production smoke.
+- `project/devops/vercel-cd.md` — Vercel deploy contract, security headers, supply-chain hygiene.
+
+**Decisions**
+
+- `adr/` — architecture decision records and cross-cutting choices.

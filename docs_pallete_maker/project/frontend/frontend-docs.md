@@ -1,5 +1,7 @@
 # Frontend Docs
 
+> Audience: all agents. Canonical source for: grid columns, harmony algorithm, build pipeline, accessibility. Product facts (palette size) are in `docs_pallete_maker/project-idea.md`.
+
 ## Current Architecture
 
 The application is a static SPA with a modular source layout:
@@ -41,7 +43,7 @@ The picker grid displays all 51 colors of the fixed palette:
   Chartreuse → Emerald → Teal → Cobalt → Indigo → Violet → Fuchsia
 - each swatch is a `<button>` element (88px, `--swatch-outer` CSS var) showing a color circle, name, and HEX
 - dimmed (incompatible) cards carry `aria-disabled="true"` and `tabindex="-1"`
-- responsive columns: 3 (mobile ≥375) → 4 (≥480) → 6 (≥640) → 8 (≥1024) → 10 (≥1280)
+- responsive columns: 3 (mobile ≥375) → 4 (≥480) → 6 (≥640) → 8 (≥1024) → 11 (≥1280)
 - color selection state is ephemeral (no persistence)
 - DOM refs are cached on init in a `DOM` object; full grid rebuild on each state change
 - the achromatic White swatch uses `#FFFFFF` with a subtle neutral inner outline

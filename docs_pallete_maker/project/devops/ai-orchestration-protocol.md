@@ -1,5 +1,7 @@
 # AI Orchestration Protocol
 
+> Audience: all agents. **Canonical source** for: agent routing, default review backend, supported agents, review normalization. Other docs reference this. Prereq: `.specify/memory/constitution.md`. Next: `ai-pr-workflow.md`.
+
 ## Canonical Delivery Contract
 
 `pallete-maker` uses a PR-only delivery model.
@@ -27,23 +29,26 @@ Agent routing is controlled by repository variables:
 - `codex`
 - `gemini`
 
-Default policy in this repository:
+Default policy in this repository (canonical):
 
 - implementation: `claude`
-- review: `gemini`
+- review: `codex` (switched from `gemini` on 2026-04-17)
 
 Claude is the canonical default implementation agent because it owns
 architecture, orchestration, CI/CD health, and repository memory for this
 repository, and is driven from the user's local Claude Code terminal session.
 
-Gemini is the canonical default review backend because it runs natively on
-GitHub pull requests via the Gemini Code Assist GitHub App.
+Codex is the current default review backend. It runs natively on GitHub pull
+requests via the ChatGPT Codex connector, triggered by `@codex review` comments
+from trusted human actors.
 
-Codex is available as an alternative review or implementation backend behind
-an explicit `AI_REVIEW_AGENT=codex` or `AI_IMPLEMENTATION_AGENT=codex` override.
+Gemini is available as an alternative review backend via the Gemini Code Assist
+GitHub App. Switch with `pnpm run review:switch -- --to gemini`.
 
-Claude review is a third-tier option behind an explicit `AI_REVIEW_AGENT=claude`
-override and still requires `ANTHROPIC_API_KEY` when used via GitHub Actions.
+Claude review (`claude-review.yml` workflow) is **currently non-operational**:
+the workflow file remains in the repository as dead code pending a cleanup PR,
+but `ANTHROPIC_API_KEY` is not configured and the local Claude runner was
+rolled back. Do not select `AI_REVIEW_AGENT=claude` until this is restored.
 
 ## Local macOS Orchestration
 
@@ -70,12 +75,13 @@ repository and do not pollute the user's `~/projects/` directory.
 
 Review normalization behavior:
 
-- `gemini` is the default review backend and auto-reviews on PR open
+- `codex` is the current default review backend; `@codex review` from a trusted
+  human posts a native PR review
 - pull-request `AI Review` runs support `codex`, `gemini`, and `claude`
 - manual Gemini and Codex review comments stay native-only to avoid canceling
   the PR-linked `AI Review` check
 - trusted human review commands dispatch the shared `AI Review` gate via
-  `workflow_dispatch` only for `claude`
+  `workflow_dispatch` only for `claude` (currently non-operational, see above)
 - the gate may reuse an existing same-head native review when a PR-linked
   `AI Review` run is rerun
 

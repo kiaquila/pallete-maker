@@ -1,6 +1,8 @@
 # AI Pull Request Workflow
 
-This is the canonical PR loop for `pallete-maker`.
+> Audience: all agents. **Canonical source** for: PR-specific gates and merge rules. Prereq: `.specify/memory/constitution.md` (Standard Feature Loop), `ai-orchestration-protocol.md` (agent routing). Next: `review-contract.md`.
+
+This doc covers PR-specific gates. The 10-step Standard Feature Loop lives in `.specify/memory/constitution.md § Standard Feature Loop` — do not duplicate here.
 
 ## Roles
 
@@ -11,24 +13,6 @@ This is the canonical PR loop for `pallete-maker`.
 - Vercel provides preview deployments for PRs and production deploy on merge to
   `main`.
 - A human remains the final merge authority.
-
-## Standard Loop
-
-1. Start from current `main`.
-2. Create or update one active `specs/<feature-id>/` folder.
-3. Create an isolated macOS worktree for the task under
-   `<repoRoot>/.claude/worktrees/<slug>/`.
-4. Select the implementation and review agents for the branch.
-5. Generate the implementation prompt from repository memory.
-6. Implement only the scoped change on that branch.
-7. Update `tasks.md`, docs, and tests or validation notes in the same PR.
-8. Open or update the same PR.
-9. Wait for:
-   - `baseline-checks`
-   - `guard`
-   - `AI Review`
-   - healthy Vercel preview deployment
-10. Keep fixing the same branch until only human approval and merge remain.
 
 ## Hard Gates
 
@@ -41,22 +25,21 @@ This is the canonical PR loop for `pallete-maker`.
 
 ## Review Contract
 
-- Reviewer selection comes only from `AI_REVIEW_AGENT`.
-- Supported review backends are `gemini`, `codex`, and `claude`.
+Summary (details in `review-contract.md` and `ai-orchestration-protocol.md`):
+
 - `AI Review` is the normalized required check regardless of the backend.
+- Reviewer selection comes only from `AI_REVIEW_AGENT` (current default: `codex`).
 - Low-severity-only findings are advisory and non-blocking.
-- With no repository override, the pull-request gate defaults to `gemini`.
-- Auto-retrigger on `synchronize` is not supported for any backend: all
-  three reject bot-posted trigger comments. The gate therefore stays in
-  `trigger_mode=skip` on every `pull_request` event and passively waits
-  for a same-head native review.
-- Initial PR review is covered by Gemini Code Assist's on-open auto-review.
-  After a new push on an already-open PR, a human must post the appropriate
-  native trigger comment (`/gemini review`, `@codex review`, or
-  `@claude review once`), or run `pnpm run review:switch -- --to <agent>`
-  to flip backends and trigger the new reviewer in one shot.
-- Manual Gemini and Codex review commands stay native-only so they do not
-  cancel the PR-linked `AI Review` check.
+- **Human trigger required for Codex on EVERY review**, including the first
+  review on PR open — Codex does not auto-review. (Only Gemini Code Assist
+  auto-reviews on `opened` / `ready_for_review`.) The gate runs with
+  `trigger_mode=skip` on `pull_request` events and polls for an existing
+  same-head review, so without a human trigger it waits until timeout.
+- After a new push on an already-open PR, a human must post the native
+  trigger comment again (`@codex review`, `/gemini review`, or
+  `@claude review once`), or run `pnpm run review:switch -- --to <agent>`.
+  Bot-posted triggers are rejected by all three backends — see
+  `review-trigger-automation.md`.
 
 ## Merge-Ready Definition
 
