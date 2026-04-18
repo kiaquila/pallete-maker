@@ -4,7 +4,12 @@
 
 ## Backend Trigger Constraints (summary)
 
-All three backends reject bot-posted trigger comments on `pull_request: synchronize`; a human-authored trigger is required on every new push. Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Canonical recovery: `pnpm run review:switch -- --to <agent>`.
+All three backends reject bot-posted trigger comments. A human-authored trigger is required:
+
+- on **every new push** (`pull_request: synchronize`) for any backend, and
+- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run waits until timeout unless a human posts `@codex review` right after opening the PR.
+
+Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Canonical recovery: `pnpm run review:switch -- --to <agent>`.
 
 ## Codex Review (current default)
 

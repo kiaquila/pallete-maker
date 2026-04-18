@@ -10,7 +10,7 @@ All three supported review backends reject bot-posted trigger comments on `pull_
 - **Gemini** — `gemini-code-assist[bot]` silently ignores bot-posted `/gemini review` comments.
 - **Claude** — `claude-review.yml` gates on `author_association in (OWNER, MEMBER, COLLABORATOR)` and drops bot-authored comments.
 
-Gemini Code Assist auto-reviews PRs on `opened` and `ready_for_review`, which covers the first review on PR creation. Every subsequent push to an already-open PR requires a human-authored trigger.
+Only Gemini Code Assist auto-reviews PRs on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default) or `claude`, **even the first review on PR open requires a human-authored trigger** — the gate runs with `trigger_mode=skip` on `pull_request` events and polls for an existing same-head native review, so without a human trigger it waits until timeout. Every subsequent push likewise requires a human-authored trigger for all three backends.
 
 ## Core Insight
 
