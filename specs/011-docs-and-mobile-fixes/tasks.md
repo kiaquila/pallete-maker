@@ -12,6 +12,6 @@
 - [x] T010: `pnpm run preflight` passes locally (59/59 tests)
 - [x] T010a: Codex P3 fix — commit `docs_pallete_maker/screenshot.png` (user-provided PNG, 2988x1510)
 - [x] T010b: Codex P2 fix — feature-detect `canvas.toBlob` with `toDataURL` fallback in `exportPalette`
-- [ ] T011: All PR #14 checks green (CI, PR Guard, OSV Scan, AI Review, Vercel)
+- [x] T011: All PR #14 checks green (CI, PR Guard, OSV Scan, AI Review, Vercel)
 - [ ] T012: User visually confirms white-swatch fix on mobile/desktop and iOS download filename fix
 - [ ] T013: Merge PR #14 after all checks COMPLETED + SUCCESSFUL per `feedback_never_merge_before_review.md`
