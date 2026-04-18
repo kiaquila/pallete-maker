@@ -22,6 +22,7 @@
 - Никогда не мержить PR до завершения ВСЕХ проверок (включая `AI Review`), даже если GitHub показывает `MERGEABLE`/`UNSTABLE`. Ждать, пока все проверки станут `COMPLETED` и `SUCCESSFUL`.
 - Перед каждым `git push` прогоняй `pnpm run preflight` — он локально повторяет то, что делают PR Guard и CI (feature-memory gate + baseline + html + build + format + tests). Экономит итерации на публичных чеках.
 - Стиль commit-message: только subject (≤72 chars, conventional prefix `fix:`/`chore:`/`docs:`/etc.); body не пишу, кроме случая с неочевидным «why»; длинный контекст идёт в PR description, не в commit body.
+- Локальный pre-push hook: `.claude/hooks/check-feature-memory-on-push.sh` (зарегистрирован в `.claude/settings.local.json` как PreToolUse на Bash) блокирует `git push`, если committed product-path changes требуют `specs/<id>/{spec,plan,tasks}.md` и спека нет. `.claude/` gitignored — на новой машине восстановить вручную из spec 013. Emergency bypass: закомментировать hook в `.claude/settings.local.json` или запушить из обычного терминала.
 - Не ломай `pnpm run build`: проект должен оставаться deployable как статический сайт
 - При review фокусируйся на mobile grid reflow, harmony rules correctness, PNG export safety, RU-строках и maintainability
 
