@@ -71,8 +71,9 @@ is a future improvement.
   `github-actions` and `npm` ecosystems with a 7-day cooldown on new
   releases (14 days for major bumps, 3 for patches). The cooldown protects
   against freshly compromised releases.
-- **Pinned action SHAs** — third-party GitHub Actions are pinned to a
-  commit SHA with a trailing `# v<tag>` comment (see
-  `anthropics/claude-code-action`, `google/osv-scanner-action`). Moving
-  tags like `@v1` can be force-pushed to a different commit; a SHA cannot.
-  Official `actions/*` are pinned to major tags for readability.
+- **Pinned action SHAs.** Third-party GitHub Actions are pinned to a
+  commit SHA with a trailing `# v<tag>` comment. Currently pinned:
+  `anthropics/claude-code-action`, `google/osv-scanner-action`,
+  `pnpm/action-setup`. Moving tags like `@v1` can be force-pushed to a
+  different commit; a SHA cannot. Official `actions/*` are pinned to
+  major tags for readability.
