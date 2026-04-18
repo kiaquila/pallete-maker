@@ -696,25 +696,39 @@
               .then(
                 (canvas) =>
                   new Promise((resolve, reject) => {
-                    // iOS Safari ignores `link.download` on data URLs and
-                    // shows an empty filename in the share sheet. Blob
-                    // URLs honour the download attribute on every modern
-                    // mobile + desktop browser. Use toBlob + objectURL.
-                    canvas.toBlob((blob) => {
-                      if (!blob) {
-                        reject(new Error("toBlob returned null"));
-                        return;
-                      }
-                      const url = URL.createObjectURL(blob);
+                    const triggerDownload = (href, revoke) => {
                       const link = document.createElement("a");
                       link.download = "palette.png";
-                      link.href = url;
+                      link.href = href;
                       document.body.appendChild(link);
                       link.click();
                       link.remove();
-                      URL.revokeObjectURL(url);
-                      resolve();
-                    }, "image/png");
+                      if (revoke) URL.revokeObjectURL(href);
+                    };
+                    // iOS Safari ignores `link.download` on data URLs and
+                    // shows an empty filename in the share sheet. Blob
+                    // URLs honour the download attribute on every modern
+                    // mobile + desktop browser. Use toBlob + objectURL
+                    // when available; fall back to toDataURL on older
+                    // browsers/WebViews where toBlob is missing so the
+                    // export path stays functional everywhere.
+                    if (typeof canvas.toBlob === "function") {
+                      canvas.toBlob((blob) => {
+                        if (!blob) {
+                          reject(new Error("toBlob returned null"));
+                          return;
+                        }
+                        triggerDownload(URL.createObjectURL(blob), true);
+                        resolve();
+                      }, "image/png");
+                    } else {
+                      try {
+                        triggerDownload(canvas.toDataURL("image/png"), false);
+                        resolve();
+                      } catch (err) {
+                        reject(err);
+                      }
+                    }
                   }),
               )
               .catch(() => {
