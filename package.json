@@ -28,5 +28,10 @@
   "engines": {
     "node": ">=20",
     "pnpm": ">=10.16"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.10"
+    }
   }
 }

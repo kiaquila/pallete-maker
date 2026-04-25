@@ -1,0 +1,25 @@
+# Tasks — 015-security-audit-hardening
+
+- [x] T001: Резолвить SHA для actions/checkout@v6, @v4, setup-node@v4, github-script@v8 через `gh api`
+- [x] T002: Пиннуть `actions/checkout@v6` → `@de0fac2e...` во всех workflow файлах (ci, pr-guard, claude-agent, claude-review, osv-scan)
+- [x] T003: Пиннуть `actions/checkout@v4` → `@34e11487...` в ai-review.yml
+- [x] T004: Пиннуть `actions/setup-node@v4` → `@49933ea5...` в ci.yml и pr-guard.yml
+- [x] T005: Пиннуть `actions/github-script@v8` → `@ed597411...` в claude-agent.yml, claude-review.yml, ai-command-policy.yml
+- [x] T006: Верификация `grep` — нет floating tag first-party actions
+- [x] T007: Создать `src/styles/app.css` с контентом из inline `<style>`
+- [x] T008: Создать `src/scripts/app.mjs` с контентом из inline `<script>`, исправить import path на `"./harmony.mjs"`
+- [x] T009: Заменить `<style>...</style>` и `<script>...</script>` в index.html на внешние ссылки через node-regex
+- [x] T010: Убрать `'unsafe-inline'` из `script-src` в vercel.json; сохранить в `style-src` (Codex P1 findings на первой итерации: cssText в buildColorSwatch/exportPalette ломается без него). Миграция cssText → classes — отдельный spec.
+- [x] T011: Заменить `DOM.grid.innerHTML = ""` на `replaceChildren()` в app.mjs
+- [x] T012: Заменить `DOM.palette.innerHTML = ""` на `replaceChildren()` в app.mjs
+- [x] T013: Убрать `id-token: write` из claude-agent.yml permissions
+- [x] T014: Убрать `id-token: write` из claude-review.yml permissions
+- [x] T015: Добавить `pnpm.overrides.postcss: ">=8.5.10"` в package.json
+- [x] T016: `pnpm install` для регенерации `pnpm-lock.yaml`
+- [x] T017: Prettier --write на src/scripts/app.mjs (preflight format fail первым прогоном)
+- [x] T018: `pnpm run preflight` зелёный (59/59 тестов)
+- [x] T019: Создать spec/plan/tasks для feature-memory gate
+- [ ] T020: Push → все PR checks COMPLETED + SUCCESSFUL
+- [ ] T021: Триггернуть Codex review через `@codex review` на PR
+- [ ] T022: Ручная проверка preview deploy: добавить цвета, export PNG, DevTools без CSP violations
+- [ ] T023: Merge после всех checks зелёных (feedback_never_merge_before_review)
