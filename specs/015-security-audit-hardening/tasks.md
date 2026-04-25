@@ -9,7 +9,7 @@
 - [x] T007: Создать `src/styles/app.css` с контентом из inline `<style>`
 - [x] T008: Создать `src/scripts/app.mjs` с контентом из inline `<script>`, исправить import path на `"./harmony.mjs"`
 - [x] T009: Заменить `<style>...</style>` и `<script>...</script>` в index.html на внешние ссылки через node-regex
-- [x] T010: Убрать `'unsafe-inline'` из CSP в vercel.json
+- [x] T010: Убрать `'unsafe-inline'` из `script-src` в vercel.json; сохранить в `style-src` (Codex P1 findings на первой итерации: cssText в buildColorSwatch/exportPalette ломается без него). Миграция cssText → classes — отдельный spec.
 - [x] T011: Заменить `DOM.grid.innerHTML = ""` на `replaceChildren()` в app.mjs
 - [x] T012: Заменить `DOM.palette.innerHTML = ""` на `replaceChildren()` в app.mjs
 - [x] T013: Убрать `id-token: write` из claude-agent.yml permissions
