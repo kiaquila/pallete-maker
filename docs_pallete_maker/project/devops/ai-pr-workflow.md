@@ -29,6 +29,11 @@ Summary (details in `review-contract.md` and `ai-orchestration-protocol.md`):
 
 - `AI Review` is the normalized required check regardless of the backend.
 - Reviewer selection comes only from `AI_REVIEW_AGENT` (current default: `codex`).
+- Gate-based `AI Review` runs execute repository scripts from
+  `github.event.repository.default_branch`, not from the pull request head. The
+  gate still resolves the PR number and head SHA through GitHub API context, but
+  contributors cannot alter `scripts/ai-review-gate.mjs` in their own PR to
+  change the required-check decision logic.
 - Low-severity-only findings are advisory and non-blocking.
 - **Human trigger required for Codex on EVERY review**, including the first
   review on PR open — Codex does not auto-review. (Only Gemini Code Assist
