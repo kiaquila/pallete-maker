@@ -84,8 +84,10 @@ for (const file of changedFiles) {
   featureIds.add(match[1]);
 }
 
+const isSha = /^[0-9a-f]{40}$/i.test(headRef);
+
 const hasCompleteFeatureMemory = (featureId) => {
-  if (inspectWorktree) {
+  if (!isSha) {
     return (
       existsSync(resolve(repoRoot, "specs", featureId, "spec.md")) &&
       existsSync(resolve(repoRoot, "specs", featureId, "plan.md")) &&
