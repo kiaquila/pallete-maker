@@ -126,6 +126,21 @@ const workflowAssertions = [
     message:
       "AI Review checkout must use ref: ${{ github.event.repository.default_branch }} so gate scripts run from trusted main.",
   },
+  {
+    test: (workflow) => {
+      // Anchor on line start so YAML comments (`# uses: actions/checkout@...`)
+      // and arbitrary text inside `run:` scripts are not counted as steps.
+      // Optional leading `-` covers the inline `- uses: ...` step form.
+      // Optional surrounding quote covers double- and single-quoted scalar
+      // values (`uses: "actions/checkout@..."`).
+      const matches = workflow.match(
+        /^[ \t]*-?[ \t]*uses:[ \t]*['"]?actions\/checkout@/gm,
+      );
+      return (matches?.length ?? 0) === 1;
+    },
+    message:
+      "AI Review workflow must contain exactly one actions/checkout step. A second checkout could overwrite gate scripts after the trusted default-branch checkout.",
+  },
 ];
 
 failures.push(
