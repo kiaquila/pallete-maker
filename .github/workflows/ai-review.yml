@@ -60,6 +60,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 1
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Resolve PR context
         id: pr

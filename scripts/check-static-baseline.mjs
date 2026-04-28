@@ -63,6 +63,10 @@ if (missing.length > 0 || missingDirs.length > 0) {
 }
 
 const html = readFileSync(resolve(root, "index.html"), "utf8");
+const aiReviewWorkflow = readFileSync(
+  resolve(root, ".github/workflows/ai-review.yml"),
+  "utf8",
+);
 
 // Declarative HTML content assertions.
 // Add entries here instead of hardcoding new checks below.
@@ -101,6 +105,34 @@ const htmlAssertions = [
 const failures = htmlAssertions
   .filter(({ test }) => !test(html))
   .map(({ message }) => message);
+
+const workflowAssertions = [
+  {
+    test: (workflow) => {
+      const checkoutStep = workflow.match(
+        /- name: Checkout\s*\n\s*uses: actions\/checkout@[^\n]+\n\s*with:\n(?<withBlock>(?:\s+[a-zA-Z0-9_-]+:\s*[^\n]+\n)+)/,
+      );
+
+      return (
+        checkoutStep?.groups?.withBlock
+          ?.split(/\r?\n/)
+          .some((line) =>
+            /^ref:\s*\$\{\{\s*github\.event\.repository\.default_branch\s*\}\}\s*$/.test(
+              line.trim(),
+            ),
+          ) ?? false
+      );
+    },
+    message:
+      "AI Review checkout must use ref: ${{ github.event.repository.default_branch }} so gate scripts run from trusted main.",
+  },
+];
+
+failures.push(
+  ...workflowAssertions
+    .filter(({ test }) => !test(aiReviewWorkflow))
+    .map(({ message }) => message),
+);
 
 if (failures.length > 0) {
   for (const msg of failures) {
