@@ -7,6 +7,7 @@
 ## Solution
 
 Mirror the pattern already applied to `ai-review.yml` (spec 016/017):
+
 - Checkout `default_branch` (trusted main)
 - Fetch PR head SHA separately for diffing only
 - Scripts that need to inspect PR head state use `git cat-file`/`git show` instead of filesystem reads

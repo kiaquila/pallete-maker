@@ -58,6 +58,11 @@ jobs:
           echo "BASE_REF=$base_ref" >> "$GITHUB_ENV"
           echo "HEAD_REF=$head_ref" >> "$GITHUB_ENV"
 
+      - name: Overlay PR specs into working tree
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: git checkout "$HEAD_REF" -- specs/ 2>/dev/null || true
+
       - name: Check docs coverage for product and infra changes
         shell: bash
         run: |
