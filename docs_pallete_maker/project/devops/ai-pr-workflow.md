@@ -33,7 +33,11 @@ Summary (details in `review-contract.md` and `ai-orchestration-protocol.md`):
   `github.event.repository.default_branch`, not from the pull request head. The
   gate still resolves the PR number and head SHA through GitHub API context, but
   contributors cannot alter `scripts/ai-review-gate.mjs` in their own PR to
-  change the required-check decision logic.
+  change the required-check decision logic. The workflow must contain exactly
+  one `actions/checkout@...` step — a second checkout would overwrite the
+  trusted scripts. `pnpm run check:repo` enforces both invariants (see
+  `specs/016-trusted-ai-review-checkout/` and
+  `specs/017-defense-in-depth-checkout-assertion/`).
 - Low-severity-only findings are advisory and non-blocking.
 - **Human trigger required for Codex on EVERY review**, including the first
   review on PR open — Codex does not auto-review. (Only Gemini Code Assist
