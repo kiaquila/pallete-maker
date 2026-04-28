@@ -131,8 +131,10 @@ const workflowAssertions = [
       // Anchor on line start so YAML comments (`# uses: actions/checkout@...`)
       // and arbitrary text inside `run:` scripts are not counted as steps.
       // Optional leading `-` covers the inline `- uses: ...` step form.
+      // Optional surrounding quote covers double- and single-quoted scalar
+      // values (`uses: "actions/checkout@..."`).
       const matches = workflow.match(
-        /^[ \t]*-?[ \t]*uses:[ \t]*actions\/checkout@/gm,
+        /^[ \t]*-?[ \t]*uses:[ \t]*['"]?actions\/checkout@/gm,
       );
       return (matches?.length ?? 0) === 1;
     },

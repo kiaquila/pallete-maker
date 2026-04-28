@@ -15,10 +15,13 @@
 ## Risk Notes
 
 - This change only adds a static assertion. It cannot affect workflow runtime.
-- The regex anchors on line start (`^[ \t]*-?[ \t]*uses:[ \t]*actions\/checkout@`,
-  `m` flag) so YAML comments (`# uses: actions/checkout@...`) and literal
-  occurrences inside `run:` scripts that begin with `#` are not counted.
-  Optional leading `-` covers the inline `- uses: ...` step form. A literal
+- The regex anchors on line start
+  (`^[ \t]*-?[ \t]*uses:[ \t]*['"]?actions\/checkout@`, `m` flag) so YAML
+  comments (`# uses: actions/checkout@...`) and literal occurrences inside
+  `run:` scripts that begin with `#` are not counted. Optional leading `-`
+  covers the inline `- uses: ...` step form. Optional surrounding quote covers
+  YAML-valid double- and single-quoted scalar values
+  (`uses: "actions/checkout@..."`, `uses: 'actions/checkout@...'`). A literal
   `uses: actions/checkout@` inside a multi-line `run: |` block at column 0
   would still match — accepted as a false positive since no realistic edit to
   `ai-review.yml` writes that.
