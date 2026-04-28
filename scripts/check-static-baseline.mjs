@@ -128,7 +128,12 @@ const workflowAssertions = [
   },
   {
     test: (workflow) => {
-      const matches = workflow.match(/uses:\s*actions\/checkout@/g);
+      // Anchor on line start so YAML comments (`# uses: actions/checkout@...`)
+      // and arbitrary text inside `run:` scripts are not counted as steps.
+      // Optional leading `-` covers the inline `- uses: ...` step form.
+      const matches = workflow.match(
+        /^[ \t]*-?[ \t]*uses:[ \t]*actions\/checkout@/gm,
+      );
       return (matches?.length ?? 0) === 1;
     },
     message:

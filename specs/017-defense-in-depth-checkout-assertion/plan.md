@@ -15,10 +15,13 @@
 ## Risk Notes
 
 - This change only adds a static assertion. It cannot affect workflow runtime.
-- The regex `uses:\s*actions\/checkout@` is intentionally loose so it matches
-  pinned SHAs, version tags, and any future `with:` placement. Forks of the
-  third-party `actions/checkout` action would not be caught — that is out of
-  scope.
+- The regex anchors on line start (`^[ \t]*-?[ \t]*uses:[ \t]*actions\/checkout@`,
+  `m` flag) so YAML comments (`# uses: actions/checkout@...`) and literal
+  occurrences inside `run:` scripts that begin with `#` are not counted.
+  Optional leading `-` covers the inline `- uses: ...` step form. A literal
+  `uses: actions/checkout@` inside a multi-line `run: |` block at column 0
+  would still match — accepted as a false positive since no realistic edit to
+  `ai-review.yml` writes that.
 - The existing trusted-`ref` assertion still runs first, so a workflow that
   removes the trusted ref entirely would fail with the spec 016 message,
   not the new one.
