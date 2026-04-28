@@ -126,6 +126,14 @@ const workflowAssertions = [
     message:
       "AI Review checkout must use ref: ${{ github.event.repository.default_branch }} so gate scripts run from trusted main.",
   },
+  {
+    test: (workflow) => {
+      const matches = workflow.match(/uses:\s*actions\/checkout@/g);
+      return (matches?.length ?? 0) === 1;
+    },
+    message:
+      "AI Review workflow must contain exactly one actions/checkout step. A second checkout could overwrite gate scripts after the trusted default-branch checkout.",
+  },
 ];
 
 failures.push(
