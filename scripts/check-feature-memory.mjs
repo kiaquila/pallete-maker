@@ -84,10 +84,33 @@ for (const file of changedFiles) {
   featureIds.add(match[1]);
 }
 
-const hasCompleteFeatureMemory = (featureId) =>
-  existsSync(resolve(repoRoot, "specs", featureId, "spec.md")) &&
-  existsSync(resolve(repoRoot, "specs", featureId, "plan.md")) &&
-  existsSync(resolve(repoRoot, "specs", featureId, "tasks.md"));
+const isSha = /^[0-9a-f]{40}$/i.test(headRef);
+
+const hasCompleteFeatureMemory = (featureId) => {
+  if (!isSha) {
+    return (
+      existsSync(resolve(repoRoot, "specs", featureId, "spec.md")) &&
+      existsSync(resolve(repoRoot, "specs", featureId, "plan.md")) &&
+      existsSync(resolve(repoRoot, "specs", featureId, "tasks.md"))
+    );
+  }
+  const existsAtRef = (relPath) => {
+    try {
+      execFileSync("git", ["cat-file", "-e", `${headRef}:${relPath}`], {
+        cwd: repoRoot,
+        stdio: "ignore",
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  return (
+    existsAtRef(`specs/${featureId}/spec.md`) &&
+    existsAtRef(`specs/${featureId}/plan.md`) &&
+    existsAtRef(`specs/${featureId}/tasks.md`)
+  );
+};
 
 const validFeature = [...featureIds].find(hasCompleteFeatureMemory);
 

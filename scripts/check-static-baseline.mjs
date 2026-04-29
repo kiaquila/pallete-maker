@@ -1,9 +1,36 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+const args = process.argv.slice(2);
+const headRefIdx = args.indexOf("--head-ref");
+const headRef = headRefIdx !== -1 ? args[headRefIdx + 1] : null;
+
 const root = resolve(process.cwd());
+
+const existsAtRef = headRef
+  ? (relPath) => {
+      try {
+        execFileSync("git", ["cat-file", "-e", `${headRef}:${relPath}`], {
+          cwd: root,
+          stdio: "ignore",
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  : (relPath) => existsSync(resolve(root, relPath));
+
+const readAtRef = headRef
+  ? (relPath) =>
+      execFileSync("git", ["show", `${headRef}:${relPath}`], {
+        cwd: root,
+        encoding: "utf8",
+      })
+  : (relPath) => readFileSync(resolve(root, relPath), "utf8");
 
 const requiredFiles = [
   "AGENTS.md",
@@ -43,30 +70,22 @@ const requiredFiles = [
 
 const requiredDirs = ["specs"];
 
-const missing = requiredFiles.filter(
-  (file) => !existsSync(resolve(root, file)),
-);
+const missing = [
+  ...requiredFiles.filter((file) => !existsAtRef(file)),
+  ...requiredDirs.filter((dir) => !existsAtRef(dir)),
+];
 
-const missingDirs = requiredDirs.filter(
-  (dir) => !existsSync(resolve(root, dir)),
-);
-
-if (missing.length > 0 || missingDirs.length > 0) {
+if (missing.length > 0) {
   console.error("Missing required baseline files:");
-  for (const file of missing) {
-    console.error(`- ${file}`);
-  }
-  for (const dir of missingDirs) {
-    console.error(`- ${dir}/`);
+  for (const item of missing) {
+    console.error(`- ${item}`);
   }
   process.exit(1);
 }
 
-const html = readFileSync(resolve(root, "index.html"), "utf8");
-const aiReviewWorkflow = readFileSync(
-  resolve(root, ".github/workflows/ai-review.yml"),
-  "utf8",
-);
+const html = readAtRef("index.html");
+const aiReviewWorkflow = readAtRef(".github/workflows/ai-review.yml");
+const prGuardWorkflow = readAtRef(".github/workflows/pr-guard.yml");
 
 // Declarative HTML content assertions.
 // Add entries here instead of hardcoding new checks below.
@@ -106,13 +125,17 @@ const failures = htmlAssertions
   .filter(({ test }) => !test(html))
   .map(({ message }) => message);
 
-const workflowAssertions = [
+// Regex shared by both checkout-ref assertions.
+const checkoutWithBlockRe =
+  /- name: Checkout\s*\n\s*uses: actions\/checkout@[^\n]+\n\s*with:\n(?<withBlock>(?:\s+[a-zA-Z0-9_-]+:\s*[^\n]+\n)+)/;
+
+// Regex shared by both single-checkout assertions.
+const checkoutStepRe = /^[ \t]*-?[ \t]*uses:[ \t]*['"]?actions\/checkout@/gm;
+
+const aiReviewAssertions = [
   {
     test: (workflow) => {
-      const checkoutStep = workflow.match(
-        /- name: Checkout\s*\n\s*uses: actions\/checkout@[^\n]+\n\s*with:\n(?<withBlock>(?:\s+[a-zA-Z0-9_-]+:\s*[^\n]+\n)+)/,
-      );
-
+      const checkoutStep = workflow.match(checkoutWithBlockRe);
       return (
         checkoutStep?.groups?.withBlock
           ?.split(/\r?\n/)
@@ -128,14 +151,7 @@ const workflowAssertions = [
   },
   {
     test: (workflow) => {
-      // Anchor on line start so YAML comments (`# uses: actions/checkout@...`)
-      // and arbitrary text inside `run:` scripts are not counted as steps.
-      // Optional leading `-` covers the inline `- uses: ...` step form.
-      // Optional surrounding quote covers double- and single-quoted scalar
-      // values (`uses: "actions/checkout@..."`).
-      const matches = workflow.match(
-        /^[ \t]*-?[ \t]*uses:[ \t]*['"]?actions\/checkout@/gm,
-      );
+      const matches = workflow.match(checkoutStepRe);
       return (matches?.length ?? 0) === 1;
     },
     message:
@@ -143,9 +159,39 @@ const workflowAssertions = [
   },
 ];
 
+const prGuardAssertions = [
+  {
+    test: (workflow) => {
+      const checkoutStep = workflow.match(checkoutWithBlockRe);
+      return (
+        checkoutStep?.groups?.withBlock
+          ?.split(/\r?\n/)
+          .some((line) =>
+            /^ref:\s*\$\{\{\s*inputs\.ref\s*\|\|\s*github\.event\.repository\.default_branch\s*\}\}\s*$/.test(
+              line.trim(),
+            ),
+          ) ?? false
+      );
+    },
+    message:
+      "PR Guard checkout must use ref: ${{ inputs.ref || github.event.repository.default_branch }} so gate scripts run from trusted main.",
+  },
+  {
+    test: (workflow) => {
+      const matches = workflow.match(checkoutStepRe);
+      return (matches?.length ?? 0) === 1;
+    },
+    message:
+      "PR Guard workflow must contain exactly one actions/checkout step. A second checkout could overwrite gate scripts after the trusted default-branch checkout.",
+  },
+];
+
 failures.push(
-  ...workflowAssertions
+  ...aiReviewAssertions
     .filter(({ test }) => !test(aiReviewWorkflow))
+    .map(({ message }) => message),
+  ...prGuardAssertions
+    .filter(({ test }) => !test(prGuardWorkflow))
     .map(({ message }) => message),
 );
 

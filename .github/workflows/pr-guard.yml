@@ -36,7 +36,11 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.ref || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ inputs.ref || github.event.repository.default_branch }}
+
+      - name: Fetch PR head
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin ${{ github.event.pull_request.head.sha }}
 
       - name: Resolve diff refs
         shell: bash
@@ -53,6 +57,11 @@ jobs:
 
           echo "BASE_REF=$base_ref" >> "$GITHUB_ENV"
           echo "HEAD_REF=$head_ref" >> "$GITHUB_ENV"
+
+      - name: Overlay PR specs into working tree
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: git checkout "$HEAD_REF" -- specs/ 2>/dev/null || true
 
       - name: Check docs coverage for product and infra changes
         shell: bash
@@ -120,4 +129,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate baseline files
-        run: pnpm run check:repo
+        run: node scripts/check-static-baseline.mjs --head-ref "$HEAD_REF"
