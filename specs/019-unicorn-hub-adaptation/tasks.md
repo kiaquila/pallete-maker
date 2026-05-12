@@ -11,6 +11,7 @@
 - [x] Add tests for new helper behavior.
 - [x] Run `pnpm run preflight`.
 - [x] Patch OSV-reported `fast-uri` transitive advisory and re-run preflight.
+- [x] Add first-install fallback for `ai-review-rerun.yml`.
 - [ ] Push branch and open PR.
 - [ ] Trigger Codex review.
 
@@ -25,3 +26,6 @@
   code.
 - `fast-uri@3.1.2` is younger than the normal 7-day release-age guard, so this
   PR adds a targeted `minimumReleaseAgeExclude` entry for `fast-uri` only.
+- `ai-review-rerun.yml` can fire before this PR is merged, but its trusted
+  checkout points at `main`; until the script exists on `main`, it must skip
+  instead of failing the PR.

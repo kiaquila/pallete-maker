@@ -37,7 +37,12 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Rerun AI Review for trusted evidence
-        run: node scripts/ai-review-rerun.mjs
+        run: |
+          if [ -f scripts/ai-review-rerun.mjs ]; then
+            node scripts/ai-review-rerun.mjs
+          else
+            echo "::warning::Trusted rerun script is missing on the default branch; skipping first-install bootstrap event."
+          fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
           AI_REVIEW_AGENT: ${{ vars.AI_REVIEW_AGENT }}
