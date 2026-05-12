@@ -3,11 +3,15 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathMatches, readConfig } from "./shared.mjs";
 
 const args = process.argv.slice(2);
 const inspectWorktree = args.includes("--worktree");
 const filteredArgs = args.filter((arg) => arg !== "--worktree");
 const repoRoot = resolve(process.cwd());
+const config = readConfig(repoRoot);
+const specsDir = config.specsDir || "specs";
+const productPaths = config.productPaths || [];
 
 const git = (args) =>
   execFileSync("git", args, {
@@ -54,19 +58,7 @@ const changedFiles = git(diffArgs)
 
 // Build-contract and repository-owned orchestration changes should participate
 // in the same feature-memory rule as UI code.
-const isProductPath = (file) =>
-  file === "index.html" ||
-  file === "package.json" ||
-  file === "pnpm-lock.yaml" ||
-  file === "pnpm-workspace.yaml" ||
-  file === "vercel.json" ||
-  file === ".htmlvalidate.json" ||
-  file.startsWith(".github/workflows/") ||
-  file.startsWith("scripts/") ||
-  file.startsWith("src/") ||
-  file.startsWith("app/") ||
-  file.startsWith("public/") ||
-  file.startsWith("assets/");
+const isProductPath = (file) => pathMatches(file, productPaths);
 
 if (!changedFiles.some(isProductPath)) {
   console.log("No product paths changed; feature-memory gate passes.");
@@ -76,7 +68,8 @@ if (!changedFiles.some(isProductPath)) {
 const featureIds = new Set();
 
 for (const file of changedFiles) {
-  const match = file.match(/^specs\/([^/]+)\//);
+  const escapedSpecsDir = specsDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = file.match(new RegExp(`^${escapedSpecsDir}/([^/]+)/`));
   if (!match) {
     continue;
   }
@@ -89,9 +82,9 @@ const isSha = /^[0-9a-f]{40}$/i.test(headRef);
 const hasCompleteFeatureMemory = (featureId) => {
   if (!isSha) {
     return (
-      existsSync(resolve(repoRoot, "specs", featureId, "spec.md")) &&
-      existsSync(resolve(repoRoot, "specs", featureId, "plan.md")) &&
-      existsSync(resolve(repoRoot, "specs", featureId, "tasks.md"))
+      existsSync(resolve(repoRoot, specsDir, featureId, "spec.md")) &&
+      existsSync(resolve(repoRoot, specsDir, featureId, "plan.md")) &&
+      existsSync(resolve(repoRoot, specsDir, featureId, "tasks.md"))
     );
   }
   const existsAtRef = (relPath) => {
@@ -106,9 +99,9 @@ const hasCompleteFeatureMemory = (featureId) => {
     }
   };
   return (
-    existsAtRef(`specs/${featureId}/spec.md`) &&
-    existsAtRef(`specs/${featureId}/plan.md`) &&
-    existsAtRef(`specs/${featureId}/tasks.md`)
+    existsAtRef(`${specsDir}/${featureId}/spec.md`) &&
+    existsAtRef(`${specsDir}/${featureId}/plan.md`) &&
+    existsAtRef(`${specsDir}/${featureId}/tasks.md`)
   );
 };
 
@@ -116,7 +109,7 @@ const validFeature = [...featureIds].find(hasCompleteFeatureMemory);
 
 if (validFeature) {
   console.log(
-    `Feature-memory gate passed via specs/${validFeature}/{spec,plan,tasks}.md`,
+    `Feature-memory gate passed via ${specsDir}/${validFeature}/{spec,plan,tasks}.md`,
   );
   process.exit(0);
 }
@@ -125,7 +118,7 @@ console.error(
   "Product paths changed without a complete feature-memory update.",
 );
 console.error(
-  "Touch one specs/<feature-id>/ folder with spec.md, plan.md, and tasks.md in the same PR.",
+  `Touch one ${specsDir}/<feature-id>/ folder with spec.md, plan.md, and tasks.md in the same PR.`,
 );
 
 if (featureIds.size > 0) {

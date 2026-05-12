@@ -5,9 +5,9 @@
 `pallete-maker` is a lightweight personal web app for creating and exporting color palettes. It lets a user:
 
 - browse a fixed palette of 51 curated colors and pick a base color
-- automatically see which colors are compatible based on an internal harmony algorithm (group + temperature rules)
+- automatically see which colors are compatible based on an internal harmony algorithm (group rules with temperature used for final sectioning)
 - assemble a palette of **up to 15 colors** (`MAX_TOTAL = 15`, `MAX_CHROMATIC = 12` in `src/scripts/harmony.mjs`; 12 chromatic + 3 achromatic)
-- preview the selection in a bottom drawer, sorted achromatics-first
+- preview the selection in a bottom drawer grouped into Warm / Cool / Universal
 - export the palette as a PNG image via html2canvas
 
 > This file is the canonical source of truth for product facts (palette size, composition). Other docs reference this.

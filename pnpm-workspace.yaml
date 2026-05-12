@@ -1,1 +1,3 @@
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - fast-uri

@@ -1,13 +1,14 @@
 # pallete-maker
 
-A personal color tool for building harmonious palettes: interactive grid up to 15 colors with LCH harmonies and PNG export.
+A personal color tool for building curated palettes: interactive grid up to 15
+colors with internal harmony rules and PNG export.
 
 [![Palette Match & Export live preview](docs_pallete_maker/screenshot.png)](https://pallete-maker.vercel.app)
 
 ## Stack
 
 - Static HTML/CSS/JS, no framework or bundler
-- Color harmony powered by [chroma-js](https://gka.github.io/chroma.js/) 2.4.2 (CDN, SRI-pinned)
+- Color harmony implemented in `src/scripts/harmony.mjs`
 - PNG export via [html2canvas](https://html2canvas.hertzen.com/) 1.4.1 (CDN, SRI-pinned)
 - Styling: Tailwind CSS pre-compiled locally
 - Inter font via Google Fonts

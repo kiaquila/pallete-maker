@@ -1,0 +1,35 @@
+{
+  "docsDir": "docs_pallete_maker",
+  "specsDir": "specs",
+  "productPaths": [
+    "index.html",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "vercel.json",
+    ".htmlvalidate.json",
+    ".github/workflows/",
+    "scripts/",
+    "src/",
+    "app/",
+    "public/",
+    "assets/"
+  ],
+  "requiredChecks": ["baseline-checks", "guard", "AI Review"],
+  "defaultBaseBranch": "main",
+  "defaultImplementationAgent": "claude",
+  "defaultReviewAgent": "codex",
+  "profile": "static-vercel",
+  "commands": {
+    "install": "pnpm install --frozen-lockfile",
+    "check": "pnpm run check:repo",
+    "test": "pnpm run test",
+    "build": "pnpm run build",
+    "preflight": "pnpm run preflight"
+  },
+  "deploy": {
+    "type": "vercel-git",
+    "preview": "pull_request",
+    "production": "merge_to_main"
+  }
+}

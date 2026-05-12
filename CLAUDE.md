@@ -1,12 +1,15 @@
 # pallete-maker
 
-Персональный инструмент для создания цветовых палитр: выбор базового цвета, построение гармоничной палитры до 15 цветов (12 хроматических + 3 ахроматических) с проверкой LCH-гармоний и экспортом в PNG.
+Персональный инструмент для создания цветовых палитр: выбор базового цвета,
+построение гармоничной палитры до 15 цветов (12 хроматических + 3
+ахроматических) через локальные group-based harmony rules и экспортом в PNG.
 
 ## Текущий стек
 
-- Статический HTML/CSS/JS
-- chroma-js 2.4.2 и html2canvas 1.4.1 через CDN
-- Tailwind CSS через CDN
+- Статический HTML/CSS/JS без framework/bundler
+- Локальная harmony-логика в `src/scripts/harmony.mjs`
+- html2canvas 1.4.1 через CDN с SRI
+- Tailwind CSS precompiled locally
 - Vercel Git integration для preview и production deploy
 - GitHub Actions для CI, guard и AI review orchestration
 - `.specify/`, `docs_pallete_maker/` и `specs/` как repository memory
