@@ -188,6 +188,33 @@ describe("AI Review run selection", () => {
     );
   });
 
+  test("does not rerun an older failure after a newer success", () => {
+    const decision = selectAiReviewRun(
+      [
+        {
+          id: 1,
+          event: "pull_request",
+          head_sha: HEAD_SHA,
+          status: "completed",
+          conclusion: "failure",
+          created_at: "2026-05-12T10:00:00Z",
+        },
+        {
+          id: 2,
+          event: "pull_request",
+          head_sha: HEAD_SHA,
+          status: "completed",
+          conclusion: "success",
+          created_at: "2026-05-12T10:01:00Z",
+        },
+      ],
+      HEAD_SHA,
+    );
+
+    assert.equal(decision.action, "already_success");
+    assert.equal(decision.run.id, 2);
+  });
+
   test("requests a rerun for the selected failed pull_request run", async () => {
     const calls = [];
     const request = async (_token, _repository, path, options = {}) => {

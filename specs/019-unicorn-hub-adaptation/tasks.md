@@ -12,6 +12,7 @@
 - [x] Run `pnpm run preflight`.
 - [x] Patch OSV-reported `fast-uri` transitive advisory and re-run preflight.
 - [x] Add first-install fallback for `ai-review-rerun.yml`.
+- [x] Address Codex P2 feedback about stale failed reruns after newer success.
 - [ ] Push branch and open PR.
 - [ ] Trigger Codex review.
 
@@ -29,3 +30,5 @@
 - `ai-review-rerun.yml` can fire before this PR is merged, but its trusted
   checkout points at `main`; until the script exists on `main`, it must skip
   instead of failing the PR.
+- Codex flagged that rerun selection must treat the newest successful
+  `AI Review` run as authoritative over older failures for the same head SHA.
