@@ -5,8 +5,8 @@
 - [x] Inspect `unicorn-hub` and compare it with `pallete-maker`.
 - [x] Refresh docs that mention obsolete chroma/LCH/Tailwind CDN or single-file
       architecture.
-- [ ] Add Unicorn Hub config and shared helpers.
-- [ ] Add SENAR PR/spec templates.
+- [x] Add Unicorn Hub config and shared helpers.
+- [x] Add SENAR PR/spec templates.
 - [ ] Add event-driven AI Review rerun scripts and workflow.
 - [ ] Add tests for new helper behavior.
 - [ ] Run `pnpm run preflight`.

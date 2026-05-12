@@ -36,6 +36,11 @@ const requiredFiles = [
   "AGENTS.md",
   "CLAUDE.md",
   ".specify/memory/constitution.md",
+  ".specify/templates/checklist-template.md",
+  ".specify/templates/plan-template.md",
+  ".specify/templates/spec-template.md",
+  ".specify/templates/tasks-template.md",
+  ".unicorn-hub/config.json",
   "index.html",
   "favicon.svg",
   "apple-touch-icon.png",
@@ -58,6 +63,7 @@ const requiredFiles = [
   "src/styles/input.css",
   "tailwind.config.cjs",
   "scripts/check-feature-memory.mjs",
+  "scripts/shared.mjs",
   "scripts/set-implementation-agent.mjs",
   "scripts/new-worktree.mjs",
   "scripts/start-implementation-worker.mjs",
@@ -66,6 +72,7 @@ const requiredFiles = [
   ".github/workflows/pr-guard.yml",
   ".github/workflows/ai-review.yml",
   ".github/workflows/ai-command-policy.yml",
+  ".github/pull_request_template.md",
 ];
 
 const requiredDirs = ["specs"];
