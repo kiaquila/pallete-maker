@@ -31,6 +31,7 @@
   },
   "pnpm": {
     "overrides": {
+      "fast-uri": ">=3.1.2",
       "postcss": ">=8.5.10"
     }
   }
