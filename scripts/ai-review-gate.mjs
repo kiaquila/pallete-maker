@@ -14,6 +14,7 @@ import {
 const token = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
 const eventPath = process.env.GITHUB_EVENT_PATH;
+const explicitHeadSha = process.env.AI_REVIEW_HEAD_SHA;
 const selectedAgent = (process.env.AI_REVIEW_AGENT || "codex")
   .trim()
   .toLowerCase();
@@ -170,7 +171,13 @@ if (!prNumber) {
 }
 
 const pull = await request(`/repos/${owner}/${repo}/pulls/${prNumber}`);
-const headSha = pull.head.sha;
+const headSha = explicitHeadSha || pull.head.sha;
+if (explicitHeadSha && explicitHeadSha !== pull.head.sha) {
+  console.log(
+    `AI Review gate skipped stale run for ${explicitHeadSha}; current PR head is ${pull.head.sha}.`,
+  );
+  process.exit(0);
+}
 const markerAgentLine = `AI_REVIEW_AGENT: ${selectedAgent}`;
 const markerShaLine = `AI_REVIEW_SHA: ${headSha}`;
 const metadataMarker = `<!-- ai-review-gate:agent=${selectedAgent};sha=${headSha} -->`;

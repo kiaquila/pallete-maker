@@ -7,7 +7,7 @@
       architecture.
 - [x] Add Unicorn Hub config and shared helpers.
 - [x] Add SENAR PR/spec templates.
-- [ ] Add event-driven AI Review rerun scripts and workflow.
+- [x] Add event-driven AI Review rerun scripts and workflow.
 - [ ] Add tests for new helper behavior.
 - [ ] Run `pnpm run preflight`.
 - [ ] Push branch and open PR.

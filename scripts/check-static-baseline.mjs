@@ -64,6 +64,8 @@ const requiredFiles = [
   "tailwind.config.cjs",
   "scripts/check-feature-memory.mjs",
   "scripts/shared.mjs",
+  "scripts/ai-command-policy.mjs",
+  "scripts/ai-review-rerun.mjs",
   "scripts/set-implementation-agent.mjs",
   "scripts/new-worktree.mjs",
   "scripts/start-implementation-worker.mjs",
@@ -71,6 +73,7 @@ const requiredFiles = [
   ".github/workflows/ci.yml",
   ".github/workflows/pr-guard.yml",
   ".github/workflows/ai-review.yml",
+  ".github/workflows/ai-review-rerun.yml",
   ".github/workflows/ai-command-policy.yml",
   ".github/pull_request_template.md",
 ];

@@ -47,8 +47,10 @@ pallete-maker/
 │   ├── start-implementation-worker.mjs # Prompt preparation helper
 │   ├── publish-branch.mjs              # Push branch and open or reuse PR
 │   ├── resolve-pr-context.mjs          # Pull request context resolver for workflows
+│   ├── ai-command-policy.mjs           # Trusted AI command validation + review rerun marker
 │   ├── ai-review-gate.mjs              # Review gate for Codex/Claude/Gemini
 │   ├── ai-review-helpers.mjs           # Shared review evidence helpers
+│   ├── ai-review-rerun.mjs             # Event-driven AI Review rerun helper
 │   └── switch-review-agent.mjs         # One-shot review backend switcher (posts human trigger comment for all three agents)
 ├── docs_pallete_maker/
 │   ├── README.md                       # Durable docs index
@@ -81,6 +83,9 @@ pallete-maker/
   - review: `codex` (switched from `gemini` on 2026-04-17; see `docs_pallete_maker/project/devops/ai-orchestration-protocol.md` for the canonical description)
 - Claude is the default implementation agent because it owns architecture, orchestration, CI/CD health, and repository memory, and is driven from the user's local Claude Code terminal session.
 - Codex is the current default review backend via `@codex review` triggers on PR comments.
+- `AI Command Policy` records trusted review-request markers and
+  `AI Review Rerun` reruns the required check when trusted reviewer evidence
+  appears.
 - Gemini review stays wired via Gemini Code Assist GitHub App; switch with `pnpm run review:switch -- --to gemini`.
 - Claude review workflow (`claude-review.yml`) is **currently non-operational** (dead code pending cleanup PR; no `ANTHROPIC_API_KEY` configured, local runner rolled back).
 

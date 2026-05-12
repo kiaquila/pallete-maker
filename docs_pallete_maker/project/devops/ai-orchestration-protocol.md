@@ -78,12 +78,13 @@ Review normalization behavior:
 - `codex` is the current default review backend; `@codex review` from a trusted
   human posts a native PR review
 - pull-request `AI Review` runs support `codex`, `gemini`, and `claude`
-- manual Gemini and Codex review comments stay native-only to avoid canceling
-  the PR-linked `AI Review` check
-- trusted human review commands dispatch the shared `AI Review` gate via
-  `workflow_dispatch` only for `claude` (currently non-operational, see above)
-- the gate may reuse an existing same-head native review when a PR-linked
-  `AI Review` run is rerun
+- manual review comments stay native-only; `AI Command Policy` records a
+  trusted marker for the current head SHA and requests an `AI Review` rerun
+  when a failed run exists
+- `AI Review Rerun` listens for trusted reviewer output and reruns the required
+  check after evidence appears
+- the gate may reuse an existing same-head native review or accepted Codex
+  summary when a PR-linked `AI Review` run is rerun
 
 Only trusted actors may trigger AI workflows:
 
