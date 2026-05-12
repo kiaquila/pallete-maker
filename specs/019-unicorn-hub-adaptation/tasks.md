@@ -14,8 +14,11 @@
 - [x] Add first-install fallback for `ai-review-rerun.yml`.
 - [x] Address Codex P2 feedback about stale failed reruns after newer success.
 - [x] Address Codex P1 feedback about newer evidence after existing pass.
-- [ ] Push branch and open PR.
-- [ ] Trigger Codex review.
+- [x] Address local reviewer feedback (architect HIGH: drop inline rerun in
+      `ai-command-policy`; code-reviewer HIGH: ignore `comment.updated_at` to
+      prevent edit-spam reruns; security MEDIUM: enforce `[bot]` suffix on
+      user-supplied trusted review logins).
+- [ ] Trigger Codex review on the latest revision.
 
 ## Process Memory
 
@@ -35,3 +38,9 @@
   `AI Review` run as authoritative over older failures for the same head SHA.
 - Codex then flagged the inverse edge case: if trusted review evidence is newer
   than the latest green run, rerun the gate even if that latest run succeeded.
+- Local review pass surfaced three convergent risks before merge: an inline
+  rerun call in `ai-command-policy.mjs` racing the event-driven flow, comment
+  edits being counted as fresh evidence (and so spamming reruns), and the
+  trusted review login list silently accepting non-bot accounts from
+  `.unicorn-hub/config.json`. All three are fixed in this PR; the rerun path
+  now has a single source of truth in `ai-review-rerun.yml`.

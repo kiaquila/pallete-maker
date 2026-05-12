@@ -4,7 +4,6 @@ import {
   createAiReviewRequestMarkerBody,
   isTrustedAssociation,
 } from "./ai-review-helpers.mjs";
-import { rerunAiReviewForPrHead } from "./ai-review-rerun.mjs";
 import { readConfig } from "./shared.mjs";
 
 const token = process.env.GITHUB_TOKEN;
@@ -166,19 +165,6 @@ if (command.kind === "review") {
       requestedAt,
     }),
   );
-
-  try {
-    const rerunResult = await rerunAiReviewForPrHead({
-      token,
-      repository,
-      headSha,
-    });
-    console.log(rerunResult.message);
-  } catch (error) {
-    console.warn(
-      `AI Review rerun request failed after marker was recorded: ${error.message}`,
-    );
-  }
 }
 
 console.log(`Trusted AI ${command.kind} command for ${selected}.`);

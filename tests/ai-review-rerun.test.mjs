@@ -4,9 +4,12 @@ import {
   createAiReviewRequestMarkerBody,
   extractAiReviewRequestMarker,
   isTrustedAssociation,
+  isTrustedReviewLogin,
   latestAiReviewRequestMarker,
+  trustedReviewLoginsForAgent,
 } from "../scripts/ai-review-helpers.mjs";
 import {
+  evidenceTimestamp,
   rerunAiReviewForPrHead,
   selectAiReviewRun,
   shouldRouteAiReviewRerunEvent,
@@ -101,6 +104,25 @@ describe("trusted AI review rerun routing", () => {
         "codex",
       ),
       false,
+    );
+  });
+
+  test("only accepts bot-suffixed logins from user config when expanding the trusted set", () => {
+    const config = {
+      trustedReviewLogins: ["kiaquila", "rogue-account[bot]"],
+      trustedReviewLoginsByAgent: { codex: ["another-human"] },
+    };
+
+    const logins = trustedReviewLoginsForAgent("codex", config);
+    assert.equal(logins.has("chatgpt-codex-connector[bot]"), true);
+    assert.equal(logins.has("rogue-account[bot]"), true);
+    assert.equal(logins.has("kiaquila"), false);
+    assert.equal(logins.has("another-human"), false);
+
+    assert.equal(isTrustedReviewLogin("kiaquila", "codex", config), false);
+    assert.equal(
+      isTrustedReviewLogin("rogue-account[bot]", "codex", config),
+      true,
     );
   });
 
@@ -233,6 +255,27 @@ describe("AI Review run selection", () => {
 
     assert.equal(decision.action, "rerun");
     assert.equal(decision.run.id, 1);
+  });
+
+  test("ignores comment edits when picking evidence timestamps", () => {
+    assert.equal(
+      evidenceTimestamp({
+        comment: {
+          created_at: "2026-05-12T10:00:00Z",
+          updated_at: "2026-05-12T11:30:00Z",
+        },
+      }),
+      "2026-05-12T10:00:00Z",
+    );
+
+    assert.equal(
+      evidenceTimestamp({
+        review: { submitted_at: "2026-05-12T10:05:00Z" },
+      }),
+      "2026-05-12T10:05:00Z",
+    );
+
+    assert.equal(evidenceTimestamp({}), "");
   });
 
   test("requests a rerun for the selected failed pull_request run", async () => {

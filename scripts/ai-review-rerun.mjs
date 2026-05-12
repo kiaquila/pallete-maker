@@ -217,13 +217,8 @@ async function resolvePullContext({
   };
 }
 
-function evidenceTimestamp(event) {
-  return (
-    event?.review?.submitted_at ||
-    event?.comment?.updated_at ||
-    event?.comment?.created_at ||
-    ""
-  );
+export function evidenceTimestamp(event) {
+  return event?.review?.submitted_at || event?.comment?.created_at || "";
 }
 
 async function main() {

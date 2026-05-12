@@ -96,14 +96,19 @@ const defaultTrustedReviewLogins = {
   gemini: ["gemini-code-assist[bot]"],
 };
 
+const botLoginPattern = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\[bot\]$/;
+
+const sanitizeBotLogins = (logins) =>
+  (Array.isArray(logins) ? logins : [])
+    .map(normalizeLogin)
+    .filter((login) => botLoginPattern.test(login));
+
 export const trustedReviewLoginsForAgent = (agent, config = {}) =>
-  new Set(
-    [
-      ...(defaultTrustedReviewLogins[agent] || []),
-      ...(config.trustedReviewLogins || []),
-      ...(config.trustedReviewLoginsByAgent?.[agent] || []),
-    ].map(normalizeLogin),
-  );
+  new Set([
+    ...(defaultTrustedReviewLogins[agent] || []).map(normalizeLogin),
+    ...sanitizeBotLogins(config.trustedReviewLogins),
+    ...sanitizeBotLogins(config.trustedReviewLoginsByAgent?.[agent]),
+  ]);
 
 export const isTrustedReviewLogin = (login, agent, config = {}) =>
   trustedReviewLoginsForAgent(agent, config).has(normalizeLogin(login));

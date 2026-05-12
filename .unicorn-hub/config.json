@@ -19,8 +19,6 @@
   "defaultBaseBranch": "main",
   "defaultImplementationAgent": "claude",
   "defaultReviewAgent": "codex",
-  "trustedReviewLogins": [],
-  "trustedReviewLoginsByAgent": {},
   "profile": "static-vercel",
   "commands": {
     "install": "pnpm install --frozen-lockfile",
