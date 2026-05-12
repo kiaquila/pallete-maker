@@ -215,6 +215,26 @@ describe("AI Review run selection", () => {
     assert.equal(decision.run.id, 2);
   });
 
+  test("reruns a successful run when newer review evidence arrives", () => {
+    const decision = selectAiReviewRun(
+      [
+        {
+          id: 1,
+          event: "pull_request",
+          head_sha: HEAD_SHA,
+          status: "completed",
+          conclusion: "success",
+          created_at: "2026-05-12T10:00:00Z",
+        },
+      ],
+      HEAD_SHA,
+      "2026-05-12T10:01:00Z",
+    );
+
+    assert.equal(decision.action, "rerun");
+    assert.equal(decision.run.id, 1);
+  });
+
   test("requests a rerun for the selected failed pull_request run", async () => {
     const calls = [];
     const request = async (_token, _repository, path, options = {}) => {
@@ -240,6 +260,7 @@ describe("AI Review run selection", () => {
       token: "token",
       repository: "kiaquila/pallete-maker",
       headSha: HEAD_SHA,
+      evidenceCreatedAt: "2026-05-12T10:01:00Z",
       request,
     });
 

@@ -71,7 +71,7 @@ export function shouldRouteAiReviewRerunEvent(
   return false;
 }
 
-export function selectAiReviewRun(runs = [], headSha) {
+export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = "") {
   const matchingRuns = runs
     .filter((run) => run.event === "pull_request" && run.head_sha === headSha)
     .sort(
@@ -84,9 +84,20 @@ export function selectAiReviewRun(runs = [], headSha) {
     return { action: "already_running", run: activeRun };
   }
 
+  const evidenceTime = Date.parse(evidenceCreatedAt || "");
   const latestCompletedRun = matchingRuns.find(
     (run) => run.status === "completed",
   );
+  const latestCompletedTime = Date.parse(latestCompletedRun?.created_at || "");
+  if (
+    latestCompletedRun &&
+    Number.isFinite(evidenceTime) &&
+    (!Number.isFinite(latestCompletedTime) ||
+      latestCompletedTime < evidenceTime)
+  ) {
+    return { action: "rerun", run: latestCompletedRun };
+  }
+
   if (latestCompletedRun?.conclusion === "success") {
     return { action: "already_success", run: latestCompletedRun };
   }
@@ -133,6 +144,7 @@ export async function rerunAiReviewForPrHead({
   token,
   repository,
   headSha,
+  evidenceCreatedAt = "",
   request = defaultRequest,
 }) {
   if (!token || !repository || !headSha) {
@@ -148,7 +160,7 @@ export async function rerunAiReviewForPrHead({
     repository,
     `/repos/${owner}/${repo}/actions/workflows/ai-review.yml/runs?event=pull_request&head_sha=${encodeURIComponent(headSha)}`,
   );
-  const selected = selectAiReviewRun(runs, headSha);
+  const selected = selectAiReviewRun(runs, headSha, evidenceCreatedAt);
 
   if (selected.action === "rerun") {
     await request(
@@ -205,6 +217,15 @@ async function resolvePullContext({
   };
 }
 
+function evidenceTimestamp(event) {
+  return (
+    event?.review?.submitted_at ||
+    event?.comment?.updated_at ||
+    event?.comment?.created_at ||
+    ""
+  );
+}
+
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPOSITORY;
@@ -232,6 +253,7 @@ async function main() {
     token,
     repository,
     headSha: context.headSha,
+    evidenceCreatedAt: evidenceTimestamp(event),
   });
   console.log(result.message);
 }

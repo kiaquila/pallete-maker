@@ -13,6 +13,7 @@
 - [x] Patch OSV-reported `fast-uri` transitive advisory and re-run preflight.
 - [x] Add first-install fallback for `ai-review-rerun.yml`.
 - [x] Address Codex P2 feedback about stale failed reruns after newer success.
+- [x] Address Codex P1 feedback about newer evidence after existing pass.
 - [ ] Push branch and open PR.
 - [ ] Trigger Codex review.
 
@@ -32,3 +33,5 @@
   instead of failing the PR.
 - Codex flagged that rerun selection must treat the newest successful
   `AI Review` run as authoritative over older failures for the same head SHA.
+- Codex then flagged the inverse edge case: if trusted review evidence is newer
+  than the latest green run, rerun the gate even if that latest run succeeded.
