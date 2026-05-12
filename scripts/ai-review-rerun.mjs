@@ -71,12 +71,18 @@ export function shouldRouteAiReviewRerunEvent(
   return false;
 }
 
+function latestRunActivityTime(run) {
+  return Date.parse(
+    run?.updated_at || run?.run_started_at || run?.created_at || "",
+  );
+}
+
 export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = "") {
   const matchingRuns = runs
     .filter((run) => run.event === "pull_request" && run.head_sha === headSha)
     .sort(
       (left, right) =>
-        Date.parse(right.created_at || "") - Date.parse(left.created_at || ""),
+        latestRunActivityTime(right) - latestRunActivityTime(left),
     );
 
   const activeRun = matchingRuns.find((run) => activeStatuses.has(run.status));
@@ -88,7 +94,7 @@ export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = "") {
   const latestCompletedRun = matchingRuns.find(
     (run) => run.status === "completed",
   );
-  const latestCompletedTime = Date.parse(latestCompletedRun?.created_at || "");
+  const latestCompletedTime = latestRunActivityTime(latestCompletedRun);
   if (
     latestCompletedRun &&
     Number.isFinite(evidenceTime) &&

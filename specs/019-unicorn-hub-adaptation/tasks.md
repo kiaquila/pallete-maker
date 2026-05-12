@@ -18,6 +18,10 @@
       `ai-command-policy`; code-reviewer HIGH: ignore `comment.updated_at` to
       prevent edit-spam reruns; security MEDIUM: enforce `[bot]` suffix on
       user-supplied trusted review logins).
+- [x] Address Codex P2 feedback about workflow run `created_at` being immutable
+      across reruns: compare evidence against `updated_at`/`run_started_at` so
+      that a completed rerun makes the same evidence comment stop looking
+      "newer" than the latest pass.
 - [ ] Trigger Codex review on the latest revision.
 
 ## Process Memory
@@ -44,3 +48,11 @@
   trusted review login list silently accepting non-bot accounts from
   `.unicorn-hub/config.json`. All three are fixed in this PR; the rerun path
   now has a single source of truth in `ai-review-rerun.yml`.
+- Codex P2 on commit 36269c5 caught the deeper version of the edit-spam: a
+  workflow run's `created_at` is immutable, while `run_attempt` /
+  `run_started_at` / `updated_at` advance after each rerun. Without using one
+  of the advancing timestamps, an evidence comment created after the original
+  AI Review run will keep looking "newer" forever. Selection now compares
+  against `updated_at` (falling back to `run_started_at`, then `created_at`)
+  so that once a rerun completes, the same evidence stops triggering more
+  reruns.

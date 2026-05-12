@@ -257,6 +257,28 @@ describe("AI Review run selection", () => {
     assert.equal(decision.run.id, 1);
   });
 
+  test("treats `updated_at` as the latest run activity to suppress post-rerun edit storms", () => {
+    const decision = selectAiReviewRun(
+      [
+        {
+          id: 1,
+          event: "pull_request",
+          head_sha: HEAD_SHA,
+          status: "completed",
+          conclusion: "success",
+          created_at: "2026-05-12T09:00:00Z",
+          run_started_at: "2026-05-12T10:30:00Z",
+          updated_at: "2026-05-12T10:30:30Z",
+        },
+      ],
+      HEAD_SHA,
+      "2026-05-12T10:00:00Z",
+    );
+
+    assert.equal(decision.action, "already_success");
+    assert.equal(decision.run.id, 1);
+  });
+
   test("ignores comment edits when picking evidence timestamps", () => {
     assert.equal(
       evidenceTimestamp({
