@@ -59,9 +59,9 @@
 
 ## Документация
 
-- Конституция процесса: `.specify/memory/constitution.md`
-- Карта docs: `docs_pallete_maker/README.md`
-- Идея проекта: `docs_pallete_maker/project-idea.md`
+- Конституция процесса: @.specify/memory/constitution.md
+- Карта docs: @docs_pallete_maker/README.md
+- Идея проекта: @docs_pallete_maker/project-idea.md
 - Frontend: `docs_pallete_maker/project/frontend/frontend-docs.md`
 - Orchestration: `docs_pallete_maker/project/devops/ai-orchestration-protocol.md`
 - PR loop: `docs_pallete_maker/project/devops/ai-pr-workflow.md`
