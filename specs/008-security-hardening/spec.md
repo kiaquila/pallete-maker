@@ -29,7 +29,7 @@ The vibecode.morecil.ru/ru wiki review (2026-04-17) surfaced OSV Scanner, SHA-pi
 
 - `vercel.json` declares `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` for `/(.*)`.
 - `.github/workflows/osv-scan.yml` present, triggers on `pull_request`, `push` to `main`, weekly cron, and `workflow_dispatch`; uses pinned SHA for `google/osv-scanner-action`.
-- `.github/dependabot.yml` configures `github-actions` and `npm` with weekly interval and cooldown (default 7, major 14, minor 7, patch 3 days).
+- `.github/dependabot.yml` configures `github-actions` and `npm` with a weekly interval and a 7-day default cooldown; `npm` additionally uses 14 days for major, 7 for minor, and 3 for patch updates, while `github-actions` uses the default cooldown only. Minor and patch updates are grouped per ecosystem.
 - `anthropics/claude-code-action` pinned to SHA in `claude-agent.yml` and `claude-review.yml`.
 - `docs_pallete_maker/project/devops/vercel-cd.md` documents headers and supply-chain hygiene.
 - All existing checks pass: `pnpm run ci`, PR Guard (docs coverage + feature memory), OSV Scan, AI Review.
