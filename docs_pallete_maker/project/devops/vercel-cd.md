@@ -70,8 +70,10 @@ is a future improvement.
   Google's Open Source Vulnerabilities database and fails the check on any
   known CVE. Broader coverage than `npm audit`.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly update PRs for
-  `github-actions` and `npm` ecosystems with a 7-day cooldown on new
-  releases (14 days for major bumps, 3 for patches). The cooldown protects
+  `github-actions` and `npm` ecosystems with a 7-day default cooldown on new
+  releases. The `npm` ecosystem additionally uses 14 days for major bumps and
+  3 days for patches; `github-actions` uses only the default cooldown.
+  Minor and patch updates are grouped per ecosystem. The cooldown protects
   against freshly compromised releases.
 - **Pinned action SHAs.** Third-party GitHub Actions are pinned to a
   commit SHA with a trailing `# v<tag>` comment. Currently pinned:
