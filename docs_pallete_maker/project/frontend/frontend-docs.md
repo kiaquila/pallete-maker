@@ -11,7 +11,7 @@ The application is a static SPA with a modular source layout:
 - `src/scripts/harmony.mjs` — pure ES module: palette data (`PM_PALETTE`, 51 colors) and all harmony functions (`getBase`, `isDimmed`, `isCompatible`, `getGrouped`, etc.). No DOM, no global state. Functions accept `palette` as an explicit parameter for testability.
 - `src/styles/app.css` — application layout, responsive grid, drawer, swatch state, and Inter font import
 - `src/styles/tailwind.css` — pre-compiled Tailwind CSS v4 (minified); regenerate with `pnpm run build:css` after adding new utility classes
-- `src/styles/input.css` — Tailwind v4 CSS entrypoint with an explicit `index.html` source and compatibility tokens that preserve the v3 gray palette
+- `src/styles/input.css` + `tailwind.config.cjs` — Tailwind v4 CSS entrypoint with an explicit `index.html` source, the repository's JavaScript config loaded through `@config`, and compatibility tokens that preserve the v3 gray palette
 - `tests/harmony.test.mjs`, `tests/ai-review-gate-regressions.test.mjs`, and review helper tests — unit tests via `node:test` (zero extra dependencies)
 - CDN dependencies: html2canvas 1.4.1 (PNG export, with SRI hash), Inter font via `@import`
 - Picker grid responsive columns: 3 / 4 / 6 / 8 / 11 at `480 / 640 / 1024 / 1280`px breakpoints; at `≥1280px` the grid shares `max-width: 80rem` with the header content so the edges align with the PALETTE logo and DOWNLOAD PNG button.
