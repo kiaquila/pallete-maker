@@ -20,13 +20,13 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
-    "html-validate": "^10.11.3",
+    "html-validate": "^11.6.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^3.4.19"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=20",
+    "node": "^22.22.0 || >=24.8.0",
     "pnpm": ">=10.16"
   },
   "pnpm": {
