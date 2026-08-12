@@ -61,7 +61,6 @@ const requiredFiles = [
   "src/scripts/harmony.mjs",
   "src/styles/tailwind.css",
   "src/styles/input.css",
-  "tailwind.config.cjs",
   "scripts/check-feature-memory.mjs",
   "scripts/shared.mjs",
   "scripts/ai-command-policy.mjs",

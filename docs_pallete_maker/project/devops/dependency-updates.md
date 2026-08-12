@@ -13,3 +13,4 @@ validated by the repository's required checks before merge.
 | #29 | actions/checkout      | v4/v6 → 7.0.1    | GitHub Actions repository checkout |
 | #30 | pnpm/action-setup     | 4.3.0 → 6.0.10   | GitHub Actions pnpm setup          |
 | #31 | actions/github-script | 8.0.0 → 9.0.0    | GitHub Actions API scripting       |
+| #32 | Tailwind CSS + CLI    | 3.4.19 → 4.3.3   | CSS compiler and generated styles  |

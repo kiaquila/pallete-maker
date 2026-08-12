@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "agent:set": "node scripts/set-implementation-agent.mjs",
-    "build:css": "tailwindcss -i src/styles/input.css -o src/styles/tailwind.css --minify --config tailwind.config.cjs",
+    "build:css": "tailwindcss -i src/styles/input.css -o src/styles/tailwind.css --minify",
     "build": "node scripts/build-static.mjs",
     "check:feature-memory": "node scripts/check-feature-memory.mjs",
     "check:repo": "node scripts/check-static-baseline.mjs",
     "check:html": "html-validate index.html",
-    "format:check": "prettier --check \"index.html\" \"src/**/*.mjs\" \"tests/**/*.mjs\" \"tailwind.config.cjs\" \"src/styles/input.css\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_pallete_maker/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
+    "format:check": "prettier --check \"index.html\" \"src/**/*.mjs\" \"tests/**/*.mjs\" \"src/styles/input.css\" \"AGENTS.md\" \"CLAUDE.md\" \".specify/**/*.md\" \"specs/**/*.md\" \"docs_pallete_maker/**/*.md\" \".github/workflows/*.{yml,yaml}\" \".gemini/**/*.{md,yaml,yml}\" \"scripts/**/*.mjs\" \"package.json\" \"vercel.json\" \".htmlvalidate.json\"",
     "test": "node --test tests/*.test.mjs",
     "ci": "pnpm run check:repo && pnpm run check:html && pnpm run build && pnpm run format:check && pnpm run test",
     "preflight": "node scripts/check-feature-memory.mjs origin/main HEAD && pnpm run ci",
@@ -20,6 +20,7 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "html-validate": "^11.6.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3"
