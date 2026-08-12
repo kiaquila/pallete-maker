@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "html-validate": "^10.11.3",
-    "prettier": "^3.8.1",
+    "prettier": "^3.9.6",
     "tailwindcss": "^3.4.19"
   },
   "packageManager": "pnpm@10.33.0",

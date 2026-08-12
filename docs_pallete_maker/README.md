@@ -21,6 +21,7 @@
 - `project/devops/review-contract.md` — what each backend produces; severity rules.
 - `project/devops/review-trigger-automation.md` — bot-trigger rejection (Tier 1 active; design for Tier 2/3 in ADR).
 - `project/devops/delivery-playbook.md` — preview validation and production smoke.
+- `project/devops/dependency-updates.md` — reviewed dependency-update ledger.
 - `project/devops/vercel-cd.md` — Vercel deploy contract, security headers, supply-chain hygiene.
 
 **Decisions**
