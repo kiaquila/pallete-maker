@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "agent:set": "node scripts/set-implementation-agent.mjs",
-    "build:css": "tailwindcss -i src/styles/input.css -o src/styles/tailwind.css --minify --config tailwind.config.cjs",
+    "build:css": "tailwindcss -i src/styles/input.css -o src/styles/tailwind.css --minify",
     "build": "node scripts/build-static.mjs",
     "check:feature-memory": "node scripts/check-feature-memory.mjs",
     "check:repo": "node scripts/check-static-baseline.mjs",
@@ -20,9 +20,10 @@
     "worktree:new": "node scripts/new-worktree.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "html-validate": "^11.6.0",
     "prettier": "^3.9.6",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^4.3.3"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {
