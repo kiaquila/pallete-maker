@@ -9,3 +9,4 @@ validated by the repository's required checks before merge.
 | #26 | Prettier           | 3.8.1 → 3.9.6    | Development formatting tool      |
 | #27 | Claude Code Action | 1.0.99 → 1.0.185 | Inactive Claude workflow runtime |
 | #27 | OSV Scanner Action | 2.3.5 → 2.3.8    | Dependency vulnerability scan    |
+| #28 | html-validate      | 10.11.3 → 11.6.0 | Static HTML validation           |
