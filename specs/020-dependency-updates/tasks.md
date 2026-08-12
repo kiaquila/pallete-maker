@@ -7,4 +7,5 @@
 - [x] PR #30: validate and document pnpm/action-setup 4.3.0 → 6.0.10.
 - [x] PR #31: validate and document actions/github-script 8.0.0 → 9.0.0.
 - [x] PR #32: migrate Tailwind CSS and its CLI from 3.4.19 → 4.3.3, preserve the v3 visual tokens, then regenerate the committed stylesheet.
-- [ ] Process subsequent dependency PRs in ascending PR-number order.
+- [x] PR #33: validate and document actions/setup-node 4.4.0 → 7.0.0.
+- [x] Process dependency PRs #26–#33 in ascending PR-number order.
