@@ -16,8 +16,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       html-validate:
-        specifier: ^11.6.0
-        version: 11.6.0
+        specifier: ^11.6.2
+        version: 11.6.2
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
@@ -267,16 +267,16 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  html-validate@11.6.0:
-    resolution: {integrity: sha512-VKoRiWBqV9g5M1sb3H0WimxAM6UCNTv6JbovEmNEtBWKVK/W5fKCY++EM4shkS92FypBwnGMlBymeo9Tlyiqxw==}
+  html-validate@11.6.2:
+    resolution: {integrity: sha512-dlAAEeWOOdv9ya/n3pdSFTzzzGlrw+ZI43J/39zBgCSqzSg24lyqrouuBP9MEkSFAtXVZm64F35mlL7m43jCNA==}
     engines: {node: ^22.22.0 || >= 24.8.0}
     hasBin: true
     peerDependencies:
       '@jest/globals': ^29.0.3 || ^30.0.0
-      '@vitest/expect': ^3.0.0 || ^4.0.1
+      '@vitest/expect': ^3.2.0 || ^4.0.1
       jest: ^29.0.3 || ^30.0.0
       jest-snapshot: ^29.0.3 || ^30.0.0
-      vitest: ^3.0.0 || ^4.0.1
+      vitest: ^3.2.0 || ^4.0.1
     peerDependenciesMeta:
       '@jest/globals':
         optional: true
@@ -635,7 +635,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  html-validate@11.6.0:
+  html-validate@11.6.2:
     dependencies:
       '@html-validate/stylish': 6.0.0
       '@sidvind/better-ajv-errors': 7.0.0(ajv@8.20.0)
