@@ -107,7 +107,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude implementation agent
-        uses: anthropics/claude-code-action@9db594c7a0e82298c121c18b7f08aa1579ce7341 # v1
+        uses: anthropics/claude-code-action@459ad358ae43fea66bfefd0a1f8d840b4b9791fb # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
