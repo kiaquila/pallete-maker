@@ -8,4 +8,7 @@
 - [x] PR #31: validate and document actions/github-script 8.0.0 → 9.0.0.
 - [x] PR #32: migrate Tailwind CSS and its CLI from 3.4.19 → 4.3.3, preserve the v3 visual tokens, then regenerate the committed stylesheet.
 - [x] PR #33: validate and document actions/setup-node 4.4.0 → 7.0.0.
+- [x] PR #34: validate and document html-validate 11.6.0 → 11.6.2; raise the
+      fast-uri override to ≥4.1.3 to remove the OSV-reported vulnerable
+      transitive version.
 - [x] Process dependency PRs #26–#33 in ascending PR-number order.

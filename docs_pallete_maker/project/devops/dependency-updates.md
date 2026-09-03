@@ -15,3 +15,4 @@ validated by the repository's required checks before merge.
 | #31 | actions/github-script | 8.0.0 → 9.0.0    | GitHub Actions API scripting       |
 | #32 | Tailwind CSS + CLI    | 3.4.19 → 4.3.3   | CSS compiler and generated styles  |
 | #33 | actions/setup-node    | 4.4.0 → 7.0.0    | GitHub Actions Node.js setup       |
+| #34 | html-validate         | 11.6.0 → 11.6.2  | Development HTML validation tool   |
