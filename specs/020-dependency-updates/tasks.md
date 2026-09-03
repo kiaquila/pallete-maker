@@ -11,4 +11,6 @@
 - [x] PR #34: validate and document html-validate 11.6.0 → 11.6.2; raise the
       fast-uri override to ≥4.1.3 to remove the OSV-reported vulnerable
       transitive version.
-- [x] Process dependency PRs #26–#33 in ascending PR-number order.
+- [x] PR #35: validate and document Claude Code Action 1.0.185 → 1.0.194 and
+      OSV Scanner Action 2.3.8 → 2.5.1.
+- [x] Process dependency PRs #26–#35 in ascending PR-number order.
