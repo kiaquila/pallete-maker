@@ -16,8 +16,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       html-validate:
-        specifier: ^11.6.2
-        version: 11.6.2
+        specifier: ^11.11.0
+        version: 11.11.0
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
@@ -267,8 +267,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  html-validate@11.6.2:
-    resolution: {integrity: sha512-dlAAEeWOOdv9ya/n3pdSFTzzzGlrw+ZI43J/39zBgCSqzSg24lyqrouuBP9MEkSFAtXVZm64F35mlL7m43jCNA==}
+  html-validate@11.11.0:
+    resolution: {integrity: sha512-ta6WyTPBO6/qj9OdlwW4p9rcArFWaMV4eiiYzfrrypnfSQP+VOHorkJBem1/UBhuahNB4G/YItX9Fkk8eK3rQg==}
     engines: {node: ^22.22.0 || >= 24.8.0}
     hasBin: true
     peerDependencies:
@@ -635,7 +635,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  html-validate@11.6.2:
+  html-validate@11.11.0:
     dependencies:
       '@html-validate/stylish': 6.0.0
       '@sidvind/better-ajv-errors': 7.0.0(ajv@8.20.0)
