@@ -13,4 +13,5 @@
       transitive version.
 - [x] PR #35: validate and document Claude Code Action 1.0.185 → 1.0.194 and
       OSV Scanner Action 2.3.8 → 2.5.1.
-- [x] Process dependency PRs #26–#35 in ascending PR-number order.
+- [x] PR #36: validate and document Claude Code Action 1.0.194 → 1.0.211.
+- [x] Process dependency PRs #26–#36 in ascending PR-number order.
