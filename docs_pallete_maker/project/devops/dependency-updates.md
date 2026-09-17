@@ -22,3 +22,4 @@ validated by the repository's required checks before merge.
 | #37 | html-validate         | 11.6.2 → 11.11.0  | Development HTML validation tool   |
 | #38 | pnpm/action-setup     | 6.0.10 → 6.1.0    | GitHub Actions pnpm setup          |
 | #38 | Claude Code Action    | 1.0.211 → 1.0.217 | Inactive Claude workflow runtime   |
+| #39 | html-validate         | 11.11.0 → 11.14.0 | Development HTML validation tool   |
