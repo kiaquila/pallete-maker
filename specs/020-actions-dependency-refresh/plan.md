@@ -7,4 +7,3 @@
 3. Run repository validation and build locally.
 4. Push the same PR branch, request a fresh Codex review for the new head, and
    wait for every required check to pass.
-

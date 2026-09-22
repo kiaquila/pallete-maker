@@ -23,4 +23,3 @@ behavior:
 - `pnpm run build` still produces the static site artifact
 - required GitHub checks and the Vercel preview are green
 - Codex review has no unresolved blocking findings
-
