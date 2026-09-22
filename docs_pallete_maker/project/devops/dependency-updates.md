@@ -23,3 +23,6 @@ validated by the repository's required checks before merge.
 | #38 | pnpm/action-setup     | 6.0.10 → 6.1.0    | GitHub Actions pnpm setup          |
 | #38 | Claude Code Action    | 1.0.211 → 1.0.217 | Inactive Claude workflow runtime   |
 | #39 | html-validate         | 11.11.0 → 11.14.0 | Development HTML validation tool   |
+| #40 | Claude Code Action    | 1.0.217 → 1.0.224 | Inactive Claude workflow runtime   |
+| #40 | OSV Scanner Action    | 2.5.1 → 2.6.0     | Dependency vulnerability scan      |
+| #41 | html-validate         | 11.14.0 → 11.15.0 | Development HTML validation tool   |
