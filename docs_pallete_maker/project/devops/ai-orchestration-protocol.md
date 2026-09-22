@@ -73,6 +73,16 @@ repository and do not pollute the user's `~/projects/` directory.
 - Codex review: `@codex review` on a top-level PR comment (optional fallback)
 - Claude review: `@claude review once` on a top-level PR comment (third-tier)
 
+## Workflow Dependency Maintenance
+
+Third-party GitHub Actions stay pinned to immutable commit SHAs. Dependabot
+updates those pins through normal pull requests, including pins in retained or
+temporarily non-operational workflows. Each such update must keep workflow
+permissions, triggers, inputs, and job structure unchanged unless the pull
+request explicitly documents a behavioral change. The pull request must also
+carry complete feature memory and pass the standard required checks and native
+AI review before merge.
+
 Review normalization behavior:
 
 - `codex` is the current default review backend; `@codex review` from a trusted
