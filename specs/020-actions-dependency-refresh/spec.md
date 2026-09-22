@@ -16,6 +16,7 @@ behavior:
   review workflows
 - update `google/osv-scanner-action/osv-scanner-action` to v2.6.0
 - keep all existing inputs, permissions, triggers, and job structure intact
+- document the repository policy for pinned workflow dependency maintenance
 
 ## Acceptance criteria
 
