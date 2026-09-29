@@ -12,3 +12,4 @@
 - [x] T009: Browser smoke on preview URL — user verified manually (2026-04-17). Only non-app CSP violation is Vercel's own `vercel.live/_next-live/feedback/feedback.js` preview widget, correctly blocked by our CSP; app golden path (palette select + PNG export) produces zero CSP violations.
 - [ ] T010: Merge PR #11 after all checks COMPLETED + SUCCESSFUL per `feedback_never_merge_before_review.md` — user decision.
 - [x] T011: Refresh the SHA-pinned `anthropics/claude-code-action` from 1.0.224 to 1.0.231 via Dependabot PR #42.
+- [x] T012: Refresh `html-validate` from 11.15.0 to 11.16.0 via Dependabot PR #43.

@@ -27,3 +27,4 @@ validated by the repository's required checks before merge.
 | #40 | OSV Scanner Action    | 2.5.1 → 2.6.0     | Dependency vulnerability scan      |
 | #41 | html-validate         | 11.14.0 → 11.15.0 | Development HTML validation tool   |
 | #42 | Claude Code Action    | 1.0.224 → 1.0.231 | Inactive Claude workflow runtime   |
+| #43 | html-validate         | 11.15.0 → 11.16.0 | Development HTML validation tool   |
