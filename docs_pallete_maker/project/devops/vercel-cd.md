@@ -71,9 +71,9 @@ is a future improvement.
   known CVE. Broader coverage than `npm audit`. The `@parcel/watcher@2.6.0`
   override removes the vulnerable `braces@3.0.3` dependency chain reported as
   `GHSA-vfj7-8cjw-p6xm` while no patched `braces` release exists. The lockfile
-  also pins `source-map-js@1.2.2` or newer to remediate
-  `GHSA-68fv-2mgg-jv7q`; `source-map-js` is narrowly excluded from the normal
-  release-age delay so the security fix can land before the cooldown expires.
+  also pins `source-map-js@1.2.2` to remediate `GHSA-68fv-2mgg-jv7q`; only that
+  exact version is excluded from the normal release-age delay so future
+  releases remain subject to the cooldown.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly update PRs for
   `github-actions` and `npm` ecosystems with a 7-day default cooldown on new
   releases. The `npm` ecosystem additionally uses 14 days for major bumps and

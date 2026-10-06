@@ -1,4 +1,4 @@
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - fast-uri
-  - source-map-js
+  - source-map-js@1.2.2
