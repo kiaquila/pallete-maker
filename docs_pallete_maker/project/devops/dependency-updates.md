@@ -28,3 +28,7 @@ validated by the repository's required checks before merge.
 | #41 | html-validate         | 11.14.0 → 11.15.0 | Development HTML validation tool   |
 | #42 | Claude Code Action    | 1.0.224 → 1.0.231 | Inactive Claude workflow runtime   |
 | #43 | html-validate         | 11.15.0 → 11.16.0 | Development HTML validation tool   |
+| #44 | html-validate         | 11.16.0 → 11.16.1 | HTML validation and 70-test CI     |
+| #44 | Prettier              | 3.9.6 → 3.9.9     | Formatting checks across repo      |
+| #44 | @parcel/watcher       | 2.5.1 → 2.6.0     | Remove vulnerable braces chain     |
+| #44 | source-map-js         | 1.2.1 → 1.2.2     | Remediate GHSA-68fv-2mgg-jv7q      |
