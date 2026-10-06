@@ -32,3 +32,4 @@ validated by the repository's required checks before merge.
 | #44 | Prettier              | 3.9.6 → 3.9.9     | Formatting checks across repo      |
 | #44 | @parcel/watcher       | 2.5.1 → 2.6.0     | Remove vulnerable braces chain     |
 | #44 | source-map-js         | 1.2.1 → 1.2.2     | Remediate GHSA-68fv-2mgg-jv7q      |
+| #45 | Claude Code Action    | 1.0.231 → 1.0.236 | Inactive Claude workflow runtime   |

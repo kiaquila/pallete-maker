@@ -1,7 +1,7 @@
 # Plan — 020
 
-1. Preserve the Dependabot-generated immutable SHA updates in the three
-   affected workflow files.
+1. Preserve the Dependabot-generated immutable SHA updates in the affected
+   workflow files.
 2. Record the durable maintenance policy for pinned workflow dependencies.
 3. Add this feature-memory folder so the repository guard can evaluate the
    infrastructure-only update under the normal delivery contract.
