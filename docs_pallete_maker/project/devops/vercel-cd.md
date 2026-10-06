@@ -68,7 +68,9 @@ is a future improvement.
 - **OSV Scanner** (`.github/workflows/osv-scan.yml`) runs on every PR, push
   to `main`, and weekly on schedule. It checks `pnpm-lock.yaml` against
   Google's Open Source Vulnerabilities database and fails the check on any
-  known CVE. Broader coverage than `npm audit`.
+  known CVE. Broader coverage than `npm audit`. The `@parcel/watcher@2.6.0`
+  override removes the vulnerable `braces@3.0.3` dependency chain reported as
+  `GHSA-vfj7-8cjw-p6xm` while no patched `braces` release exists.
 - **Dependabot** (`.github/dependabot.yml`) opens weekly update PRs for
   `github-actions` and `npm` ecosystems with a 7-day default cooldown on new
   releases. The `npm` ecosystem additionally uses 14 days for major bumps and
