@@ -18,4 +18,7 @@
 - [x] PR #38: validate and document pnpm/action-setup 6.0.10 → 6.1.0 and
       Claude Code Action 1.0.211 → 1.0.217.
 - [x] PR #39: validate and document html-validate 11.11.0 → 11.14.0.
+- [x] PR #44: validate and document html-validate 11.16.0 → 11.16.1 and
+      Prettier 3.9.6 → 3.9.9; remediate the OSV-reported `braces` and
+      `source-map-js` transitive dependencies.
 - [x] Process dependency PRs #26–#39 in ascending PR-number order.
