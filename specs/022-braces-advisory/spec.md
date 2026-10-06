@@ -19,7 +19,8 @@ interface.
 
 - pnpm resolves `@parcel/watcher` to `2.6.0`.
 - `pnpm-lock.yaml` no longer contains `braces`.
-- `pnpm-lock.yaml` resolves `source-map-js` to exactly `1.2.2`.
+- The override enforces `source-map-js>=1.2.2`, and the current lockfile
+  resolves to `1.2.2`.
 - The release-age exception is limited to `source-map-js@1.2.2`.
 - html-validate, Prettier formatting, the Tailwind build, and all tests pass.
 - Repository preflight and the GitHub OSV scan pass.
