@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
-    "html-validate": "^11.16.1",
+    "html-validate": "^11.16.2",
     "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3"
   },

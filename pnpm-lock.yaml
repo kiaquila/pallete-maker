@@ -18,8 +18,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       html-validate:
-        specifier: ^11.16.1
-        version: 11.16.1
+        specifier: ^11.16.2
+        version: 11.16.2
       prettier:
         specifier: ^3.9.9
         version: 3.9.9
@@ -29,8 +29,8 @@ importers:
 
 packages:
 
-  '@html-validate/stylish@6.0.0':
-    resolution: {integrity: sha512-d1/lI3qIXhGVJF3+MmKEBn1dRX6U4Z+BDaOdDI3E6SXcO+OQ7hC/3mSo6BIjwQlcuV6NdDOKm6QCrzIQL1EezQ==}
+  '@html-validate/stylish@6.1.0':
+    resolution: {integrity: sha512-ceNvF6/5hgvw/OrxXtdl2KurRVLN/Q/OkD/qminRRY/IIERmVaqJOpDF1nhRZMrOG/vyKKW0+Nxw6lSoHUP4Ow==}
     engines: {node: ^22.16.0 || >= 24.0.0}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -244,14 +244,14 @@ packages:
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
-  fast-uri@4.2.1:
-    resolution: {integrity: sha512-TmHQgewjHtMq1E5QKA0tOE0yeYGQs25KZC/ziJpubRtWI15W92e6vPFydWOeZBVROSHBYw/QhD9d5OefdD6LDg==}
+  fast-uri@4.2.2:
+    resolution: {integrity: sha512-EwVpUMzLVNOmcWW0zi5G3JJwkopB6XXjnVvNBGfqrMMsVew2hkQWl5e/pe/CfYUeS6jt4cIO2MnamEW7v/7wPw==}
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  html-validate@11.16.1:
-    resolution: {integrity: sha512-PklC0d9tLeXpvC6INePZcTBlXplZOmBkR0IQTYoJ9TSrtqxBKR74lMdKPXcnOImD4mAdp/L5/QJR/x6WrvDYvA==}
+  html-validate@11.16.2:
+    resolution: {integrity: sha512-oci8F4t1AQdAwkOK895hOOrMTSY0zZ6fk4p2LCvGKQDjL/CYDTGyIoVTzZWII0DfwA7gpq7+qJxAKubUofgo1Q==}
     engines: {node: ^22.22.0 || >= 24.8.0}
     hasBin: true
     peerDependencies:
@@ -420,7 +420,7 @@ packages:
 
 snapshots:
 
-  '@html-validate/stylish@6.0.0': {}
+  '@html-validate/stylish@6.1.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -575,7 +575,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 4.2.1
+      fast-uri: 4.2.2
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -588,13 +588,13 @@ snapshots:
 
   fast-deep-equal@3.1.3: {}
 
-  fast-uri@4.2.1: {}
+  fast-uri@4.2.2: {}
 
   graceful-fs@4.2.11: {}
 
-  html-validate@11.16.1:
+  html-validate@11.16.2:
     dependencies:
-      '@html-validate/stylish': 6.0.0
+      '@html-validate/stylish': 6.1.0
       '@sidvind/better-ajv-errors': 7.0.0(ajv@8.20.0)
       ajv: 8.20.0
       kleur: 4.1.5
