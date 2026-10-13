@@ -34,3 +34,4 @@ validated by the repository's required checks before merge.
 | #44 | source-map-js         | 1.2.1 → 1.2.2     | Remediate GHSA-68fv-2mgg-jv7q      |
 | #45 | Claude Code Action    | 1.0.231 → 1.0.236 | Inactive Claude workflow runtime   |
 | #46 | Claude Code Action    | 1.0.236 → 1.0.242 | Inactive Claude workflow runtime   |
+| #47 | html-validate         | 11.16.1 → 11.16.2 | Development HTML validation tool   |
