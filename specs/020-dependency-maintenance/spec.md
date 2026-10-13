@@ -21,6 +21,8 @@ gates.
 
 - PR #46 updates `anthropics/claude-code-action` from `1.0.236` to `1.0.242`
   while keeping the action pinned to an immutable commit SHA.
+- PR #47 updates `html-validate` from `11.16.1` to `11.16.2` together with its
+  generated lockfile dependencies.
 
 ## Acceptance criteria
 
