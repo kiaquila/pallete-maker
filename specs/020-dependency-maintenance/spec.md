@@ -1,0 +1,30 @@
+# 020 — Dependency maintenance
+
+## Status
+
+Active
+
+## Goal
+
+Keep pinned GitHub Actions and development dependencies current through small,
+reviewed Dependabot pull requests without weakening the repository delivery
+gates.
+
+## Scope
+
+- Accept compatible patch and minor updates proposed by Dependabot.
+- Preserve immutable commit-SHA pins for third-party GitHub Actions.
+- Require the normal CI, security, AI review, and merge-readiness checks.
+- Record each accepted maintenance update in this feature memory.
+
+## Current update
+
+- PR #46 updates `anthropics/claude-code-action` from `1.0.236` to `1.0.242`
+  while keeping the action pinned to an immutable commit SHA.
+
+## Acceptance criteria
+
+- [ ] Only the intended dependency references change.
+- [ ] Repository checks pass on the current PR head.
+- [ ] AI Review reports no unresolved blocking findings.
+- [ ] The pull request is mergeable without bypassing branch protection.
