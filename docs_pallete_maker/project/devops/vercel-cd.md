@@ -86,3 +86,7 @@ is a future improvement.
   `pnpm/action-setup`. Moving tags like `@v1` can be force-pushed to a
   different commit; a SHA cannot. Official `actions/*` are pinned to
   major tags for readability.
+- Pinned action versions are refreshed through reviewed Dependabot pull
+  requests. Each accepted update keeps the full commit SHA, passes the normal
+  protected-branch gates, and is recorded in
+  `specs/020-dependency-maintenance/`.
