@@ -7,7 +7,7 @@
 All three backends reject bot-posted trigger comments. A human-authored trigger is required:
 
 - on **every new push** (`pull_request: synchronize`) for any backend, and
-- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run waits until timeout unless a human posts `@codex review` right after opening the PR.
+- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run fails quickly without evidence; a human must post `@codex review <full-head-sha>` after opening the PR.
 
 Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Canonical recovery: `pnpm run review:switch -- --to <agent>`.
 
@@ -17,14 +17,47 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
 - Native GitHub PR review surface from `chatgpt-codex-connector[bot]`
 - Inline findings must carry `P0` to `P3`
 - `P3`-only findings are advisory
-- `P0` to `P2` findings block merge
+- `P0` to `P2` findings block merge, including findings published in the
+  formal review body when GitHub cannot attach an inline comment. Untagged
+  machine-marked body findings fail closed; a suggestions body without readable
+  severity cannot be treated as an empty no-findings review.
 - In `trigger_mode=skip`, formal reviews with `commit_id === headSha`
   stay authoritative.
 - Summary-only / setup-error comments are accepted only when they land
   after the current head's PR timeline activation event, and after the
   newest same-head human `@codex review` trigger if one exists.
+- Accept legacy `Codex Review:` no-findings replies and the native
+  `<!-- codex-review-receipt:v1 -->` format from
+  `chatgpt-codex-connector[bot]` only. A receipt requires exactly one positive
+  verdict and one `**Reviewed commit:**` line. Match the current full SHA,
+  resolving a 10–39 character abbreviation through GitHub before success.
+  Reject missing/stale SHAs, duplicate markers, conflicting text and incomplete
+  verdicts. Known connector sign-offs and emoji are allowed after the explicit
+  no-findings sentence; unknown or contradictory prose fails closed. Only the
+  known About Codex details block may follow the verdict. The observed `Bravo.`
+  presentation sign-off is accepted; unknown or contradictory prose is pending.
+- Formal review edits and dismissals must re-evaluate the check. Trusted
+  `ai-review-edit:v1` records supply ordering only, bound to the full head,
+  selected agent, review ID and exact current body/state hash. They cannot
+  manufacture a native verdict. A retracted formal verdict becomes pending;
+  every same-head native P0-P2 or untagged formal body finding remains blocking.
+  All submitted current-head native reviews remain candidates even after their
+  verdict text is removed. On equal-second timestamps, a non-passing comment or
+  formal verdict takes precedence over a passing counterpart, including ties
+  between multiple formal reviews regardless of REST list order.
+- Pick the freshest formal review or eligible receipt using edit timestamps;
+  malformed newer evidence cannot expose an older positive comment. A receipt
+  edited after the current trusted trigger may be reused even if created earlier.
+- Before success, inspect all review-thread pages for unresolved native Codex
+  P0–P2 or untagged findings, including older heads. New request markers never
+  erase them; P3-only findings remain advisory. Re-read the PR head immediately
+  before publishing success and fail if it changed or the PR closed.
+- `codex-pull-request-review-summary` / `codex-review-state:v1` comments are
+  wakeup signals only. Their JSON, `Completed` text and reactions never grant
+  a passing review; malformed or negative state cannot be mistaken for approval.
 - If the timeline lookup is unavailable, the gate logs a warning and
-  fails closed by waiting for formal review only.
+  fails closed by waiting for formal review only. If review-thread proof is
+  unavailable, no Codex result may pass.
 
 ## Gemini Review
 

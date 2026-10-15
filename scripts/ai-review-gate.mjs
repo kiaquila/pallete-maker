@@ -3,11 +3,9 @@
 import { appendFileSync, readFileSync } from "node:fs";
 import {
   classifyCodexSetupReply,
-  classifyCodexSummaryComment,
   codexReviewerLogins,
-  findLatestHeadActivationIndex,
-  matchesCodexReview,
-  matchesCodexSummaryComment,
+  codexCommentTimestamp,
+  nativeReviewTimestamp,
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
 
@@ -173,11 +171,75 @@ if (!prNumber) {
 const pull = await request(`/repos/${owner}/${repo}/pulls/${prNumber}`);
 const headSha = explicitHeadSha || pull.head.sha;
 if (explicitHeadSha && explicitHeadSha !== pull.head.sha) {
-  console.log(
-    `AI Review gate skipped stale run for ${explicitHeadSha}; current PR head is ${pull.head.sha}.`,
+  throw new Error(
+    `AI Review refuses stale head ${explicitHeadSha}; current PR head is ${pull.head.sha}.`,
   );
-  process.exit(0);
 }
+const assertCurrentHead = async () => {
+  const current = await request(`/repos/${owner}/${repo}/pulls/${prNumber}`);
+  if (current.state !== "open" || current.head.sha !== headSha) {
+    throw new Error(
+      `PR head changed or closed while evaluating ${headSha}; refusing success.`,
+    );
+  }
+};
+
+// Check all pages and retain unresolved blockers from older heads/review requests.
+const assertNoUnresolvedCodexBlockers = async () => {
+  let cursor = null;
+  do {
+    const data = await request("/graphql", {
+      method: "POST",
+      body: JSON.stringify({
+        query: `query($owner:String!,$repo:String!,$number:Int!,$cursor:String) {
+          repository(owner:$owner,name:$repo) { pullRequest(number:$number) {
+            reviewThreads(first:100,after:$cursor) {
+              pageInfo { hasNextPage endCursor }
+              nodes { isResolved comments(first:100) {
+                pageInfo { hasNextPage }
+                nodes { author { login } body url }
+              } }
+            }
+          } }
+        }`,
+        variables: { owner, repo, number: Number(prNumber), cursor },
+      }),
+    });
+    const threads = data?.data?.repository?.pullRequest?.reviewThreads;
+    if (data.errors || !threads)
+      throw new Error("Could not verify unresolved Codex findings.");
+    for (const thread of threads.nodes) {
+      if (thread.isResolved) continue;
+      if (thread.comments.pageInfo.hasNextPage)
+        throw new Error(
+          "Incomplete unresolved review thread; refusing success.",
+        );
+      for (const comment of thread.comments.nodes) {
+        // GraphQL exposes bot logins without REST's [bot] suffix.
+        if (
+          !["chatgpt-codex-connector", "chatgpt-codex-connector[bot]"].includes(
+            comment.author?.login,
+          )
+        )
+          continue;
+        const priority = extractCodexPriority(comment.body || "");
+        if (priority === null || priority <= 2) {
+          throw new Error(
+            `Unresolved Codex finding blocks this head: ${comment.url}`,
+          );
+        }
+      }
+    }
+    if (
+      threads.pageInfo.hasNextPage &&
+      (!threads.pageInfo.endCursor || threads.pageInfo.endCursor === cursor)
+    ) {
+      throw new Error("Invalid review-thread pagination; refusing success.");
+    }
+    cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
+  } while (cursor);
+};
+
 const markerAgentLine = `AI_REVIEW_AGENT: ${selectedAgent}`;
 const markerShaLine = `AI_REVIEW_SHA: ${headSha}`;
 const metadataMarker = `<!-- ai-review-gate:agent=${selectedAgent};sha=${headSha} -->`;
@@ -307,14 +369,19 @@ const pickLatest = (items, matchFn, timestampFn) =>
   items.filter(matchFn).sort((a, b) => timestampFn(b) - timestampFn(a))[0] ||
   null;
 
-const reviewTimestamp = (r) => new Date(r.submitted_at || 0).getTime();
+let formalEditComments = [];
+const reviewTimestamp = (review) =>
+  nativeReviewTimestamp(review, formalEditComments, selectedAgent, headSha);
 const commentTimestamp = (c) =>
   new Date(c.updated_at || c.created_at || 0).getTime();
 
 const pickLatestCodexReview = (reviews) =>
   pickLatest(
     reviews,
-    (r) => r.submitted_at && matchesCodexReview(r, headSha),
+    (r) =>
+      r.submitted_at &&
+      r.commit_id === headSha &&
+      codexReviewerLogins.has(r.user?.login),
     reviewTimestamp,
   );
 
@@ -334,11 +401,31 @@ const findLatestCurrentHeadGeminiReview = pickLatestGeminiReview;
 const findLatestCurrentHeadClaudeComment = pickLatestClaudeComment;
 
 const extractCodexPriority = (body) => {
-  const match = body.match(/\bP([0-3])\b/i);
-  return match ? Number(match[1]) : null;
+  const priorities = [...body.matchAll(/\bP([0-3])\b/gi)].map((match) =>
+    Number(match[1]),
+  );
+  return priorities.length ? Math.min(...priorities) : null;
 };
 
 const classifyCodexReview = async (review) => {
+  const body = review.body || "";
+  const bodyPriority = extractCodexPriority(body);
+  const bodyFinding = body.includes("<!-- codex-code-review-finding:v1 -->");
+  if (bodyPriority !== null && bodyPriority <= 2) {
+    return {
+      outcome: "fail",
+      reason: `Codex reported a blocking P${bodyPriority} finding in the formal review body.`,
+      details: [review.html_url],
+    };
+  }
+  if (bodyFinding && bodyPriority === null) {
+    return {
+      outcome: "fail",
+      reason:
+        "Codex formal review body contains a finding without recognized P0-P3 severity.",
+      details: [review.html_url],
+    };
+  }
   if (review.state === "APPROVED") {
     return {
       outcome: "pass",
@@ -363,6 +450,13 @@ const classifyCodexReview = async (review) => {
     };
   }
 
+  if (!body.includes("Codex Review")) {
+    return {
+      outcome: "pending",
+      reason: "Codex formal review verdict was withdrawn or is unrecognized.",
+      details: [review.html_url],
+    };
+  }
   const reviewComments = await listPaginated(
     buildPullReviewCommentsPath(
       review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
@@ -373,9 +467,21 @@ const classifyCodexReview = async (review) => {
   );
 
   if (commentsForReview.length === 0) {
+    if (
+      /Here are some automated review suggestions/i.test(body) &&
+      bodyPriority === null
+    ) {
+      return {
+        outcome: "pending",
+        reason:
+          "Codex indicates findings but their severity evidence is unavailable.",
+        details: [review.html_url],
+      };
+    }
     return {
       outcome: "pass",
-      reason: "Codex completed a comment review without inline findings.",
+      reason:
+        "Codex completed a comment review without inline blocking findings.",
       details: [],
     };
   }
@@ -554,7 +660,6 @@ const triggerTime = triggerComment
 const deadline = Date.now() + maxWaitMs;
 let codexTimelineWarning = "";
 let codexTimelineWarningLogged = false;
-let codexTimelineHeadPendingLogged = false;
 
 while (Date.now() < deadline) {
   if (selectedAgent === "claude") {
@@ -606,203 +711,120 @@ while (Date.now() < deadline) {
         }
 
         console.log(mapped.reason);
+        await assertCurrentHead();
         process.exit(0);
       }
     }
   } else if (selectedAgent === "codex") {
-    const reviews = await listNewestPullReviews(
+    const reviews = await listPaginated(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
-    const recentReviews = reviews.filter(
-      (review) => new Date(review.submitted_at || 0).getTime() >= triggerTime,
-    );
-    const candidateReviews = triggerMode === "skip" ? reviews : recentReviews;
-    const matchedReview =
-      pickLatestCodexReview(candidateReviews) ||
-      (triggerMode === "skip"
-        ? null
-        : findLatestCurrentHeadCodexReview(reviews));
-
-    if (matchedReview) {
-      const mapped = await classifyCodexReview(matchedReview);
-
-      if (mapped.outcome !== "pending") {
-        setOutput("review_agent", selectedAgent);
-        setOutput("review_state", matchedReview.state);
-        setOutput("review_url", matchedReview.html_url);
-        setOutput("review_id", matchedReview.id);
-
-        appendSummary([
-          "## AI Review Gate",
-          "",
-          `- Selected reviewer: \`${selectedAgent}\``,
-          `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-          `- Matched review: ${matchedReview.html_url}`,
-          `- Review state: \`${matchedReview.state}\``,
-          `- Result: ${mapped.reason}`,
-          ...(mapped.details?.length
-            ? [`- Evidence: ${mapped.details.join(", ")}`]
-            : []),
-        ]);
-
-        if (mapped.outcome === "fail") {
-          throw new Error(mapped.reason);
-        }
-
-        console.log(mapped.reason);
-        process.exit(0);
+    formalEditComments = await listPaginated(buildIssueCommentsPath());
+    // Ordering markers must never make a same-head body finding disappear.
+    for (const review of reviews) {
+      if (
+        review.commit_id !== headSha ||
+        !codexReviewerLogins.has(review.user?.login) ||
+        review.state === "DISMISSED"
+      )
+        continue;
+      const priority = extractCodexPriority(review.body || "");
+      if (
+        (priority !== null && priority <= 2) ||
+        ((review.body || "").includes(
+          "<!-- codex-code-review-finding:v1 -->",
+        ) &&
+          priority === null)
+      ) {
+        throw new Error(
+          `Blocking or untagged Codex formal body finding: ${review.html_url}`,
+        );
       }
     }
-
-    if (triggerMode === "skip") {
-      let timelineEvents = null;
-
-      try {
-        timelineEvents = await listPaginated(buildIssueTimelinePath());
-      } catch (error) {
-        codexTimelineWarning =
-          "Codex skip-mode could not read PR timeline, so summary/setup fallback is disabled until the timeline endpoint recovers.";
-        if (!codexTimelineWarningLogged) {
-          console.warn(
-            `${codexTimelineWarning} Continuing to poll for a formal review only. Root cause: ${error.message}`,
-          );
-          codexTimelineWarningLogged = true;
-        }
-      }
-
-      if (timelineEvents) {
-        const headActivationIndex = findLatestHeadActivationIndex(
-          timelineEvents,
-          headSha,
-        );
-
-        if (headActivationIndex < 0) {
-          if (!codexTimelineHeadPendingLogged) {
-            console.warn(
-              `Codex skip-mode is waiting for PR timeline to expose the current head SHA ${headSha} before it can trust summary/setup comments.`,
-            );
-            codexTimelineHeadPendingLogged = true;
-          }
-        } else {
-          codexTimelineHeadPendingLogged = false;
-          const matchedComment = pickAuthoritativeCodexSkipModeComment({
-            timelineEvents,
-            headSha,
-          });
-
-          if (matchedComment) {
-            const { comment, classification, reviewState } = matchedComment;
-
-            setOutput("review_agent", selectedAgent);
-            setOutput("review_state", reviewState);
-            setOutput("review_url", comment.html_url);
-            setOutput("review_id", comment.id);
-
-            appendSummary([
-              "## AI Review Gate",
-              "",
-              `- Selected reviewer: \`${selectedAgent}\``,
-              `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-              `- Matched reviewer comment: ${comment.html_url}`,
-              `- Review state: \`${reviewState}\``,
-              `- Result: ${classification.reason}`,
-              ...(classification.details?.length
-                ? [`- Evidence: ${classification.details.join(", ")}`]
-                : []),
-            ]);
-
-            if (classification.outcome === "fail") {
-              throw new Error(classification.reason);
-            }
-
-            console.log(classification.reason);
-            process.exit(0);
-          }
-        }
-      }
-    } else {
-      const issueComments = await listPaginated(
-        buildIssueCommentsPath(triggerTime),
-      );
-      const recentIssueComments = issueComments.filter(
-        (comment) => new Date(comment.created_at || 0).getTime() >= triggerTime,
-      );
-      const summaryComment =
-        recentIssueComments
-          .filter((comment) => matchesCodexSummaryComment(comment))
-          .sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime(),
-          )[0] || null;
-
-      if (summaryComment) {
-        const mapped = classifyCodexSummaryComment(summaryComment);
-
-        if (mapped.outcome !== "pending") {
-          setOutput("review_agent", selectedAgent);
-          setOutput("review_state", "COMMENTED_NO_FINDINGS");
-          setOutput("review_url", summaryComment.html_url);
-          setOutput("review_id", summaryComment.id);
-
-          appendSummary([
-            "## AI Review Gate",
-            "",
-            `- Selected reviewer: \`${selectedAgent}\``,
-            `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-            `- Matched reviewer comment: ${summaryComment.html_url}`,
-            "- Review state: `COMMENTED_NO_FINDINGS`",
-            `- Result: ${mapped.reason}`,
-            ...(mapped.details?.length
-              ? [`- Evidence: ${mapped.details.join(", ")}`]
-              : []),
-          ]);
-
-          console.log(mapped.reason);
-          process.exit(0);
-        }
-      }
-
-      const recentConnectorReply =
-        issueComments
+    let formal = pickLatestCodexReview(reviews);
+    let formalVerdict = null;
+    if (formal) {
+      // REST ordering cannot prove which equal-second verdict is newer.
+      const tied = await Promise.all(
+        reviews
           .filter(
-            (comment) =>
-              codexReviewerLogins.has(comment.user?.login || "") &&
-              new Date(comment.created_at || 0).getTime() >= triggerTime,
+            (review) =>
+              review.submitted_at &&
+              review.commit_id === headSha &&
+              codexReviewerLogins.has(review.user?.login) &&
+              reviewTimestamp(review) === reviewTimestamp(formal),
           )
-          .sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime(),
-          )
-          .map((comment) => ({
-            comment,
-            classification: classifyCodexSetupReply(comment),
-          }))
-          .find((entry) => entry.classification) || null;
-
-      if (recentConnectorReply) {
-        const { comment, classification } = recentConnectorReply;
-
-        setOutput("review_agent", selectedAgent);
-        setOutput("review_state", "SETUP_REQUIRED");
-        setOutput("review_url", comment.html_url);
-        setOutput("review_id", comment.id);
-
-        appendSummary([
-          "## AI Review Gate",
-          "",
-          `- Selected reviewer: \`${selectedAgent}\``,
-          `- Trigger source: ${triggerComment ? triggerComment.html_url : "inline native workflow invocation"}`,
-          `- Connector reply: ${comment.html_url}`,
-          "- Review state: `SETUP_REQUIRED`",
-          `- Result: ${classification.reason}`,
-        ]);
-
-        throw new Error(classification.reason);
+          .map(async (review) => ({
+            review,
+            verdict: await classifyCodexReview(review),
+          })),
+      );
+      const selected =
+        tied.find((item) => item.verdict.outcome === "fail") ||
+        tied.find((item) => item.verdict.outcome === "pending") ||
+        tied[0];
+      formal = selected.review;
+      formalVerdict = selected.verdict;
+    }
+    let commentEvidence = null;
+    try {
+      const timelineEvents = await listPaginated(buildIssueTimelinePath());
+      commentEvidence = pickAuthoritativeCodexSkipModeComment({
+        timelineEvents,
+        headSha,
+      });
+    } catch (error) {
+      codexTimelineWarning =
+        "Codex timeline unavailable; only formal review can be accepted.";
+      if (!codexTimelineWarningLogged) {
+        console.warn(`${codexTimelineWarning} ${error.message}`);
+        codexTimelineWarningLogged = true;
       }
+    }
+    const useComment =
+      commentEvidence &&
+      (!formal ||
+        codexCommentTimestamp(commentEvidence.comment) >
+          reviewTimestamp(formal) ||
+        (codexCommentTimestamp(commentEvidence.comment) ===
+          reviewTimestamp(formal) &&
+          commentEvidence.classification.outcome !== "pass"));
+    const evidence = useComment ? commentEvidence.comment : formal;
+    const mapped = useComment ? commentEvidence.classification : formalVerdict;
+
+    if (mapped && mapped.outcome !== "pending") {
+      if (mapped.outcome === "fail") throw new Error(mapped.reason);
+      if (mapped.reviewedSha && mapped.reviewedSha.length < 40) {
+        // Resolve abbreviations through GitHub, rather than trusting prefix equality alone.
+        const commit = await request(
+          `/repos/${owner}/${repo}/commits/${mapped.reviewedSha}`,
+        );
+        if (commit.sha !== headSha)
+          throw new Error(
+            "Receipt commit does not resolve to the current full head SHA.",
+          );
+      }
+      await assertNoUnresolvedCodexBlockers();
+      await assertCurrentHead();
+      setOutput("review_agent", selectedAgent);
+      setOutput(
+        "review_state",
+        useComment ? commentEvidence.reviewState : formal.state,
+      );
+      setOutput("review_url", evidence.html_url);
+      setOutput("review_id", evidence.id);
+      appendSummary([
+        "## AI Review Gate",
+        "",
+        `- Head SHA: \`${headSha}\``,
+        `- Native evidence: ${evidence.html_url}`,
+        `- Result: ${mapped.reason}`,
+      ]);
+      console.log(mapped.reason);
+      process.exit(0);
     }
   } else {
+    formalEditComments = await listPaginated(buildIssueCommentsPath());
     const reviews = await listNewestPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
@@ -847,6 +869,7 @@ while (Date.now() < deadline) {
         }
 
         console.log(mapped.reason);
+        await assertCurrentHead();
         process.exit(0);
       }
     }

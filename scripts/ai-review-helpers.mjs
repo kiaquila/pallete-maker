@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const reviewerBotLogins = new Set([
   "chatgpt-codex-connector[bot]",
   "gemini-code-assist[bot]",
@@ -8,8 +10,37 @@ export const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 export const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 const codexSummaryPrefix = /^Codex Review:/i;
+const codexReceiptMarker = "<!-- codex-review-receipt:v1 -->";
 const codexNoIssuesPattern =
-  /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
+  /^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.([^\r\n]*)$/i;
+// Observed connector sign-offs are presentation text, not additional verdicts.
+// Unknown prose fails closed instead of accepting a contradictory second sentence.
+const codexSignoffs = new Set([
+  "",
+  "nice work!",
+  "keep it up!",
+  "looks good!",
+  "breezy!",
+  "bravo.",
+  "can't wait for the next one!",
+  "chef's kiss.",
+  "delightful!",
+  "hooray!",
+  "keep them coming!",
+  "more of your lovely prs please.",
+  "what shall we delve into next?",
+  "you're on a roll.",
+]);
+const hasCodexNoIssuesVerdict = (body) => {
+  const match = body.match(codexNoIssuesPattern);
+  if (!match) return false;
+  const signoff = match[1]
+    .trim()
+    .replace(/(?:\s*(?::[a-z0-9_+-]+:|🚀|🎉))+$/i, "")
+    .trim()
+    .toLowerCase();
+  return codexSignoffs.has(signoff);
+};
 const codexEnvironmentPattern = /create an environment for this repo/i;
 const codexAccountPattern = /create a codex account and connect to github/i;
 const codexTriggerPattern = /@codex review\b/i;
@@ -146,6 +177,8 @@ const isCodexBotComment = (entry) =>
 const isHumanCodexTriggerComment = (entry) =>
   isCommentEvent(entry) &&
   codexTriggerPattern.test(getBody(entry)) &&
+  isTrustedAssociation(entry.author_association) &&
+  entry.user?.type !== "Bot" &&
   !reviewerBotLogins.has(getLogin(entry));
 
 const isCurrentHeadActivationEvent = (entry, headSha) =>
@@ -160,7 +193,24 @@ export const matchesCodexReview = (review, headSha) =>
   (review?.body || "").includes("Codex Review");
 
 export const matchesCodexSummaryComment = (comment) =>
-  isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));
+  isCodexBotComment(comment) &&
+  (codexSummaryPrefix.test(getBody(comment)) ||
+    getBody(comment).startsWith("<!-- codex-review-receipt:"));
+
+// A summary is a wakeup signal only. Its hidden state is never a verdict.
+export const isCodexEvidenceBody = (body) => {
+  const text = String(body || "").trim();
+  return (
+    codexSummaryPrefix.test(text) ||
+    text.startsWith("<!-- codex-review-receipt:") ||
+    text.startsWith("<!-- codex-pull-request-review-summary -->") ||
+    codexEnvironmentPattern.test(text) ||
+    codexAccountPattern.test(text)
+  );
+};
+
+export const codexCommentTimestamp = (comment) =>
+  Date.parse(comment.updated_at || comment.created_at || "");
 
 export const classifyCodexSetupReply = (comment) => {
   const body = getBody(comment);
@@ -186,23 +236,60 @@ export const classifyCodexSetupReply = (comment) => {
   return null;
 };
 
-export const classifyCodexSummaryComment = (comment) => {
-  const body = getBody(comment);
-
-  if (codexNoIssuesPattern.test(body)) {
+export const classifyCodexSummaryComment = (comment, headSha) => {
+  const pending = {
+    outcome: "pending",
+    reason:
+      "Codex comment lacks an unambiguous current-head no-findings verdict.",
+    details: [comment?.html_url],
+  };
+  if (!matchesCodexSummaryComment(comment)) return pending;
+  let body = getBody(comment);
+  const receipt = body.startsWith("<!-- codex-review-receipt:");
+  if (receipt) {
+    if (!body.startsWith(`${codexReceiptMarker}\n`)) return pending;
+    body = body.slice(codexReceiptMarker.length).trim();
+  }
+  // Never strip arbitrary HTML or permit duplicate/conflicting machine markers.
+  if (
+    /<!--\s*codex-/i.test(body) ||
+    (body.match(/\*\*Reviewed commit:\*\*/g) || []).length > 1
+  )
+    return pending;
+  const detailsIndex = body.indexOf("<details>");
+  if (detailsIndex !== -1) {
+    const details = body.slice(detailsIndex);
+    if (
+      !/^<details>\s*<summary>ℹ️ About Codex in GitHub<\/summary>[\s\S]*<\/details>$/.test(
+        details,
+      ) ||
+      (details.match(/<details>/g) || []).length !== 1 ||
+      (details.match(/<\/details>/g) || []).length !== 1
+    )
+      return pending;
+    body = body.slice(0, detailsIndex).trim();
+  }
+  const shaMatch = body.match(
+    /\n\n\*\*Reviewed commit:\*\* `([a-f0-9]{10,40})`$/,
+  );
+  if (receipt && !shaMatch) return pending;
+  if (shaMatch) {
+    if (
+      !/^[a-f0-9]{40}$/.test(headSha || "") ||
+      !headSha.startsWith(shaMatch[1])
+    )
+      return pending;
+    body = body.slice(0, shaMatch.index).trim();
+  }
+  if (hasCodexNoIssuesVerdict(body)) {
     return {
       outcome: "pass",
       reason: "Codex completed review with no major issues.",
       details: [comment.html_url],
+      reviewedSha: shaMatch?.[1] || null,
     };
   }
-
-  return {
-    outcome: "pending",
-    reason:
-      "Codex summary comment did not match a recognized no-findings reply.",
-    details: [comment.html_url],
-  };
+  return pending;
 };
 
 export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
@@ -250,11 +337,28 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
-  const latestCodexComment =
+  const boundaryTime = Date.parse(
+    timelineEvents[boundaryIndex].created_at || "",
+  );
+  const latestCandidate =
     timelineEvents
-      .slice(boundaryIndex + 1)
-      .filter((entry) => isCodexBotComment(entry))
-      .at(-1) || null;
+      .map((entry, index) => ({ entry, index }))
+      .filter(
+        ({ entry, index }) =>
+          isCodexBotComment(entry) &&
+          !getBody(entry).startsWith(
+            "<!-- codex-pull-request-review-summary -->",
+          ) &&
+          (index > boundaryIndex ||
+            (Number.isFinite(boundaryTime) &&
+              codexCommentTimestamp(entry) > boundaryTime)),
+      )
+      .sort(
+        (a, b) =>
+          codexCommentTimestamp(b.entry) - codexCommentTimestamp(a.entry) ||
+          b.index - a.index,
+      )[0] || null;
+  const latestCodexComment = latestCandidate?.entry;
 
   if (!latestCodexComment) {
     return null;
@@ -271,20 +375,98 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     };
   }
 
-  if (!matchesCodexSummaryComment(latestCodexComment)) {
-    return null;
-  }
-
-  const summaryClassification = classifyCodexSummaryComment(latestCodexComment);
-  if (summaryClassification.outcome === "pending") {
-    return null;
-  }
+  const summaryClassification = classifyCodexSummaryComment(
+    latestCandidate.index <= boundaryIndex &&
+      !getBody(latestCodexComment).startsWith(codexReceiptMarker)
+      ? { ...latestCodexComment, body: "" }
+      : latestCodexComment,
+    headSha,
+  );
 
   return {
     comment: latestCodexComment,
     classification: summaryClassification,
-    reviewState: "COMMENTED_NO_FINDINGS",
+    reviewState:
+      summaryClassification.outcome === "pass"
+        ? "COMMENTED_NO_FINDINGS"
+        : "PENDING",
     boundaryType:
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };
+};
+
+// This marker records ordering only. It can never supply a review verdict.
+const nativeEditPrefix = "<!-- ai-review-edit:v1 ";
+export const nativeReviewBodyHash = (review) =>
+  createHash("sha256")
+    .update(
+      JSON.stringify([
+        review.commit_id,
+        String(review.state || "").toUpperCase(),
+        review.body || "",
+      ]),
+    )
+    .digest("hex");
+
+export const createNativeReviewEditMarker = ({
+  agent,
+  headSha,
+  review,
+  observedAt,
+  sourceRunId,
+}) =>
+  `${nativeEditPrefix}${JSON.stringify({
+    agent,
+    head_sha: headSha,
+    review_id: String(review.id),
+    body_sha256: nativeReviewBodyHash(review),
+    observed_at: new Date(observedAt).toISOString(),
+    source_run_id: String(sourceRunId),
+  })} -->`;
+
+export const extractNativeReviewEditMarker = (comment) => {
+  if (comment?.user?.login !== "github-actions[bot]") return null;
+  const body = String(comment.body || "").trim();
+  if (!body.startsWith(nativeEditPrefix) || !body.endsWith(" -->")) return null;
+  const raw = body.slice(nativeEditPrefix.length, -4);
+  try {
+    const marker = JSON.parse(raw);
+    if (
+      JSON.stringify(marker) !== raw ||
+      Object.keys(marker).sort().join(",") !==
+        "agent,body_sha256,head_sha,observed_at,review_id,source_run_id" ||
+      !["codex", "gemini"].includes(marker.agent) ||
+      !/^[a-f0-9]{40}$/.test(marker.head_sha) ||
+      !/^[a-f0-9]{64}$/.test(marker.body_sha256) ||
+      !/^[1-9][0-9]*$/.test(marker.review_id) ||
+      !/^[1-9][0-9]*$/.test(marker.source_run_id) ||
+      new Date(marker.observed_at).toISOString() !== marker.observed_at
+    )
+      return null;
+    return marker;
+  } catch {
+    return null;
+  }
+};
+
+export const nativeReviewTimestamp = (
+  review,
+  comments = [],
+  agent,
+  headSha,
+) => {
+  const original = Date.parse(review.submitted_at || "") || 0;
+  if (review.commit_id !== headSha) return original;
+  return comments.reduce((latest, comment) => {
+    const marker = extractNativeReviewEditMarker(comment);
+    if (
+      !marker ||
+      marker.agent !== agent ||
+      marker.head_sha !== headSha ||
+      marker.review_id !== String(review.id) ||
+      marker.body_sha256 !== nativeReviewBodyHash(review)
+    )
+      return latest;
+    return Math.max(latest, Date.parse(marker.observed_at));
+  }, original);
 };

@@ -38,9 +38,52 @@ valid review command (`@codex review`, `/gemini review`, or
    PR head SHA
 4. reruns the latest failed `AI Review` run for that SHA when one exists
 
-`AI Review Rerun` also listens for trusted reviewer output from the selected
-backend and reruns `AI Review` after evidence arrives. This keeps the required
-check event-driven instead of depending on a long polling window.
+`AI Review Rerun` listens for trusted reviewer output from the selected
+backend on comment creation **and edits**. Codex legacy replies, v1 receipts,
+and updates to the existing native summary all wake the gate. Summary state
+is never positive evidence: the gate still requires a validated receipt or
+formal review. All bot comment edits reach the default-branch runtime filter,
+which authenticates the selected reviewer before routing. This includes edits
+that remove every recognized marker and retract previously accepted evidence.
+Comment evidence uses `updated_at`, not just `created_at`.
+
+Formal reviews route `submitted`, `edited`, and `dismissed` events. REST review
+objects do not reliably expose edit time, so the trusted rerun workflow records
+an `ai-review-edit:v1` issue-comment marker before checking for an active gate.
+It is authored by `github-actions[bot]` and binds the selected agent, full head,
+review ID and SHA-256 of the current commit/state/body to the event workflow's
+creation time and run ID. Canonicalize review state to uppercase before hashing:
+webhook payloads use lowercase while REST uses uppercase. The run creation time stays stable on workflow retry.
+The `issues: write` permission is used only for this ordering record. Duplicate
+records for the same event are not posted. The marker never supplies a verdict;
+only matching current native review content can consume its timestamp. Owner
+copies, malformed records and body/state/head mismatches are ignored. Completion
+reconciliation consumes the same bound timestamp, so edits while a gate is
+active are retained even though REST still returns the original `submitted_at`.
+
+If the gate is active, the evidence event does not start a duplicate attempt.
+An `AI Review` `workflow_run: completed` event reads current trusted evidence
+and reconciles it against the latest attempt's `run_started_at`. Because REST
+cannot recover an edit's previous body, completion reconciliation considers all
+trusted Codex comment updates, including now-unrecognized retractions. Evidence
+arriving during that attempt causes one rerun, including timestamps equal to
+its start because GitHub timestamps may have only second-level precision. Once
+the next attempt starts strictly after that evidence it does not requeue again,
+even when the previous attempt's final
+`updated_at` is newer than the evidence. A subsequent attempt started after
+that evidence does not rerun again, including after failure. The completion
+listener accepts only the PR-based `ai-review.yml` workflow, matching the
+workflow file before an optional GitHub `@ref` suffix, so it cannot requeue itself. Closed PRs, old heads and concurrent pushes are ignored; the
+head is refreshed again before the rerun request. When GitHub omits linked
+PRs from the completion payload, resolve open exact-head PRs via the commit.
+
+All privileged gate and rerun scripts still come from the default branch.
+For the first compatibility PR, a passing native formal Codex review on its
+exact head remains consumable by the old gate. A receipt-only response cannot
+bootstrap the old parser: preserve the PR and report the deployment blocker
+unless an existing trusted native review path succeeds. Never switch checkout
+to unreviewed PR scripts, fabricate a check, weaken protection or bypass merge
+checks to install the parser.
 
 ## Tier 1 — Manual local wrapper (active, zero secrets)
 

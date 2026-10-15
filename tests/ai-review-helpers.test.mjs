@@ -27,6 +27,7 @@ const commented = ({ login, body, urlSuffix }) => {
   return {
     event: "commented",
     user: { login },
+    author_association: "OWNER",
     body,
     html_url: `https://example.com/${urlSuffix || `comment-${commentId}`}`,
     created_at: `2026-04-17T20:${String(commentId).padStart(2, "0")}:00Z`,

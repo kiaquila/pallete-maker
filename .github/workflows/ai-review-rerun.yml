@@ -1,8 +1,11 @@
 name: AI Review Rerun
 
 on:
+  workflow_run:
+    workflows: [AI Review]
+    types: [completed]
   pull_request_review:
-    types: [submitted]
+    types: [submitted, edited, dismissed]
   issue_comment:
     types: [created, edited]
 
@@ -10,11 +13,24 @@ permissions:
   actions: write
   contents: read
   pull-requests: read
+  issues: write
+
+concurrency:
+  group: >-
+    ai-review-rerun-${{ github.event.issue.number ||
+      github.event.pull_request.number ||
+      github.event.workflow_run.pull_requests[0].number ||
+      github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
 
 jobs:
   ai-review-rerun:
     name: ai-review-rerun
     if: |
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.event == 'pull_request'
+      ) ||
       (
         github.event_name == 'pull_request_review' &&
         github.event.review.user.type == 'Bot'
@@ -23,7 +39,10 @@ jobs:
         github.event.issue.pull_request &&
         github.event.comment.user.type == 'Bot' &&
         (
+          github.event.action == 'edited' ||
           startsWith(github.event.comment.body, 'Codex Review:') ||
+          contains(github.event.comment.body, '<!-- codex-review-receipt:') ||
+          contains(github.event.comment.body, '<!-- codex-pull-request-review-summary -->') ||
           contains(github.event.comment.body, 'create an environment for this repo') ||
           contains(github.event.comment.body, 'create a Codex account and connect to GitHub') ||
           contains(github.event.comment.body, 'AI_REVIEW_OUTCOME:')
