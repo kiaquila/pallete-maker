@@ -271,3 +271,43 @@ test("completion reconciliation accepts the documented workflow path with an @re
     false,
   );
 });
+
+test("an edit retracting every recognized marker reaches workflow and trusted runtime", async () => {
+  const event = {
+    ...commentEvent("Result withdrawn", "edited", {
+      created_at: "2026-10-14T10:00:00Z",
+      updated_at: "2026-10-15T10:02:00Z",
+    }),
+    changes: { body: { from: receipt } },
+  };
+  assert.equal(workflowAllows(event, "issue_comment"), true);
+  assert.equal(shouldRouteAiReviewRerunEvent(event), true);
+  assert.equal(
+    shouldRouteAiReviewRerunEvent({
+      ...event,
+      comment: {
+        ...event.comment,
+        user: { login: "attacker[bot]", type: "Bot" },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    (await route(event, { run: { ...baseRun, conclusion: "success" } })).action,
+    "rerun",
+  );
+  assert.equal(
+    (await route(event, { run: { ...baseRun, status: "in_progress" } })).action,
+    "already_running",
+  );
+  assert.equal(
+    (await route(completed, { comments: [event.comment] })).action,
+    "rerun",
+  );
+  const reconciled = await route(completed, {
+    comments: [event.comment],
+    run: { ...baseRun, run_started_at: "2026-10-15T10:04:00Z" },
+  });
+  assert.equal(reconciled.action, "evidence_observed");
+  assert.equal(reconciled.posts.length, 0);
+});

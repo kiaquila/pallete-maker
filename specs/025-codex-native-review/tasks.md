@@ -19,3 +19,8 @@ workflow path. Normalize the path before matching and exercise completion
 reconciliation with branch, pull-request and commit refs. Final-head acceptance
 and merge evidence are recorded on
 [PR #48](https://github.com/kiaquila/pallete-maker/pull/48).
+
+A later P2 identified retracted evidence hidden by the workflow body filter.
+Route bot edits through runtime identity validation and reconcile all trusted
+Codex comment updates on completion, including bodies that lost their markers.
+Such edits must invalidate older positive evidence without granting a verdict.

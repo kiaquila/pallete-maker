@@ -42,11 +42,16 @@ valid review command (`@codex review`, `/gemini review`, or
 backend on comment creation **and edits**. Codex legacy replies, v1 receipts,
 and updates to the existing native summary all wake the gate. Summary state
 is never positive evidence: the gate still requires a validated receipt or
-formal review. Comment evidence uses `updated_at`, not just `created_at`.
+formal review. All bot comment edits reach the default-branch runtime filter,
+which authenticates the selected reviewer before routing. This includes edits
+that remove every recognized marker and retract previously accepted evidence.
+Comment evidence uses `updated_at`, not just `created_at`.
 
 If the gate is active, the evidence event does not start a duplicate attempt.
 An `AI Review` `workflow_run: completed` event reads current trusted evidence
-and reconciles it against the latest attempt's `run_started_at`. Evidence
+and reconciles it against the latest attempt's `run_started_at`. Because REST
+cannot recover an edit's previous body, completion reconciliation considers all
+trusted Codex comment updates, including now-unrecognized retractions. Evidence
 arriving during that attempt causes one rerun, even when the attempt's final
 `updated_at` is newer than the evidence. A subsequent attempt started after
 that evidence does not rerun again, including after failure. The completion

@@ -164,8 +164,8 @@ test("an edited receipt can be bound after a newer trigger, but an old legacy co
     pickAuthoritativeCodexSkipModeComment({
       headSha: HEAD,
       timelineEvents: [{ ...edited, body: legacy }, activation, trigger],
-    }),
-    null,
+    }).classification.outcome,
+    "pending",
   );
 });
 
@@ -361,4 +361,19 @@ test("unavailable thread proof fails closed; unavailable timeline retains formal
     runGate({ timelineUnavailable: true, reviews: [formal()] }).status,
     0,
   );
+});
+
+test("actual gate retracts an edited receipt instead of exposing an older formal pass", () => {
+  const withdrawn = comment("Result withdrawn", {
+    created_at: "2026-10-14T10:00:00Z",
+    updated_at: "2026-10-15T10:04:00Z",
+  });
+  for (const comments of [
+    [withdrawn, activation, trigger],
+    [activation, trigger, withdrawn],
+  ]) {
+    const result = runGate({ comments, reviews: [formal()] });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /timed out/);
+  }
 });

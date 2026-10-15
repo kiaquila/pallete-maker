@@ -59,7 +59,8 @@ export function shouldRouteAiReviewRerunEvent(
 
   if (agent === "codex") {
     return (
-      isCodexEvidenceBody(body) && isTrustedReviewLogin(login, "codex", config)
+      (isCodexEvidenceBody(body) || event.action === "edited") &&
+      isTrustedReviewLogin(login, "codex", config)
     );
   }
 
@@ -332,14 +333,18 @@ export async function routeAiReviewRerun({
         `/repos/${repository}/pulls/${context.prNumber}/reviews`,
       ),
     ]);
+    // REST no longer contains an edit's prior body. Reconcile all selected
+    // Codex comment updates so a retraction during an active gate is not lost.
     const timestamps = [
       ...comments
         .filter((comment) =>
-          shouldRouteAiReviewRerunEvent(
-            { issue: { pull_request: {} }, comment },
-            selectedAgent,
-            config,
-          ),
+          normalizeAgent(selectedAgent) === "codex"
+            ? isTrustedReviewLogin(comment.user?.login, "codex", config)
+            : shouldRouteAiReviewRerunEvent(
+                { issue: { pull_request: {} }, comment },
+                selectedAgent,
+                config,
+              ),
         )
         .map((comment) => evidenceTimestamp({ comment })),
       ...reviews

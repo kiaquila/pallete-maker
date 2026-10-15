@@ -337,7 +337,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   const boundaryTime = Date.parse(
     timelineEvents[boundaryIndex].created_at || "",
   );
-  const latestCodexComment =
+  const latestCandidate =
     timelineEvents
       .map((entry, index) => ({ entry, index }))
       .filter(
@@ -347,15 +347,15 @@ export const pickAuthoritativeCodexSkipModeComment = ({
             "<!-- codex-pull-request-review-summary -->",
           ) &&
           (index > boundaryIndex ||
-            (getBody(entry).startsWith(codexReceiptMarker) &&
-              Number.isFinite(boundaryTime) &&
+            (Number.isFinite(boundaryTime) &&
               codexCommentTimestamp(entry) > boundaryTime)),
       )
       .sort(
         (a, b) =>
           codexCommentTimestamp(b.entry) - codexCommentTimestamp(a.entry) ||
           b.index - a.index,
-      )[0]?.entry || null;
+      )[0] || null;
+  const latestCodexComment = latestCandidate?.entry;
 
   if (!latestCodexComment) {
     return null;
@@ -373,7 +373,10 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   }
 
   const summaryClassification = classifyCodexSummaryComment(
-    latestCodexComment,
+    latestCandidate.index <= boundaryIndex &&
+      !getBody(latestCodexComment).startsWith(codexReceiptMarker)
+      ? { ...latestCodexComment, body: "" }
+      : latestCodexComment,
     headSha,
   );
 
