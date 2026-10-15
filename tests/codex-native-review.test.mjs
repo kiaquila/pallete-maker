@@ -527,3 +527,49 @@ test("formal edit hashes normalize webhook and REST states while retaining body/
     );
   }
 });
+
+test("same-second native formal retractions remain eligible and tied non-passes win", () => {
+  const at = "2026-10-15T10:03:00Z";
+  const review = formal({ body: "Result withdrawn", submitted_at: at });
+  const marker = editMarker(review, { observedAt: at });
+  for (const receiptAt of ["2026-10-15T10:02:00Z", at]) {
+    const result = runGate({
+      comments: timeline(comment(receipt, { created_at: receiptAt })),
+      reviews: [review],
+      issueComments: [marker],
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /timed out/);
+  }
+  const negativeComment = runGate({
+    comments: timeline(
+      comment(invalid["incomplete verdict"], { created_at: at }),
+    ),
+    reviews: [formal()],
+  });
+  assert.notEqual(negativeComment.status, 0);
+  assert.equal(
+    runGate({
+      comments: timeline(comment(receipt, { created_at: at })),
+      reviews: [formal()],
+    }).status,
+    0,
+  );
+});
+
+test("equal-second formal verdict conflicts fail closed regardless of REST ordering", () => {
+  const positive = formal({ id: 3 });
+  const retracted = formal({ id: 4, body: "Result withdrawn" });
+  const incomplete = formal({
+    id: 5,
+    body: "Codex Review: Here are some automated review suggestions",
+  });
+  for (const negative of [retracted, incomplete]) {
+    for (const reviews of [
+      [positive, negative],
+      [negative, positive],
+    ]) {
+      assert.notEqual(runGate({ comments: [], reviews }).status, 0);
+    }
+  }
+});

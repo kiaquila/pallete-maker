@@ -5,7 +5,6 @@ import {
   classifyCodexSetupReply,
   codexReviewerLogins,
   codexCommentTimestamp,
-  matchesCodexReview,
   nativeReviewTimestamp,
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
@@ -381,10 +380,8 @@ const pickLatestCodexReview = (reviews) =>
     reviews,
     (r) =>
       r.submitted_at &&
-      (matchesCodexReview(r, headSha) ||
-        (r.commit_id === headSha &&
-          codexReviewerLogins.has(r.user?.login) &&
-          reviewTimestamp(r) > Date.parse(r.submitted_at))),
+      r.commit_id === headSha &&
+      codexReviewerLogins.has(r.user?.login),
     reviewTimestamp,
   );
 
@@ -744,7 +741,31 @@ while (Date.now() < deadline) {
         );
       }
     }
-    const formal = pickLatestCodexReview(reviews);
+    let formal = pickLatestCodexReview(reviews);
+    let formalVerdict = null;
+    if (formal) {
+      // REST ordering cannot prove which equal-second verdict is newer.
+      const tied = await Promise.all(
+        reviews
+          .filter(
+            (review) =>
+              review.submitted_at &&
+              review.commit_id === headSha &&
+              codexReviewerLogins.has(review.user?.login) &&
+              reviewTimestamp(review) === reviewTimestamp(formal),
+          )
+          .map(async (review) => ({
+            review,
+            verdict: await classifyCodexReview(review),
+          })),
+      );
+      const selected =
+        tied.find((item) => item.verdict.outcome === "fail") ||
+        tied.find((item) => item.verdict.outcome === "pending") ||
+        tied[0];
+      formal = selected.review;
+      formalVerdict = selected.verdict;
+    }
     let commentEvidence = null;
     try {
       const timelineEvents = await listPaginated(buildIssueTimelinePath());
@@ -763,14 +784,13 @@ while (Date.now() < deadline) {
     const useComment =
       commentEvidence &&
       (!formal ||
-        codexCommentTimestamp(commentEvidence.comment) >=
-          reviewTimestamp(formal));
+        codexCommentTimestamp(commentEvidence.comment) >
+          reviewTimestamp(formal) ||
+        (codexCommentTimestamp(commentEvidence.comment) ===
+          reviewTimestamp(formal) &&
+          commentEvidence.classification.outcome !== "pass"));
     const evidence = useComment ? commentEvidence.comment : formal;
-    const mapped = useComment
-      ? commentEvidence.classification
-      : formal
-        ? await classifyCodexReview(formal)
-        : null;
+    const mapped = useComment ? commentEvidence.classification : formalVerdict;
 
     if (mapped && mapped.outcome !== "pending") {
       if (mapped.outcome === "fail") throw new Error(mapped.reason);

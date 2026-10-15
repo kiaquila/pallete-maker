@@ -40,6 +40,10 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   selected agent, review ID and exact current body/state hash. They cannot
   manufacture a native verdict. A retracted formal verdict becomes pending;
   every same-head native P0-P2 or untagged formal body finding remains blocking.
+  All submitted current-head native reviews remain candidates even after their
+  verdict text is removed. On equal-second timestamps, a non-passing comment or
+  formal verdict takes precedence over a passing counterpart, including ties
+  between multiple formal reviews regardless of REST list order.
 - Pick the freshest formal review or eligible receipt using edit timestamps;
   malformed newer evidence cannot expose an older positive comment. A receipt
   edited after the current trusted trigger may be reused even if created earlier.

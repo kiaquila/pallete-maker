@@ -40,3 +40,10 @@ is ordering metadata only; same-head native body findings remain blocking.
 Native P1 in review 5540952034 identified webhook/REST state case differences.
 Canonicalize state before hashing and exercise lowercase event payloads against
 uppercase REST reviews, including approval, changes requested and dismissal.
+
+Native P2 in review 5540988151 identified a strict timestamp comparison that
+excluded formal retractions in the submission second. Retain all trusted
+current-head formal reviews as candidates and prefer a non-pass when comment
+and formal timestamps tie. Cover older and tied positive receipts, tied
+incomplete comments, conflicting formal reviews in both REST orders and the
+both-positive case.
