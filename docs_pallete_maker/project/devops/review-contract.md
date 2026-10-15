@@ -7,7 +7,7 @@
 All three backends reject bot-posted trigger comments. A human-authored trigger is required:
 
 - on **every new push** (`pull_request: synchronize`) for any backend, and
-- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run waits until timeout unless a human posts `@codex review` right after opening the PR.
+- on **PR open** for `codex` and `claude` — only Gemini Code Assist auto-reviews on `opened` / `ready_for_review`. With `AI_REVIEW_AGENT=codex` (current default), the initial `AI Review` run fails quickly without evidence; a human must post `@codex review <full-head-sha>` after opening the PR.
 
 Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Canonical recovery: `pnpm run review:switch -- --to <agent>`.
 
@@ -23,8 +23,26 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
 - Summary-only / setup-error comments are accepted only when they land
   after the current head's PR timeline activation event, and after the
   newest same-head human `@codex review` trigger if one exists.
+- Accept legacy `Codex Review:` no-findings replies and the native
+  `<!-- codex-review-receipt:v1 -->` format from
+  `chatgpt-codex-connector[bot]` only. A receipt requires exactly one positive
+  verdict and one `**Reviewed commit:**` line. Match the current full SHA,
+  resolving a 10–39 character abbreviation through GitHub before success.
+  Reject missing/stale SHAs, duplicate markers, conflicting text and incomplete
+  verdicts. Only the known About Codex details block may follow the verdict.
+- Pick the freshest formal review or eligible receipt using edit timestamps;
+  malformed newer evidence cannot expose an older positive comment. A receipt
+  edited after the current trusted trigger may be reused even if created earlier.
+- Before success, inspect all review-thread pages for unresolved native Codex
+  P0–P2 or untagged findings, including older heads. New request markers never
+  erase them; P3-only findings remain advisory. Re-read the PR head immediately
+  before publishing success and fail if it changed or the PR closed.
+- `codex-pull-request-review-summary` / `codex-review-state:v1` comments are
+  wakeup signals only. Their JSON, `Completed` text and reactions never grant
+  a passing review; malformed or negative state cannot be mistaken for approval.
 - If the timeline lookup is unavailable, the gate logs a warning and
-  fails closed by waiting for formal review only.
+  fails closed by waiting for formal review only. If review-thread proof is
+  unavailable, no Codex result may pass.
 
 ## Gemini Review
 

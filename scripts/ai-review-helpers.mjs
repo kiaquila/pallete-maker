@@ -8,8 +8,9 @@ export const codexReviewerLogins = new Set(["chatgpt-codex-connector[bot]"]);
 export const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 const codexSummaryPrefix = /^Codex Review:/i;
+const codexReceiptMarker = "<!-- codex-review-receipt:v1 -->";
 const codexNoIssuesPattern =
-  /did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues/i;
+  /^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s+(?:Nice work!|Keep it up!|Looks good!|:[a-z_]+:|🚀|🎉))*$/i;
 const codexEnvironmentPattern = /create an environment for this repo/i;
 const codexAccountPattern = /create a codex account and connect to github/i;
 const codexTriggerPattern = /@codex review\b/i;
@@ -146,6 +147,8 @@ const isCodexBotComment = (entry) =>
 const isHumanCodexTriggerComment = (entry) =>
   isCommentEvent(entry) &&
   codexTriggerPattern.test(getBody(entry)) &&
+  isTrustedAssociation(entry.author_association) &&
+  entry.user?.type !== "Bot" &&
   !reviewerBotLogins.has(getLogin(entry));
 
 const isCurrentHeadActivationEvent = (entry, headSha) =>
@@ -160,7 +163,24 @@ export const matchesCodexReview = (review, headSha) =>
   (review?.body || "").includes("Codex Review");
 
 export const matchesCodexSummaryComment = (comment) =>
-  isCodexBotComment(comment) && codexSummaryPrefix.test(getBody(comment));
+  isCodexBotComment(comment) &&
+  (codexSummaryPrefix.test(getBody(comment)) ||
+    getBody(comment).startsWith("<!-- codex-review-receipt:"));
+
+// A summary is a wakeup signal only. Its hidden state is never a verdict.
+export const isCodexEvidenceBody = (body) => {
+  const text = String(body || "").trim();
+  return (
+    codexSummaryPrefix.test(text) ||
+    text.startsWith("<!-- codex-review-receipt:") ||
+    text.startsWith("<!-- codex-pull-request-review-summary -->") ||
+    codexEnvironmentPattern.test(text) ||
+    codexAccountPattern.test(text)
+  );
+};
+
+export const codexCommentTimestamp = (comment) =>
+  Date.parse(comment.updated_at || comment.created_at || "");
 
 export const classifyCodexSetupReply = (comment) => {
   const body = getBody(comment);
@@ -186,23 +206,60 @@ export const classifyCodexSetupReply = (comment) => {
   return null;
 };
 
-export const classifyCodexSummaryComment = (comment) => {
-  const body = getBody(comment);
-
+export const classifyCodexSummaryComment = (comment, headSha) => {
+  const pending = {
+    outcome: "pending",
+    reason:
+      "Codex comment lacks an unambiguous current-head no-findings verdict.",
+    details: [comment?.html_url],
+  };
+  if (!matchesCodexSummaryComment(comment)) return pending;
+  let body = getBody(comment);
+  const receipt = body.startsWith("<!-- codex-review-receipt:");
+  if (receipt) {
+    if (!body.startsWith(`${codexReceiptMarker}\n`)) return pending;
+    body = body.slice(codexReceiptMarker.length).trim();
+  }
+  // Never strip arbitrary HTML or permit duplicate/conflicting machine markers.
+  if (
+    /<!--\s*codex-/i.test(body) ||
+    (body.match(/\*\*Reviewed commit:\*\*/g) || []).length > 1
+  )
+    return pending;
+  const detailsIndex = body.indexOf("<details>");
+  if (detailsIndex !== -1) {
+    const details = body.slice(detailsIndex);
+    if (
+      !/^<details>\s*<summary>ℹ️ About Codex in GitHub<\/summary>[\s\S]*<\/details>$/.test(
+        details,
+      ) ||
+      (details.match(/<details>/g) || []).length !== 1 ||
+      (details.match(/<\/details>/g) || []).length !== 1
+    )
+      return pending;
+    body = body.slice(0, detailsIndex).trim();
+  }
+  const shaMatch = body.match(
+    /\n\n\*\*Reviewed commit:\*\* `([a-f0-9]{10,40})`$/,
+  );
+  if (receipt && !shaMatch) return pending;
+  if (shaMatch) {
+    if (
+      !/^[a-f0-9]{40}$/.test(headSha || "") ||
+      !headSha.startsWith(shaMatch[1])
+    )
+      return pending;
+    body = body.slice(0, shaMatch.index).trim();
+  }
   if (codexNoIssuesPattern.test(body)) {
     return {
       outcome: "pass",
       reason: "Codex completed review with no major issues.",
       details: [comment.html_url],
+      reviewedSha: shaMatch?.[1] || null,
     };
   }
-
-  return {
-    outcome: "pending",
-    reason:
-      "Codex summary comment did not match a recognized no-findings reply.",
-    details: [comment.html_url],
-  };
+  return pending;
 };
 
 export const findLatestHeadActivationIndex = (timelineEvents, headSha) => {
@@ -250,11 +307,28 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
+  const boundaryTime = Date.parse(
+    timelineEvents[boundaryIndex].created_at || "",
+  );
   const latestCodexComment =
     timelineEvents
-      .slice(boundaryIndex + 1)
-      .filter((entry) => isCodexBotComment(entry))
-      .at(-1) || null;
+      .map((entry, index) => ({ entry, index }))
+      .filter(
+        ({ entry, index }) =>
+          isCodexBotComment(entry) &&
+          !getBody(entry).startsWith(
+            "<!-- codex-pull-request-review-summary -->",
+          ) &&
+          (index > boundaryIndex ||
+            (getBody(entry).startsWith(codexReceiptMarker) &&
+              Number.isFinite(boundaryTime) &&
+              codexCommentTimestamp(entry) > boundaryTime)),
+      )
+      .sort(
+        (a, b) =>
+          codexCommentTimestamp(b.entry) - codexCommentTimestamp(a.entry) ||
+          b.index - a.index,
+      )[0]?.entry || null;
 
   if (!latestCodexComment) {
     return null;
@@ -271,19 +345,18 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     };
   }
 
-  if (!matchesCodexSummaryComment(latestCodexComment)) {
-    return null;
-  }
-
-  const summaryClassification = classifyCodexSummaryComment(latestCodexComment);
-  if (summaryClassification.outcome === "pending") {
-    return null;
-  }
+  const summaryClassification = classifyCodexSummaryComment(
+    latestCodexComment,
+    headSha,
+  );
 
   return {
     comment: latestCodexComment,
     classification: summaryClassification,
-    reviewState: "COMMENTED_NO_FINDINGS",
+    reviewState:
+      summaryClassification.outcome === "pass"
+        ? "COMMENTED_NO_FINDINGS"
+        : "PENDING",
     boundaryType:
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };

@@ -38,9 +38,30 @@ valid review command (`@codex review`, `/gemini review`, or
    PR head SHA
 4. reruns the latest failed `AI Review` run for that SHA when one exists
 
-`AI Review Rerun` also listens for trusted reviewer output from the selected
-backend and reruns `AI Review` after evidence arrives. This keeps the required
-check event-driven instead of depending on a long polling window.
+`AI Review Rerun` listens for trusted reviewer output from the selected
+backend on comment creation **and edits**. Codex legacy replies, v1 receipts,
+and updates to the existing native summary all wake the gate. Summary state
+is never positive evidence: the gate still requires a validated receipt or
+formal review. Comment evidence uses `updated_at`, not just `created_at`.
+
+If the gate is active, the evidence event does not start a duplicate attempt.
+An `AI Review` `workflow_run: completed` event reads current trusted evidence
+and reconciles it against the latest attempt's `run_started_at`. Evidence
+arriving during that attempt causes one rerun, even when the attempt's final
+`updated_at` is newer than the evidence. A subsequent attempt started after
+that evidence does not rerun again, including after failure. The completion
+listener accepts only the PR-based `ai-review.yml` workflow, so it cannot
+requeue itself. Closed PRs, old heads and concurrent pushes are ignored; the
+head is refreshed again before the rerun request. When GitHub omits linked
+PRs from the completion payload, resolve open exact-head PRs via the commit.
+
+All privileged gate and rerun scripts still come from the default branch.
+For the first compatibility PR, a passing native formal Codex review on its
+exact head remains consumable by the old gate. A receipt-only response cannot
+bootstrap the old parser: preserve the PR and report the deployment blocker
+unless an existing trusted native review path succeeds. Never switch checkout
+to unreviewed PR scripts, fabricate a check, weaken protection or bypass merge
+checks to install the parser.
 
 ## Tier 1 — Manual local wrapper (active, zero secrets)
 

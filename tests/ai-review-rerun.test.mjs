@@ -257,7 +257,7 @@ describe("AI Review run selection", () => {
     assert.equal(decision.run.id, 1);
   });
 
-  test("treats `updated_at` as the latest run activity to suppress post-rerun edit storms", () => {
+  test("uses the latest attempt start to suppress already-observed edits", () => {
     const decision = selectAiReviewRun(
       [
         {
@@ -279,7 +279,7 @@ describe("AI Review run selection", () => {
     assert.equal(decision.run.id, 1);
   });
 
-  test("ignores comment edits when picking evidence timestamps", () => {
+  test("uses comment edit times for updated evidence", () => {
     assert.equal(
       evidenceTimestamp({
         comment: {
@@ -287,7 +287,7 @@ describe("AI Review run selection", () => {
           updated_at: "2026-05-12T11:30:00Z",
         },
       }),
-      "2026-05-12T10:00:00Z",
+      "2026-05-12T11:30:00Z",
     );
 
     assert.equal(
