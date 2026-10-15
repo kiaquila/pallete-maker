@@ -29,7 +29,9 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   verdict and one `**Reviewed commit:**` line. Match the current full SHA,
   resolving a 10–39 character abbreviation through GitHub before success.
   Reject missing/stale SHAs, duplicate markers, conflicting text and incomplete
-  verdicts. Only the known About Codex details block may follow the verdict.
+  verdicts. Known connector sign-offs and emoji are allowed after the explicit
+  no-findings sentence; unknown or contradictory prose fails closed. Only the
+  known About Codex details block may follow the verdict.
 - Pick the freshest formal review or eligible receipt using edit timestamps;
   malformed newer evidence cannot expose an older positive comment. A receipt
   edited after the current trusted trigger may be reused even if created earlier.

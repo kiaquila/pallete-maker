@@ -50,6 +50,26 @@ for (const [name, body] of [
     assert.equal(verdict(comment(body)), "pass"));
 }
 
+for (const signoff of [
+  ":+1:",
+  "Breezy!",
+  "Can't wait for the next one!",
+  "Chef's kiss.",
+  "Delightful!",
+  "Hooray!",
+  "Keep them coming!",
+  "More of your lovely PRs please.",
+  "What shall we delve into next?",
+  "You're on a roll.",
+]) {
+  test(`accepts observed native sign-off: ${signoff}`, () => {
+    assert.equal(
+      verdict(comment(receipt.replace(":rocket:", signoff))),
+      "pass",
+    );
+  });
+}
+
 const invalid = {
   "stale SHA": receipt.replace(HEAD.slice(0, 10), OLD.slice(0, 10)),
   "wrong full SHA with matching prefix": receipt.replace(
@@ -218,7 +238,7 @@ function runGate({
           AI_REVIEW_PR_NUMBER: "7",
           AI_REVIEW_HEAD_SHA: HEAD,
           AI_REVIEW_TRIGGER_MODE: "skip",
-          AI_REVIEW_WAIT_MS: "60",
+          AI_REVIEW_WAIT_MS: "300",
           AI_REVIEW_POLL_MS: "10",
         },
       },

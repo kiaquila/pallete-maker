@@ -10,7 +10,34 @@ export const trustedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const codexSummaryPrefix = /^Codex Review:/i;
 const codexReceiptMarker = "<!-- codex-review-receipt:v1 -->";
 const codexNoIssuesPattern =
-  /^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.(?:\s+(?:Nice work!|Keep it up!|Looks good!|:[a-z_]+:|🚀|🎉))*$/i;
+  /^Codex Review: did(?:\s+not|\s*n['’]?t)\s+find\s+any\s+major\s+issues\.([^\r\n]*)$/i;
+// Observed connector sign-offs are presentation text, not additional verdicts.
+// Unknown prose fails closed instead of accepting a contradictory second sentence.
+const codexSignoffs = new Set([
+  "",
+  "nice work!",
+  "keep it up!",
+  "looks good!",
+  "breezy!",
+  "can't wait for the next one!",
+  "chef's kiss.",
+  "delightful!",
+  "hooray!",
+  "keep them coming!",
+  "more of your lovely prs please.",
+  "what shall we delve into next?",
+  "you're on a roll.",
+]);
+const hasCodexNoIssuesVerdict = (body) => {
+  const match = body.match(codexNoIssuesPattern);
+  if (!match) return false;
+  const signoff = match[1]
+    .trim()
+    .replace(/(?:\s*(?::[a-z0-9_+-]+:|🚀|🎉))+$/i, "")
+    .trim()
+    .toLowerCase();
+  return codexSignoffs.has(signoff);
+};
 const codexEnvironmentPattern = /create an environment for this repo/i;
 const codexAccountPattern = /create a codex account and connect to github/i;
 const codexTriggerPattern = /@codex review\b/i;
@@ -251,7 +278,7 @@ export const classifyCodexSummaryComment = (comment, headSha) => {
       return pending;
     body = body.slice(0, shaMatch.index).trim();
   }
-  if (codexNoIssuesPattern.test(body)) {
+  if (hasCodexNoIssuesVerdict(body)) {
     return {
       outcome: "pass",
       reason: "Codex completed review with no major issues.",
