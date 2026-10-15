@@ -311,3 +311,26 @@ test("an edit retracting every recognized marker reaches workflow and trusted ru
   assert.equal(reconciled.action, "evidence_observed");
   assert.equal(reconciled.posts.length, 0);
 });
+
+test("second-precision equality re-evaluates a successful check and stops after a later attempt", async () => {
+  const event = commentEvent("Result withdrawn", "edited", {
+    updated_at: baseRun.run_started_at,
+  });
+  for (const conclusion of ["success", "failure"]) {
+    const run = { ...baseRun, conclusion };
+    assert.equal((await route(event, { run })).action, "rerun");
+    assert.equal(
+      (await route(completed, { run, comments: [event.comment] })).action,
+      "rerun",
+    );
+    const later = await route(completed, {
+      comments: [event.comment],
+      run: { ...run, run_started_at: "2026-10-15T10:00:01Z" },
+    });
+    assert.equal(later.posts.length, 0);
+    assert.equal(
+      later.action,
+      conclusion === "success" ? "already_success" : "evidence_observed",
+    );
+  }
+});

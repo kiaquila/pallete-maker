@@ -24,3 +24,8 @@ A later P2 identified retracted evidence hidden by the workflow body filter.
 Route bot edits through runtime identity validation and reconcile all trusted
 Codex comment updates on completion, including bodies that lost their markers.
 Such edits must invalidate older positive evidence without granting a verdict.
+
+A native P2 in formal review 5540814051 identified second-precision timestamp
+ambiguity. Treat equality with the attempt start conservatively and stop after
+a newer attempt has observed the evidence. Also preserve severity when a native
+finding is published directly in the formal review body without an inline thread.

@@ -377,3 +377,46 @@ test("actual gate retracts an edited receipt instead of exposing an older formal
     assert.match(result.stderr, /timed out/);
   }
 });
+
+test("formal body findings never pass as an empty comment review", () => {
+  for (const priority of ["P0", "P1", "P2"]) {
+    const body = `<!-- codex-code-review-finding:v1 -->\n### Codex Review\n![${priority} Badge](https://example.com/badge) Actual finding`;
+    assert.match(
+      runGate({ comments: [], reviews: [formal({ body })] }).stderr,
+      /blocking P[012] finding/,
+    );
+  }
+  assert.match(
+    runGate({
+      comments: [],
+      reviews: [
+        formal({
+          body: "<!-- codex-code-review-finding:v1 -->\nCodex Review: actual untagged finding",
+        }),
+      ],
+    }).stderr,
+    /without recognized/,
+  );
+  assert.notEqual(
+    runGate({
+      comments: [],
+      reviews: [
+        formal({
+          body: "Codex Review: Here are some automated review suggestions",
+        }),
+      ],
+    }).status,
+    0,
+  );
+  assert.equal(
+    runGate({
+      comments: [],
+      reviews: [
+        formal({
+          body: "<!-- codex-code-review-finding:v1 -->\nCodex Review: [P3] advisory",
+        }),
+      ],
+    }).status,
+    0,
+  );
+});

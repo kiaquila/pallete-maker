@@ -52,7 +52,10 @@ An `AI Review` `workflow_run: completed` event reads current trusted evidence
 and reconciles it against the latest attempt's `run_started_at`. Because REST
 cannot recover an edit's previous body, completion reconciliation considers all
 trusted Codex comment updates, including now-unrecognized retractions. Evidence
-arriving during that attempt causes one rerun, even when the attempt's final
+arriving during that attempt causes one rerun, including timestamps equal to
+its start because GitHub timestamps may have only second-level precision. Once
+the next attempt starts strictly after that evidence it does not requeue again,
+even when the previous attempt's final
 `updated_at` is newer than the evidence. A subsequent attempt started after
 that evidence does not rerun again, including after failure. The completion
 listener accepts only the PR-based `ai-review.yml` workflow, matching the

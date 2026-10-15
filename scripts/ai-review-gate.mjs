@@ -403,6 +403,24 @@ const extractCodexPriority = (body) => {
 };
 
 const classifyCodexReview = async (review) => {
+  const body = review.body || "";
+  const bodyPriority = extractCodexPriority(body);
+  const bodyFinding = body.includes("<!-- codex-code-review-finding:v1 -->");
+  if (bodyPriority !== null && bodyPriority <= 2) {
+    return {
+      outcome: "fail",
+      reason: `Codex reported a blocking P${bodyPriority} finding in the formal review body.`,
+      details: [review.html_url],
+    };
+  }
+  if (bodyFinding && bodyPriority === null) {
+    return {
+      outcome: "fail",
+      reason:
+        "Codex formal review body contains a finding without recognized P0-P3 severity.",
+      details: [review.html_url],
+    };
+  }
   if (review.state === "APPROVED") {
     return {
       outcome: "pass",
@@ -437,9 +455,21 @@ const classifyCodexReview = async (review) => {
   );
 
   if (commentsForReview.length === 0) {
+    if (
+      /Here are some automated review suggestions/i.test(body) &&
+      bodyPriority === null
+    ) {
+      return {
+        outcome: "pending",
+        reason:
+          "Codex indicates findings but their severity evidence is unavailable.",
+        details: [review.html_url],
+      };
+    }
     return {
       outcome: "pass",
-      reason: "Codex completed a comment review without inline findings.",
+      reason:
+        "Codex completed a comment review without inline blocking findings.",
       details: [],
     };
   }

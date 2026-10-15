@@ -17,7 +17,10 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
 - Native GitHub PR review surface from `chatgpt-codex-connector[bot]`
 - Inline findings must carry `P0` to `P3`
 - `P3`-only findings are advisory
-- `P0` to `P2` findings block merge
+- `P0` to `P2` findings block merge, including findings published in the
+  formal review body when GitHub cannot attach an inline comment. Untagged
+  machine-marked body findings fail closed; a suggestions body without readable
+  severity cannot be treated as an empty no-findings review.
 - In `trigger_mode=skip`, formal reviews with `commit_id === headSha`
   stay authoritative.
 - Summary-only / setup-error comments are accepted only when they land

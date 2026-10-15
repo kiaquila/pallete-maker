@@ -99,6 +99,7 @@ export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = "") {
   );
   // Reconcile evidence against the attempt start, not completion: evidence can
   // arrive after the gate's last read while the run is still in progress.
+  // GitHub truncates timestamps to seconds, so equality is also fresh evidence.
   const latestCompletedTime = Date.parse(
     latestCompletedRun?.run_started_at || latestCompletedRun?.created_at || "",
   );
@@ -106,7 +107,7 @@ export function selectAiReviewRun(runs = [], headSha, evidenceCreatedAt = "") {
     latestCompletedRun &&
     Number.isFinite(evidenceTime) &&
     (!Number.isFinite(latestCompletedTime) ||
-      latestCompletedTime < evidenceTime)
+      latestCompletedTime <= evidenceTime)
   ) {
     return { action: "rerun", run: latestCompletedRun };
   }
