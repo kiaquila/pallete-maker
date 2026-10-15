@@ -5,6 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import {
+  createNativeReviewEditMarker,
+  extractNativeReviewEditMarker,
+  nativeReviewTimestamp,
   classifyCodexSummaryComment,
   matchesCodexSummaryComment,
   pickAuthoritativeCodexSkipModeComment,
@@ -177,6 +180,7 @@ function runGate({
   finalHead = HEAD,
   resolvedSha = HEAD,
   reviewComments = [],
+  issueComments = [],
   timelineUnavailable = false,
   threadErrors = false,
 } = {}) {
@@ -193,6 +197,7 @@ function runGate({
         finalHead,
         resolvedSha,
         reviewComments,
+        issueComments,
         timelineUnavailable,
         threadErrors,
       }),
@@ -214,6 +219,7 @@ function runGate({
         }
         else if(path.includes('/commits/')) data={sha:d.resolvedSha};
         else if(path.endsWith('/graphql')) data=d.threadErrors?{errors:[{message:'denied'}]}:{data:{repository:{pullRequest:{reviewThreads:{nodes:d.threads,pageInfo:{hasNextPage:false}}}}}};
+        else if(path.endsWith('/issues/7/comments')) data=d.issueComments;
         else if(path.endsWith('/comments')) data=d.reviewComments;
         else throw new Error('Unexpected request '+path);
         return new Response(JSON.stringify(data),{status:200,headers:{'content-type':'application/json'}});
@@ -383,7 +389,7 @@ test("formal body findings never pass as an empty comment review", () => {
     const body = `<!-- codex-code-review-finding:v1 -->\n### Codex Review\n![${priority} Badge](https://example.com/badge) Actual finding`;
     assert.match(
       runGate({ comments: [], reviews: [formal({ body })] }).stderr,
-      /blocking P[012] finding/,
+      /Blocking or untagged/,
     );
   }
   assert.match(
@@ -395,7 +401,7 @@ test("formal body findings never pass as an empty comment review", () => {
         }),
       ],
     }).stderr,
-    /without recognized/,
+    /Blocking or untagged/,
   );
   assert.notEqual(
     runGate({
@@ -419,4 +425,83 @@ test("formal body findings never pass as an empty comment review", () => {
     }).status,
     0,
   );
+});
+
+const editMarker = (review, extra = {}) => ({
+  user: { login: "github-actions[bot]" },
+  body: createNativeReviewEditMarker({
+    agent: "codex",
+    headSha: HEAD,
+    review,
+    observedAt: "2026-10-15T10:04:00Z",
+    sourceRunId: "12345",
+    ...extra,
+  }),
+});
+test("edit ordering is bound to bot identity, full head, review ID and exact current body/state", () => {
+  const review = formal();
+  const marker = editMarker(review);
+  const original = Date.parse(review.submitted_at);
+  assert.equal(
+    nativeReviewTimestamp(review, [marker], "codex", HEAD),
+    Date.parse("2026-10-15T10:04:00Z"),
+  );
+  for (const c of [
+    { ...marker, user: { login: "kiaquila" } },
+    editMarker(review, { headSha: OLD }),
+    editMarker({ ...review, id: 99 }),
+    editMarker({ ...review, body: "different body" }),
+    editMarker({ ...review, state: "APPROVED" }),
+    editMarker(review, { agent: "gemini" }),
+    {
+      ...marker,
+      body: marker.body.replace(
+        '"agent":"codex"',
+        '"agent":"gemini","agent":"codex"',
+      ),
+    },
+    { ...marker, body: marker.body + " conflicting prose" },
+    {
+      ...marker,
+      body: marker.body.replace(
+        '"source_run_id":"12345"',
+        '"source_run_id":"not-a-run"',
+      ),
+    },
+  ]) {
+    assert.equal(nativeReviewTimestamp(review, [c], "codex", HEAD), original);
+  }
+  assert.equal(
+    extractNativeReviewEditMarker({
+      ...marker,
+      body: marker.body.replace("2026-10-15T10:04:00.000Z", "invalid"),
+    }),
+    null,
+  );
+  assert.notEqual(runGate({ comments: [], issueComments: [marker] }).status, 0);
+});
+test("an edited formal retraction becomes pending instead of exposing a newer receipt", () => {
+  const review = formal({
+    body: "Result withdrawn",
+    submitted_at: "2026-10-15T10:00:00Z",
+  });
+  const result = runGate({
+    reviews: [review],
+    issueComments: [editMarker(review)],
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /timed out/);
+});
+test("same-head body blockers cannot be superseded by a newer positive receipt or ordering marker", () => {
+  for (const body of [
+    "Codex Review: [P1] blocker",
+    "<!-- codex-code-review-finding:v1 --> Codex Review: untagged finding",
+  ]) {
+    const review = formal({ body, submitted_at: "2026-10-15T10:00:00Z" });
+    assert.match(
+      runGate({ reviews: [review], issueComments: [editMarker(review)] })
+        .stderr,
+      /Blocking or untagged/,
+    );
+  }
 });

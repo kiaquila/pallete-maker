@@ -6,6 +6,7 @@ import {
   codexReviewerLogins,
   codexCommentTimestamp,
   matchesCodexReview,
+  nativeReviewTimestamp,
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
 
@@ -369,14 +370,21 @@ const pickLatest = (items, matchFn, timestampFn) =>
   items.filter(matchFn).sort((a, b) => timestampFn(b) - timestampFn(a))[0] ||
   null;
 
-const reviewTimestamp = (r) => new Date(r.submitted_at || 0).getTime();
+let formalEditComments = [];
+const reviewTimestamp = (review) =>
+  nativeReviewTimestamp(review, formalEditComments, selectedAgent, headSha);
 const commentTimestamp = (c) =>
   new Date(c.updated_at || c.created_at || 0).getTime();
 
 const pickLatestCodexReview = (reviews) =>
   pickLatest(
     reviews,
-    (r) => r.submitted_at && matchesCodexReview(r, headSha),
+    (r) =>
+      r.submitted_at &&
+      (matchesCodexReview(r, headSha) ||
+        (r.commit_id === headSha &&
+          codexReviewerLogins.has(r.user?.login) &&
+          reviewTimestamp(r) > Date.parse(r.submitted_at))),
     reviewTimestamp,
   );
 
@@ -445,6 +453,13 @@ const classifyCodexReview = async (review) => {
     };
   }
 
+  if (!body.includes("Codex Review")) {
+    return {
+      outcome: "pending",
+      reason: "Codex formal review verdict was withdrawn or is unrecognized.",
+      details: [review.html_url],
+    };
+  }
   const reviewComments = await listPaginated(
     buildPullReviewCommentsPath(
       review.submitted_at ? new Date(review.submitted_at).getTime() : 0,
@@ -707,6 +722,28 @@ while (Date.now() < deadline) {
     const reviews = await listPaginated(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );
+    formalEditComments = await listPaginated(buildIssueCommentsPath());
+    // Ordering markers must never make a same-head body finding disappear.
+    for (const review of reviews) {
+      if (
+        review.commit_id !== headSha ||
+        !codexReviewerLogins.has(review.user?.login) ||
+        review.state === "DISMISSED"
+      )
+        continue;
+      const priority = extractCodexPriority(review.body || "");
+      if (
+        (priority !== null && priority <= 2) ||
+        ((review.body || "").includes(
+          "<!-- codex-code-review-finding:v1 -->",
+        ) &&
+          priority === null)
+      ) {
+        throw new Error(
+          `Blocking or untagged Codex formal body finding: ${review.html_url}`,
+        );
+      }
+    }
     const formal = pickLatestCodexReview(reviews);
     let commentEvidence = null;
     try {
@@ -767,6 +804,7 @@ while (Date.now() < deadline) {
       process.exit(0);
     }
   } else {
+    formalEditComments = await listPaginated(buildIssueCommentsPath());
     const reviews = await listNewestPullReviews(
       `/repos/${owner}/${repo}/pulls/${prNumber}/reviews?per_page=100`,
     );

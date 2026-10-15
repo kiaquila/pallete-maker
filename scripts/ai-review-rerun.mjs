@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   extractClaudeOutcome,
+  createNativeReviewEditMarker,
+  extractNativeReviewEditMarker,
+  nativeReviewTimestamp,
   isCodexEvidenceBody,
   isTrustedReviewLogin,
 } from "./ai-review-helpers.mjs";
@@ -277,8 +280,12 @@ async function resolvePullContext({
   return { prNumber: pull.number, headSha: pull.head?.sha };
 }
 
-export function evidenceTimestamp(event) {
+export function evidenceTimestamp(event, observedAt = "") {
   return (
+    (event?.review && ["edited", "dismissed"].includes(event.action)
+      ? observedAt
+      : "") ||
+    event?.review?.updated_at ||
     event?.review?.submitted_at ||
     event?.comment?.updated_at ||
     event?.comment?.created_at ||
@@ -292,6 +299,8 @@ export async function routeAiReviewRerun({
   event,
   selectedAgent = "codex",
   config = {},
+  observedAt = "",
+  sourceRunId = "",
   request = defaultRequest,
 }) {
   if (!shouldRouteAiReviewRerunEvent(event, selectedAgent, config)) {
@@ -316,7 +325,47 @@ export async function routeAiReviewRerun({
       message: "Event is not for an open current PR head.",
     };
   }
-  let timestamp = evidenceTimestamp(event);
+  let timestamp = evidenceTimestamp(event, observedAt);
+  if (event.review && ["edited", "dismissed"].includes(event.action)) {
+    if (!observedAt || !sourceRunId)
+      throw new Error(
+        "Formal review edits require the trusted workflow run's time and ID.",
+      );
+    const body = createNativeReviewEditMarker({
+      agent: normalizeAgent(selectedAgent),
+      headSha: context.headSha,
+      review: event.review,
+      observedAt,
+      sourceRunId,
+    });
+    const existing = await listPaginated(
+      request,
+      token,
+      repository,
+      `/repos/${repository}/issues/${context.prNumber}/comments`,
+    );
+    if (
+      !existing.some(
+        (comment) =>
+          comment.body === body && extractNativeReviewEditMarker(comment),
+      )
+    ) {
+      const posted = await request(
+        token,
+        repository,
+        `/repos/${repository}/issues/${context.prNumber}/comments`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ body }),
+        },
+      );
+      if (!extractNativeReviewEditMarker(posted))
+        throw new Error(
+          "Formal edit ordering must be recorded by github-actions[bot].",
+        );
+    }
+  }
   if (event.workflow_run) {
     // Completion closes the active-run race. A second attempt starts after the
     // same evidence, so its completion cannot create an endless rerun loop.
@@ -354,7 +403,16 @@ export async function routeAiReviewRerun({
             review.commit_id === context.headSha &&
             shouldRouteAiReviewRerunEvent({ review }, selectedAgent, config),
         )
-        .map((review) => evidenceTimestamp({ review })),
+        .map((review) =>
+          new Date(
+            nativeReviewTimestamp(
+              review,
+              comments,
+              normalizeAgent(selectedAgent),
+              context.headSha,
+            ),
+          ).toISOString(),
+        ),
     ].filter((time) => Number.isFinite(Date.parse(time)));
     timestamp = timestamps.sort((a, b) => Date.parse(b) - Date.parse(a))[0];
     if (!timestamp)
@@ -380,10 +438,26 @@ async function main() {
     throw new Error(
       "GITHUB_TOKEN, GITHUB_REPOSITORY, and GITHUB_EVENT_PATH are required.",
     );
+  const event = JSON.parse(readFileSync(eventPath, "utf8"));
+  let observedAt = "";
+  let sourceRunId = "";
+  if (event.review && ["edited", "dismissed"].includes(event.action)) {
+    if (!process.env.GITHUB_RUN_ID)
+      throw new Error("GITHUB_RUN_ID is required to timestamp a formal edit.");
+    const run = await defaultRequest(
+      token,
+      repository,
+      `/repos/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+    );
+    observedAt = run.created_at;
+    sourceRunId = String(run.id);
+  }
   const result = await routeAiReviewRerun({
     token,
     repository,
-    event: JSON.parse(readFileSync(eventPath, "utf8")),
+    event,
+    observedAt,
+    sourceRunId,
     selectedAgent: normalizeAgent(process.env.AI_REVIEW_AGENT),
     config: readConfig(),
   });

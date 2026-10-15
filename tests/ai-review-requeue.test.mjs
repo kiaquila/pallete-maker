@@ -2,10 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  evidenceTimestamp,
   routeAiReviewRerun,
   selectAiReviewRun,
   shouldRouteAiReviewRerunEvent,
 } from "../scripts/ai-review-rerun.mjs";
+
+import { createNativeReviewEditMarker } from "../scripts/ai-review-helpers.mjs";
 
 const HEAD = "a".repeat(40);
 const BOT = { login: "chatgpt-codex-connector[bot]", type: "Bot" };
@@ -81,6 +84,10 @@ for (const action of ["created", "edited"]) {
   }
 }
 test("workflow subscribes to created/edited and gate completion; runtime restricts completion source", () => {
+  assert.match(
+    workflow,
+    /pull_request_review:\s*types: \[submitted, edited, dismissed\]/,
+  );
   assert.match(workflow, /issue_comment:\s*types: \[created, edited\]/);
   assert.match(
     workflow,
@@ -108,16 +115,28 @@ async function route(
   {
     run = baseRun,
     comments = [commentEvent().comment],
+    reviews = [],
+    observedAt = "",
+    sourceRunId = "",
     head = HEAD,
     headBeforePost = head,
     pullsMissing = false,
   } = {},
 ) {
   const posts = [];
+  const postedComments = [];
   let pullReads = 0;
   const request = async (_token, _repo, path, options = {}) => {
     if (options.method === "POST") {
       posts.push(path);
+      if (path.endsWith("/issues/7/comments")) {
+        const posted = {
+          ...JSON.parse(options.body),
+          user: { login: "github-actions[bot]" },
+        };
+        postedComments.push(posted);
+        return posted;
+      }
       return null;
     }
     if (/\/pulls\/7$/.test(path))
@@ -130,7 +149,7 @@ async function route(
       return [{ number: 7, state: "open", head: { sha: HEAD } }];
     if (path.includes("/actions/workflows/")) return { workflow_runs: [run] };
     if (path.includes("/issues/7/comments")) return comments;
-    if (path.includes("/pulls/7/reviews")) return [];
+    if (path.includes("/pulls/7/reviews")) return reviews;
     throw new Error(`Unexpected ${path}`);
   };
   const result = await routeAiReviewRerun({
@@ -139,9 +158,11 @@ async function route(
     event: pullsMissing
       ? { ...event, workflow_run: { ...event.workflow_run, pull_requests: [] } }
       : event,
+    observedAt,
+    sourceRunId,
     request,
   });
-  return { ...result, posts };
+  return { ...result, posts, postedComments };
 }
 test("completed failure requeues after a receipt; a successful check also re-evaluates new evidence", async () => {
   for (const conclusion of ["failure", "success"]) {
@@ -333,4 +354,124 @@ test("second-precision equality re-evaluates a successful check and stops after 
       conclusion === "success" ? "already_success" : "evidence_observed",
     );
   }
+});
+
+const editedFormal = {
+  action: "edited",
+  pull_request: { number: 7 },
+  review: {
+    id: 24,
+    user: BOT,
+    commit_id: HEAD,
+    state: "COMMENTED",
+    submitted_at: "2026-10-15T09:58:00Z",
+    body: "Codex Review: [P1] edited blocking finding",
+  },
+};
+const editContext = {
+  observedAt: "2026-10-15T10:02:00Z",
+  sourceRunId: "12345",
+};
+for (const action of ["submitted", "edited", "dismissed"]) {
+  test(`formal ${action} events reach the workflow and selected native runtime`, () => {
+    const event = { ...editedFormal, action };
+    assert.equal(workflowAllows(event, "pull_request_review"), true);
+    assert.equal(shouldRouteAiReviewRerunEvent(event), true);
+    assert.equal(
+      shouldRouteAiReviewRerunEvent({
+        ...event,
+        review: { ...event.review, user: { login: "attacker[bot]" } },
+      }),
+      false,
+    );
+  });
+}
+test("formal edit time comes from the event workflow run, not the original submission", () => {
+  assert.equal(
+    evidenceTimestamp(editedFormal, editContext.observedAt),
+    editContext.observedAt,
+  );
+  assert.equal(
+    evidenceTimestamp(
+      { ...editedFormal, action: "submitted" },
+      editContext.observedAt,
+    ),
+    editedFormal.review.submitted_at,
+  );
+});
+test("formal edits record stable ordering before re-evaluating a successful gate", async () => {
+  const result = await route(editedFormal, {
+    ...editContext,
+    comments: [],
+    run: { ...baseRun, conclusion: "success" },
+  });
+  assert.equal(result.action, "rerun");
+  assert.deepEqual(result.posts, [
+    "/repos/owner/repo/issues/7/comments",
+    "/repos/owner/repo/actions/runs/99/rerun",
+  ]);
+  assert.equal(
+    result.postedComments[0].body,
+    createNativeReviewEditMarker({
+      agent: "codex",
+      headSha: HEAD,
+      review: editedFormal.review,
+      ...editContext,
+    }),
+  );
+  const duplicate = await route(editedFormal, {
+    ...editContext,
+    comments: result.postedComments,
+  });
+  assert.deepEqual(duplicate.posts, [
+    "/repos/owner/repo/actions/runs/99/rerun",
+  ]);
+  await assert.rejects(route(editedFormal), /trusted workflow run/);
+});
+test("formal edits arriving during an active gate survive REST's unchanged submitted_at and reconcile once", async () => {
+  const result = await route(editedFormal, {
+    ...editContext,
+    comments: [],
+    run: { ...baseRun, status: "in_progress" },
+  });
+  assert.equal(result.action, "already_running");
+  assert.deepEqual(result.posts, ["/repos/owner/repo/issues/7/comments"]);
+  const context = {
+    comments: result.postedComments,
+    reviews: [editedFormal.review],
+  };
+  assert.equal((await route(completed, context)).action, "rerun");
+  const later = await route(completed, {
+    ...context,
+    run: { ...baseRun, run_started_at: "2026-10-15T10:04:00Z" },
+  });
+  assert.equal(later.action, "evidence_observed");
+  assert.equal(later.posts.length, 0);
+});
+test("dismissal ordering is durable and does not reuse an earlier body hash", async () => {
+  const event = {
+    ...editedFormal,
+    action: "dismissed",
+    review: { ...editedFormal.review, state: "DISMISSED" },
+  };
+  const result = await route(event, { ...editContext, comments: [] });
+  assert.equal(result.action, "rerun");
+  assert.equal(
+    (
+      await route(completed, {
+        comments: result.postedComments,
+        reviews: [event.review],
+      })
+    ).action,
+    "rerun",
+  );
+  assert.equal(
+    (
+      await route(completed, {
+        comments: result.postedComments,
+        reviews: [editedFormal.review],
+      })
+    ).posts.length,
+    0,
+  );
 });

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const reviewerBotLogins = new Set([
   "chatgpt-codex-connector[bot]",
   "gemini-code-assist[bot]",
@@ -390,4 +392,74 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     boundaryType:
       boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
   };
+};
+
+// This marker records ordering only. It can never supply a review verdict.
+const nativeEditPrefix = "<!-- ai-review-edit:v1 ";
+export const nativeReviewBodyHash = (review) =>
+  createHash("sha256")
+    .update(JSON.stringify([review.commit_id, review.state, review.body || ""]))
+    .digest("hex");
+
+export const createNativeReviewEditMarker = ({
+  agent,
+  headSha,
+  review,
+  observedAt,
+  sourceRunId,
+}) =>
+  `${nativeEditPrefix}${JSON.stringify({
+    agent,
+    head_sha: headSha,
+    review_id: String(review.id),
+    body_sha256: nativeReviewBodyHash(review),
+    observed_at: new Date(observedAt).toISOString(),
+    source_run_id: String(sourceRunId),
+  })} -->`;
+
+export const extractNativeReviewEditMarker = (comment) => {
+  if (comment?.user?.login !== "github-actions[bot]") return null;
+  const body = String(comment.body || "").trim();
+  if (!body.startsWith(nativeEditPrefix) || !body.endsWith(" -->")) return null;
+  const raw = body.slice(nativeEditPrefix.length, -4);
+  try {
+    const marker = JSON.parse(raw);
+    if (
+      JSON.stringify(marker) !== raw ||
+      Object.keys(marker).sort().join(",") !==
+        "agent,body_sha256,head_sha,observed_at,review_id,source_run_id" ||
+      !["codex", "gemini"].includes(marker.agent) ||
+      !/^[a-f0-9]{40}$/.test(marker.head_sha) ||
+      !/^[a-f0-9]{64}$/.test(marker.body_sha256) ||
+      !/^[1-9][0-9]*$/.test(marker.review_id) ||
+      !/^[1-9][0-9]*$/.test(marker.source_run_id) ||
+      new Date(marker.observed_at).toISOString() !== marker.observed_at
+    )
+      return null;
+    return marker;
+  } catch {
+    return null;
+  }
+};
+
+export const nativeReviewTimestamp = (
+  review,
+  comments = [],
+  agent,
+  headSha,
+) => {
+  const original = Date.parse(review.submitted_at || "") || 0;
+  if (review.commit_id !== headSha) return original;
+  return comments.reduce((latest, comment) => {
+    const marker = extractNativeReviewEditMarker(comment);
+    if (
+      !marker ||
+      marker.agent !== agent ||
+      marker.head_sha !== headSha ||
+      marker.review_id !== String(review.id) ||
+      marker.body_sha256 !== nativeReviewBodyHash(review)
+    )
+      return latest;
+    return Math.max(latest, Date.parse(marker.observed_at));
+  }, original);
 };

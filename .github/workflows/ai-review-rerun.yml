@@ -5,7 +5,7 @@ on:
     workflows: [AI Review]
     types: [completed]
   pull_request_review:
-    types: [submitted]
+    types: [submitted, edited, dismissed]
   issue_comment:
     types: [created, edited]
 
@@ -13,6 +13,7 @@ permissions:
   actions: write
   contents: read
   pull-requests: read
+  issues: write
 
 concurrency:
   group: >-

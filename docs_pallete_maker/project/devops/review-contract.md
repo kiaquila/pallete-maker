@@ -35,6 +35,11 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   verdicts. Known connector sign-offs and emoji are allowed after the explicit
   no-findings sentence; unknown or contradictory prose fails closed. Only the
   known About Codex details block may follow the verdict.
+- Formal review edits and dismissals must re-evaluate the check. Trusted
+  `ai-review-edit:v1` records supply ordering only, bound to the full head,
+  selected agent, review ID and exact current body/state hash. They cannot
+  manufacture a native verdict. A retracted formal verdict becomes pending;
+  every same-head native P0-P2 or untagged formal body finding remains blocking.
 - Pick the freshest formal review or eligible receipt using edit timestamps;
   malformed newer evidence cannot expose an older positive comment. A receipt
   edited after the current trusted trigger may be reused even if created earlier.

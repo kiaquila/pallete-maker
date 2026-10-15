@@ -29,3 +29,10 @@ A native P2 in formal review 5540814051 identified second-precision timestamp
 ambiguity. Treat equality with the attempt start conservatively and stop after
 a newer attempt has observed the evidence. Also preserve severity when a native
 finding is published directly in the formal review body without an inline thread.
+
+Native P1 in review 5540858298 identified formal review edits that could leave a
+previously successful check green. Subscribe to edits and dismissals, and record
+stable event-run ordering through a trusted, exact-body-bound Actions marker.
+Exercise successful and active gates, completion reconciliation, duplicate
+handling, spoofing/mismatch rejection and formal verdict retraction. The marker
+is ordering metadata only; same-head native body findings remain blocking.

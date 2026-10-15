@@ -47,6 +47,19 @@ which authenticates the selected reviewer before routing. This includes edits
 that remove every recognized marker and retract previously accepted evidence.
 Comment evidence uses `updated_at`, not just `created_at`.
 
+Formal reviews route `submitted`, `edited`, and `dismissed` events. REST review
+objects do not reliably expose edit time, so the trusted rerun workflow records
+an `ai-review-edit:v1` issue-comment marker before checking for an active gate.
+It is authored by `github-actions[bot]` and binds the selected agent, full head,
+review ID and SHA-256 of the current commit/state/body to the event workflow's
+creation time and run ID. The run creation time stays stable on workflow retry.
+The `issues: write` permission is used only for this ordering record. Duplicate
+records for the same event are not posted. The marker never supplies a verdict;
+only matching current native review content can consume its timestamp. Owner
+copies, malformed records and body/state/head mismatches are ignored. Completion
+reconciliation consumes the same bound timestamp, so edits while a gate is
+active are retained even though REST still returns the original `submitted_at`.
+
 If the gate is active, the evidence event does not start a duplicate attempt.
 An `AI Review` `workflow_run: completed` event reads current trusted evidence
 and reconciles it against the latest attempt's `run_started_at`. Because REST
