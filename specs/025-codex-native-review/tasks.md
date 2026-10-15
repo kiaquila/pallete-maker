@@ -47,3 +47,8 @@ current-head formal reviews as candidates and prefer a non-pass when comment
 and formal timestamps tie. Cover older and tied positive receipts, tied
 incomplete comments, conflicting formal reviews in both REST orders and the
 both-positive case.
+
+Native review on 1cb1ecf5c3ecfd56d1bbe837f1d44ba7dd41dd4a completed
+without findings (receipt 6204216828). Its observed `Bravo.` sign-off exposed
+another strict compatibility gap; add that exact harmless presentation phrase
+without accepting arbitrary or contradictory prose. Re-review the changed head.

@@ -34,7 +34,8 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   Reject missing/stale SHAs, duplicate markers, conflicting text and incomplete
   verdicts. Known connector sign-offs and emoji are allowed after the explicit
   no-findings sentence; unknown or contradictory prose fails closed. Only the
-  known About Codex details block may follow the verdict.
+  known About Codex details block may follow the verdict. The observed `Bravo.`
+  presentation sign-off is accepted; unknown or contradictory prose is pending.
 - Formal review edits and dismissals must re-evaluate the check. Trusted
   `ai-review-edit:v1` records supply ordering only, bound to the full head,
   selected agent, review ID and exact current body/state hash. They cannot

@@ -57,6 +57,7 @@ for (const [name, body] of [
 for (const signoff of [
   ":+1:",
   "Breezy!",
+  "Bravo.",
   "Can't wait for the next one!",
   "Chef's kiss.",
   "Delightful!",

@@ -21,6 +21,7 @@ const codexSignoffs = new Set([
   "keep it up!",
   "looks good!",
   "breezy!",
+  "bravo.",
   "can't wait for the next one!",
   "chef's kiss.",
   "delightful!",
