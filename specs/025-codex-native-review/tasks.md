@@ -36,3 +36,7 @@ stable event-run ordering through a trusted, exact-body-bound Actions marker.
 Exercise successful and active gates, completion reconciliation, duplicate
 handling, spoofing/mismatch rejection and formal verdict retraction. The marker
 is ordering metadata only; same-head native body findings remain blocking.
+
+Native P1 in review 5540952034 identified webhook/REST state case differences.
+Canonicalize state before hashing and exercise lowercase event payloads against
+uppercase REST reviews, including approval, changes requested and dismissal.

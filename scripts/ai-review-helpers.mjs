@@ -398,7 +398,13 @@ export const pickAuthoritativeCodexSkipModeComment = ({
 const nativeEditPrefix = "<!-- ai-review-edit:v1 ";
 export const nativeReviewBodyHash = (review) =>
   createHash("sha256")
-    .update(JSON.stringify([review.commit_id, review.state, review.body || ""]))
+    .update(
+      JSON.stringify([
+        review.commit_id,
+        String(review.state || "").toUpperCase(),
+        review.body || "",
+      ]),
+    )
     .digest("hex");
 
 export const createNativeReviewEditMarker = ({

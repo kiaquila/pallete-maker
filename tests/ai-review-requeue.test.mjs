@@ -363,7 +363,7 @@ const editedFormal = {
     id: 24,
     user: BOT,
     commit_id: HEAD,
-    state: "COMMENTED",
+    state: "commented",
     submitted_at: "2026-10-15T09:58:00Z",
     body: "Codex Review: [P1] edited blocking finding",
   },
@@ -438,7 +438,7 @@ test("formal edits arriving during an active gate survive REST's unchanged submi
   assert.deepEqual(result.posts, ["/repos/owner/repo/issues/7/comments"]);
   const context = {
     comments: result.postedComments,
-    reviews: [editedFormal.review],
+    reviews: [{ ...editedFormal.review, state: "COMMENTED" }],
   };
   assert.equal((await route(completed, context)).action, "rerun");
   const later = await route(completed, {
@@ -452,7 +452,7 @@ test("dismissal ordering is durable and does not reuse an earlier body hash", as
   const event = {
     ...editedFormal,
     action: "dismissed",
-    review: { ...editedFormal.review, state: "DISMISSED" },
+    review: { ...editedFormal.review, state: "dismissed" },
   };
   const result = await route(event, { ...editContext, comments: [] });
   assert.equal(result.action, "rerun");
@@ -460,7 +460,7 @@ test("dismissal ordering is durable and does not reuse an earlier body hash", as
     (
       await route(completed, {
         comments: result.postedComments,
-        reviews: [event.review],
+        reviews: [{ ...event.review, state: "DISMISSED" }],
       })
     ).action,
     "rerun",
@@ -469,7 +469,7 @@ test("dismissal ordering is durable and does not reuse an earlier body hash", as
     (
       await route(completed, {
         comments: result.postedComments,
-        reviews: [editedFormal.review],
+        reviews: [{ ...editedFormal.review, state: "COMMENTED" }],
       })
     ).posts.length,
     0,

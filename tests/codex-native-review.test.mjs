@@ -8,6 +8,7 @@ import {
   createNativeReviewEditMarker,
   extractNativeReviewEditMarker,
   nativeReviewTimestamp,
+  nativeReviewBodyHash,
   classifyCodexSummaryComment,
   matchesCodexSummaryComment,
   pickAuthoritativeCodexSkipModeComment,
@@ -432,7 +433,7 @@ const editMarker = (review, extra = {}) => ({
   body: createNativeReviewEditMarker({
     agent: "codex",
     headSha: HEAD,
-    review,
+    review: { ...review, state: review.state.toLowerCase() },
     observedAt: "2026-10-15T10:04:00Z",
     sourceRunId: "12345",
     ...extra,
@@ -502,6 +503,27 @@ test("same-head body blockers cannot be superseded by a newer positive receipt o
       runGate({ reviews: [review], issueComments: [editMarker(review)] })
         .stderr,
       /Blocking or untagged/,
+    );
+  }
+});
+
+test("formal edit hashes normalize webhook and REST states while retaining body/state changes", () => {
+  for (const state of [
+    "COMMENTED",
+    "APPROVED",
+    "CHANGES_REQUESTED",
+    "DISMISSED",
+  ]) {
+    const rest = formal({ state });
+    const event = { ...rest, state: state.toLowerCase() };
+    assert.equal(nativeReviewBodyHash(event), nativeReviewBodyHash(rest));
+    assert.equal(
+      nativeReviewTimestamp(rest, [editMarker(rest)], "codex", HEAD),
+      Date.parse("2026-10-15T10:04:00Z"),
+    );
+    assert.notEqual(
+      nativeReviewBodyHash({ ...event, body: "new body" }),
+      nativeReviewBodyHash(rest),
     );
   }
 });

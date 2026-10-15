@@ -52,7 +52,8 @@ objects do not reliably expose edit time, so the trusted rerun workflow records
 an `ai-review-edit:v1` issue-comment marker before checking for an active gate.
 It is authored by `github-actions[bot]` and binds the selected agent, full head,
 review ID and SHA-256 of the current commit/state/body to the event workflow's
-creation time and run ID. The run creation time stays stable on workflow retry.
+creation time and run ID. Canonicalize review state to uppercase before hashing:
+webhook payloads use lowercase while REST uses uppercase. The run creation time stays stable on workflow retry.
 The `issues: write` permission is used only for this ordering record. Duplicate
 records for the same event are not posted. The marker never supplies a verdict;
 only matching current native review content can consume its timestamp. Owner
