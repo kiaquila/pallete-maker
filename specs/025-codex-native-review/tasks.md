@@ -14,5 +14,8 @@ Native review of the initial implementation completed without findings. The
 connector ignored both requests for a legacy/formal bootstrap result and emitted
 v1 receipts only. The existing required gate therefore remains red until a
 trusted deployment path is available; no bypass or policy change was used.
-Final-head acceptance and merge evidence are recorded on
+The subsequent native review identified P1: GitHub may append `@ref` to the
+workflow path. Normalize the path before matching and exercise completion
+reconciliation with branch, pull-request and commit refs. Final-head acceptance
+and merge evidence are recorded on
 [PR #48](https://github.com/kiaquila/pallete-maker/pull/48).

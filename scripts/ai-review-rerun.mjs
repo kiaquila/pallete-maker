@@ -41,7 +41,8 @@ export function shouldRouteAiReviewRerunEvent(
       event.action === "completed" &&
       event.workflow_run.name === "AI Review" &&
       event.workflow_run.event === "pull_request" &&
-      event.workflow_run.path === ".github/workflows/ai-review.yml"
+      String(event.workflow_run.path || "").split("@", 1)[0] ===
+        ".github/workflows/ai-review.yml"
     );
   }
 

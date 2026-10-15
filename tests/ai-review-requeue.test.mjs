@@ -241,3 +241,33 @@ test("a concurrent rerun conflict is accepted only after observing an active exa
   });
   assert.equal(result.action, "already_running");
 });
+
+test("completion reconciliation accepts the documented workflow path with an @ref suffix", async () => {
+  for (const ref of ["main", "refs/pull/48/merge", HEAD]) {
+    const event = {
+      ...completed,
+      workflow_run: {
+        ...completed.workflow_run,
+        path: `.github/workflows/ai-review.yml@${ref}`,
+      },
+    };
+    assert.equal(shouldRouteAiReviewRerunEvent(event), true);
+    const result = await route(event);
+    assert.equal(result.action, "rerun");
+    assert.deepEqual(result.posts, ["/repos/owner/repo/actions/runs/99/rerun"]);
+    const reconciled = await route(event, {
+      run: { ...baseRun, run_started_at: "2026-10-15T10:04:00Z" },
+    });
+    assert.equal(reconciled.action, "evidence_observed");
+  }
+  assert.equal(
+    shouldRouteAiReviewRerunEvent({
+      ...completed,
+      workflow_run: {
+        ...completed.workflow_run,
+        path: ".github/workflows/other.yml@main",
+      },
+    }),
+    false,
+  );
+});

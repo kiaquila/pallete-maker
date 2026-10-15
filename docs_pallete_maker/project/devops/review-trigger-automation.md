@@ -50,8 +50,8 @@ and reconciles it against the latest attempt's `run_started_at`. Evidence
 arriving during that attempt causes one rerun, even when the attempt's final
 `updated_at` is newer than the evidence. A subsequent attempt started after
 that evidence does not rerun again, including after failure. The completion
-listener accepts only the PR-based `ai-review.yml` workflow, so it cannot
-requeue itself. Closed PRs, old heads and concurrent pushes are ignored; the
+listener accepts only the PR-based `ai-review.yml` workflow, matching the
+workflow file before an optional GitHub `@ref` suffix, so it cannot requeue itself. Closed PRs, old heads and concurrent pushes are ignored; the
 head is refreshed again before the rerun request. When GitHub omits linked
 PRs from the completion payload, resolve open exact-head PRs via the commit.
 
