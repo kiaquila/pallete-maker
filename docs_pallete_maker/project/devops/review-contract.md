@@ -52,9 +52,9 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   P0–P2 or untagged findings, including older heads. New request markers never
   erase them; P3-only findings remain advisory. Re-read the PR head immediately
   before publishing success and fail if it changed or the PR closed.
-- `codex-pull-request-review-summary` / `codex-review-state:v1` comments are
-  wakeup signals only. Their JSON, `Completed` text and reactions never grant
-  a passing review; malformed or negative state cannot be mistaken for approval.
+- Official `codex-pull-request-review-summary` / `codex-review-state:v1` snapshots
+  may supply proof only under the strict native-state contract below. A heading,
+  `Completed` text or reaction alone never supplies a verdict.
 - If the timeline lookup is unavailable, the gate logs a warning and
   fails closed by waiting for formal review only. If review-thread proof is
   unavailable, no Codex result may pass.
@@ -99,3 +99,39 @@ For `pallete-maker`, reviewers should prioritize:
 - build/deploy safety
 - CDN supply-chain risks (chroma-js, html2canvas, Tailwind)
 - maintainability risks in the static app
+
+## Strict native structured state
+
+Modern connector replies can vary their friendly closing without changing the
+review verdict. The gate therefore accepts the connector's official mutable
+summary as independent proof, rather than interpreting arbitrary closing prose.
+Standalone legacy replies and receipts retain their strict verdict rules.
+
+A trusted `chatgpt-codex-connector[bot]` summary must contain exactly one supported
+summary marker and one compact `codex-review-state:v1` JSON object. The closed
+schema requires exactly `code_review` and `security_review`, each with exactly
+`commit_sha`, `has_any_findings`, `has_unresolved_findings` and `status`. Code
+review must bind the full current 40-character SHA, have status `completed`, and
+both flags must be boolean `false`. Security must either have all four fields
+`null`, or independently satisfy the same current-head clean condition. Duplicate
+keys, unknown keys/versions, wrong types, partial security state and stale SHAs
+remain pending. The matching native visible review table is required; extra or
+contradictory visible text, stale commits and unknown help content fail closed.
+
+The snapshot's `updated_at` must follow the current head activation and latest
+human request boundary; an older creation can qualify only through a fresh edit.
+The latest summary supersedes older clean state even when malformed, negative,
+for another head or still running. A non-passing snapshot wins timestamp ties.
+No timeline means no structured-state approval.
+
+Unknown receipt closings remain pending evidence under the existing strict
+receipt parser. A later strict completed-clean snapshot may supersede that
+receipt; an unknown receipt arriving after a clean snapshot makes the result
+pending again. On equal timestamps, non-passing evidence wins. Request a fresh
+native review when the connector publishes ambiguous evidence last. This keeps
+future neutral phrases independent of a positive suffix allowlist without
+interpreting arbitrary prose or weakening contradictory-finding invalidation.
+Malformed envelopes, extra lines, duplicate metadata, unsupported footers and
+explicit negative/provisional findings retain their normal invalidating role.
+Native P0–P2 findings, unresolved threads, formal retractions, abbreviated receipt
+SHA resolution and final-head checks keep their existing blocking rules.

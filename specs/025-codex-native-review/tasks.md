@@ -75,3 +75,16 @@ Native review on 1cb1ecf5c3ecfd56d1bbe837f1d44ba7dd41dd4a completed
 without findings (receipt 6204216828). Its observed `Bravo.` sign-off exposed
 another strict compatibility gap; add that exact harmless presentation phrase
 without accepting arbitrary or contradictory prose. Re-review the changed head.
+
+## Structured-state compatibility
+
+Support unseen friendly closings through independent official structured proof,
+not an open-ended prose verdict. Validate one closed-schema native v1 snapshot,
+full current head, completed clean code/security state and matching visible table.
+Use mutable update time and request/head boundaries; newer malformed, stale,
+pending or negative state invalidates old clean state, including timestamp ties.
+Keep standalone receipts strict: unknown later/equal receipts stay pending until
+a newer strict clean summary. Preserve exact SHA resolution and finding vetoes. Preserve blocking threads, formal
+review and final-head checks. Regression coverage exercises actual gates, both
+arrival orders, schemas, freshness, spoofing, contradictions and native blockers.
+Run full preflight and obtain current-head native review before protected merge.

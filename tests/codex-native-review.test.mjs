@@ -1,3 +1,7 @@
+import {
+  cleanStateBody,
+  presentationReceipt,
+} from "./fixtures/codex-state.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -125,12 +129,12 @@ test("rejects author spoofing and unproven current head", () => {
     "pending",
   );
 });
-test("a structured summary never grants a passing verdict", () => {
+test("an incomplete structured summary never grants a passing verdict", () => {
   const body =
     '<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {"code_review":{"commit_sha":"' +
     HEAD +
     '","has_any_findings":false,"has_unresolved_findings":false,"status":"completed"}} -->\n## Codex Review Summary\nCompleted 👍';
-  assert.equal(matchesCodexSummaryComment(comment(body)), false);
+  assert.equal(matchesCodexSummaryComment(comment(body)), true);
   assert.equal(verdict(comment(body)), "pending");
 });
 test("a new malformed receipt cannot expose an older successful reply", () => {
@@ -574,3 +578,28 @@ test("equal-second formal verdict conflicts fail closed regardless of REST order
     }
   }
 });
+
+for (const ordering of ["summary-first", "receipt-first"]) {
+  test(`actual gate accepts strict state with unseen closing (${ordering})`, () => {
+    const snapshot = comment(cleanStateBody(HEAD), {
+      id: 41,
+      created_at: "2026-10-20T12:02:00Z",
+    });
+    const presentation = comment(presentationReceipt(HEAD), {
+      id: 42,
+      created_at: "2026-10-20T12:03:00Z",
+    });
+    if (ordering === "receipt-first")
+      snapshot.created_at = "2026-10-20T12:04:00Z";
+    const events = [
+      activation,
+      ...(ordering === "summary-first"
+        ? [snapshot, presentation]
+        : [presentation, snapshot]),
+    ];
+    const result = runGate({ comments: events });
+    if (ordering === "receipt-first")
+      assert.equal(result.status, 0, result.stderr);
+    else assert.notEqual(result.status, 0);
+  });
+}
