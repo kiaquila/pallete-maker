@@ -1,4 +1,8 @@
-import { hasCleanCodexState, isCodexStateBody } from "./codex-review-state.mjs";
+import {
+  hasCleanCodexState,
+  isCodexStateBody,
+  codexCodeReviewCompletionTime,
+} from "./codex-review-state.mjs";
 import { createHash } from "node:crypto";
 
 const reviewerBotLogins = new Set([
@@ -360,6 +364,20 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   const stateBoundaryTime = Date.parse(events[boundaryIndex]?.created_at || "");
   const eligibleState = (entry) => {
     if (activationIndex < 0) return false;
+    const completedAt = codexCodeReviewCompletionTime(getBody(entry));
+    const activationTime = Date.parse(
+      events[activationIndex]?.created_at || "",
+    );
+    if (
+      !Number.isFinite(completedAt) ||
+      completedAt >= codexCommentTimestamp(entry) + 1000 ||
+      (Number.isFinite(stateBoundaryTime) &&
+        Math.floor(completedAt / 1000) <=
+          Math.floor(stateBoundaryTime / 1000)) ||
+      (Number.isFinite(activationTime) &&
+        Math.floor(completedAt / 1000) <= Math.floor(activationTime / 1000))
+    )
+      return false;
     const time = codexCommentTimestamp(entry);
     if (Number.isFinite(stateBoundaryTime)) {
       return (
@@ -374,6 +392,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       time === Date.parse(entry.created_at)
     );
   };
+  const evidenceTime = (entry) =>
+    isCodexStateBody(getBody(entry)) &&
+    eligibleState(entry) &&
+    hasCleanCodexState(getBody(entry), headSha)
+      ? Math.floor(codexCodeReviewCompletionTime(getBody(entry)) / 1000) * 1000
+      : codexCommentTimestamp(entry);
   const stateComments = allComments.filter(
     (entry) =>
       isCodexBotComment(entry) &&
@@ -396,7 +420,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       )
       .sort(
         (a, b) =>
-          codexCommentTimestamp(b.entry) - codexCommentTimestamp(a.entry) ||
+          evidenceTime(b.entry) - evidenceTime(a.entry) ||
           (isCodexStateBody(getBody(a.entry)) ||
           isCodexStateBody(getBody(b.entry))
             ? Number(
@@ -444,6 +468,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
             : latestCodexComment,
           headSha,
         );
+  summaryClassification.evidenceTimestamp = evidenceTime(latestCodexComment);
 
   return {
     comment: latestCodexComment,

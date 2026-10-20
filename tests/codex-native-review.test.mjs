@@ -589,8 +589,13 @@ for (const ordering of ["summary-first", "receipt-first"]) {
       id: 42,
       created_at: "2026-10-20T12:03:00Z",
     });
-    if (ordering === "receipt-first")
+    if (ordering === "receipt-first") {
       snapshot.created_at = "2026-10-20T12:04:00Z";
+      snapshot.body = snapshot.body.replaceAll(
+        "2026-10-20T12:02:00Z",
+        "2026-10-20T12:04:00Z",
+      );
+    }
     const events = [
       activation,
       ...(ordering === "summary-first"
