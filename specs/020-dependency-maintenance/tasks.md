@@ -19,3 +19,13 @@
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.
+
+## PR #50 — GitHub Actions minor and patch updates
+
+- [x] Confirm the PR changes only the five existing action references.
+- [x] Confirm all replacements remain pinned to full commit SHAs.
+- [x] Record the reviewed version bumps in the dependency update ledger.
+- [x] Run repository CI locally.
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.
