@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { hasCleanCodexState } from "../scripts/codex-review-state.mjs";
-import { pickAuthoritativeCodexSkipModeComment } from "../scripts/ai-review-helpers.mjs";
+import {
+  pickAuthoritativeCodexSkipModeComment,
+  classifyCodexSummaryComment,
+} from "../scripts/ai-review-helpers.mjs";
 import {
   cleanStateBody,
   presentationReceipt,
