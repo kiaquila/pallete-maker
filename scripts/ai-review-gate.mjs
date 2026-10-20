@@ -9,6 +9,8 @@ import {
   pickAuthoritativeCodexSkipModeComment,
 } from "./ai-review-helpers.mjs";
 
+import { hasCodexNegativeHistory } from "./codex-review-state.mjs";
+
 const token = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
 const eventPath = process.env.GITHUB_EVENT_PATH;
@@ -767,8 +769,10 @@ while (Date.now() < deadline) {
       formalVerdict = selected.verdict;
     }
     let commentEvidence = null;
+    const historyComments = [...formalEditComments];
     try {
       const timelineEvents = await listPaginated(buildIssueTimelinePath());
+      historyComments.push(...timelineEvents);
       commentEvidence = pickAuthoritativeCodexSkipModeComment({
         timelineEvents,
         headSha,
@@ -780,6 +784,15 @@ while (Date.now() < deadline) {
         console.warn(`${codexTimelineWarning} ${error.message}`);
         codexTimelineWarningLogged = true;
       }
+    }
+    if (
+      hasCodexNegativeHistory(historyComments, headSha, (entry) =>
+        codexReviewerLogins.has(entry.user?.login),
+      )
+    ) {
+      throw new Error(
+        "Codex structured findings remain uncleared for this head.",
+      );
     }
     const useComment =
       commentEvidence &&
