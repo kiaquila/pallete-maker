@@ -1,5 +1,6 @@
 import {
   hasCleanCodexState,
+  codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
 } from "./codex-review-state.mjs";
@@ -393,14 +394,17 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     );
   };
   const evidenceTime = (entry) =>
-    isCodexStateBody(getBody(entry)) &&
-    eligibleState(entry) &&
-    hasCleanCodexState(getBody(entry), headSha)
-      ? Math.floor(codexCodeReviewCompletionTime(getBody(entry)) / 1000) * 1000
-      : !isCodexStateBody(getBody(entry)) &&
-          classifyCodexSummaryComment(entry, headSha).outcome === "pass"
-        ? Date.parse(entry.created_at || "") || 0
-        : codexCommentTimestamp(entry);
+    Number.isFinite(codexNegativeCompletionTime(entry, headSha))
+      ? codexNegativeCompletionTime(entry, headSha)
+      : isCodexStateBody(getBody(entry)) &&
+          eligibleState(entry) &&
+          hasCleanCodexState(getBody(entry), headSha)
+        ? Math.floor(codexCodeReviewCompletionTime(getBody(entry)) / 1000) *
+          1000
+        : !isCodexStateBody(getBody(entry)) &&
+            classifyCodexSummaryComment(entry, headSha).outcome === "pass"
+          ? Date.parse(entry.created_at || "") || 0
+          : codexCommentTimestamp(entry);
   const eligibleStaticApproval = (entry) => {
     const createdAt = Date.parse(entry.created_at || "");
     const entryIndex = timelineEvents.findLastIndex(
