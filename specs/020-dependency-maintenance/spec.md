@@ -27,6 +27,8 @@ gates.
   `anthropics/claude-code-action` from `1.0.242` to `1.0.248`, and
   `google/osv-scanner-action/osv-scanner-action` from `2.6.0` to `2.7.0`,
   while keeping every action pinned to an immutable commit SHA.
+- PR #51 updates `prettier` from `3.9.9` to `3.9.10` together with its
+  generated lockfile entry.
 
 ## Acceptance criteria
 
