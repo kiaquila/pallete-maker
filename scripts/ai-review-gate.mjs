@@ -784,9 +784,11 @@ while (Date.now() < deadline) {
     const useComment =
       commentEvidence &&
       (!formal ||
-        codexCommentTimestamp(commentEvidence.comment) >
+        (commentEvidence.classification.evidenceTimestamp ??
+          codexCommentTimestamp(commentEvidence.comment)) >
           reviewTimestamp(formal) ||
-        (codexCommentTimestamp(commentEvidence.comment) ===
+        ((commentEvidence.classification.evidenceTimestamp ??
+          codexCommentTimestamp(commentEvidence.comment)) ===
           reviewTimestamp(formal) &&
           commentEvidence.classification.outcome !== "pass"));
     const evidence = useComment ? commentEvidence.comment : formal;

@@ -1,3 +1,8 @@
+import {
+  hasCleanCodexState,
+  isCodexStateBody,
+  codexCodeReviewCompletionTime,
+} from "./codex-review-state.mjs";
 import { createHash } from "node:crypto";
 
 const reviewerBotLogins = new Set([
@@ -195,12 +200,14 @@ export const matchesCodexReview = (review, headSha) =>
 export const matchesCodexSummaryComment = (comment) =>
   isCodexBotComment(comment) &&
   (codexSummaryPrefix.test(getBody(comment)) ||
+    isCodexStateBody(getBody(comment)) ||
     getBody(comment).startsWith("<!-- codex-review-receipt:"));
 
-// A summary is a wakeup signal only. Its hidden state is never a verdict.
+// Routing is broad; the strict state classifier owns affirmative evidence.
 export const isCodexEvidenceBody = (body) => {
   const text = String(body || "").trim();
   return (
+    isCodexStateBody(text) ||
     codexSummaryPrefix.test(text) ||
     text.startsWith("<!-- codex-review-receipt:") ||
     text.startsWith("<!-- codex-pull-request-review-summary -->") ||
@@ -244,6 +251,16 @@ export const classifyCodexSummaryComment = (comment, headSha) => {
     details: [comment?.html_url],
   };
   if (!matchesCodexSummaryComment(comment)) return pending;
+  if (isCodexStateBody(getBody(comment))) {
+    return hasCleanCodexState(getBody(comment), headSha)
+      ? {
+          outcome: "pass",
+          reason:
+            "Codex completed current-head structured review with no findings.",
+          details: [comment.html_url],
+        }
+      : pending;
+  }
   let body = getBody(comment);
   const receipt = body.startsWith("<!-- codex-review-receipt:");
   if (receipt) {
@@ -337,6 +354,57 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     }
   }
 
+  const events = timelineEvents;
+  const allComments = events;
+  const statePosition = (entry) =>
+    events.findLastIndex(
+      (event) =>
+        isCommentEvent(event) && entry.id != null && event.id === entry.id,
+    );
+  const stateBoundaryTime = Date.parse(events[boundaryIndex]?.created_at || "");
+  const eligibleState = (entry) => {
+    if (activationIndex < 0) return false;
+    const completedAt = codexCodeReviewCompletionTime(getBody(entry));
+    const activationTime = Date.parse(
+      events[activationIndex]?.created_at || "",
+    );
+    if (
+      !Number.isFinite(completedAt) ||
+      completedAt >= codexCommentTimestamp(entry) + 1000 ||
+      (Number.isFinite(stateBoundaryTime) &&
+        Math.floor(completedAt / 1000) <=
+          Math.floor(stateBoundaryTime / 1000)) ||
+      (Number.isFinite(activationTime) &&
+        Math.floor(completedAt / 1000) <= Math.floor(activationTime / 1000))
+    )
+      return false;
+    const time = codexCommentTimestamp(entry);
+    if (Number.isFinite(stateBoundaryTime)) {
+      return (
+        time > stateBoundaryTime ||
+        (time === stateBoundaryTime &&
+          time === Date.parse(entry.created_at) &&
+          statePosition(entry) > boundaryIndex)
+      );
+    }
+    return (
+      statePosition(entry) > boundaryIndex &&
+      time === Date.parse(entry.created_at)
+    );
+  };
+  const evidenceTime = (entry) =>
+    isCodexStateBody(getBody(entry)) &&
+    eligibleState(entry) &&
+    hasCleanCodexState(getBody(entry), headSha)
+      ? Math.floor(codexCodeReviewCompletionTime(getBody(entry)) / 1000) * 1000
+      : codexCommentTimestamp(entry);
+  const stateComments = allComments.filter(
+    (entry) =>
+      isCodexBotComment(entry) &&
+      isCodexStateBody(getBody(entry)) &&
+      eligibleState(entry),
+  );
+
   const boundaryTime = Date.parse(
     timelineEvents[boundaryIndex].created_at || "",
   );
@@ -346,16 +414,24 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       .filter(
         ({ entry, index }) =>
           isCodexBotComment(entry) &&
-          !getBody(entry).startsWith(
-            "<!-- codex-pull-request-review-summary -->",
-          ) &&
           (index > boundaryIndex ||
             (Number.isFinite(boundaryTime) &&
               codexCommentTimestamp(entry) > boundaryTime)),
       )
       .sort(
         (a, b) =>
-          codexCommentTimestamp(b.entry) - codexCommentTimestamp(a.entry) ||
+          evidenceTime(b.entry) - evidenceTime(a.entry) ||
+          (isCodexStateBody(getBody(a.entry)) ||
+          isCodexStateBody(getBody(b.entry))
+            ? Number(
+                classifyCodexSummaryComment(a.entry, headSha).outcome ===
+                  "pass",
+              ) -
+              Number(
+                classifyCodexSummaryComment(b.entry, headSha).outcome ===
+                  "pass",
+              )
+            : 0) ||
           b.index - a.index,
       )[0] || null;
   const latestCodexComment = latestCandidate?.entry;
@@ -375,13 +451,24 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     };
   }
 
-  const summaryClassification = classifyCodexSummaryComment(
-    latestCandidate.index <= boundaryIndex &&
-      !getBody(latestCodexComment).startsWith(codexReceiptMarker)
-      ? { ...latestCodexComment, body: "" }
-      : latestCodexComment,
-    headSha,
-  );
+  const summaryClassification =
+    isCodexStateBody(getBody(latestCodexComment)) &&
+    !eligibleState(latestCodexComment)
+      ? {
+          outcome: "pending",
+          reason:
+            "Structured review predates the current request or head activation.",
+          details: [latestCodexComment.html_url],
+        }
+      : classifyCodexSummaryComment(
+          latestCandidate.index <= boundaryIndex &&
+            !isCodexStateBody(getBody(latestCodexComment)) &&
+            !getBody(latestCodexComment).startsWith(codexReceiptMarker)
+            ? { ...latestCodexComment, body: "" }
+            : latestCodexComment,
+          headSha,
+        );
+  summaryClassification.evidenceTimestamp = evidenceTime(latestCodexComment);
 
   return {
     comment: latestCodexComment,
