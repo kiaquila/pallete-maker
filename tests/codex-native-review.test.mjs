@@ -157,7 +157,7 @@ test("an unrecognized newer connector reply cannot expose an older pass", () => 
   });
   assert.equal(result.classification.outcome, "pending");
 });
-test("an edited receipt can be bound after a newer trigger, but an old legacy comment cannot", () => {
+test("an edit cannot renew a receipt or legacy approval from before the trigger", () => {
   const edited = comment(receipt, {
     created_at: "2026-10-14T10:00:00Z",
     updated_at: "2026-10-15T10:02:00Z",
@@ -167,7 +167,7 @@ test("an edited receipt can be bound after a newer trigger, but an old legacy co
       headSha: HEAD,
       timelineEvents: [edited, activation, trigger],
     }).classification.outcome,
-    "pass",
+    "pending",
   );
   assert.equal(
     pickAuthoritativeCodexSkipModeComment({
@@ -606,5 +606,50 @@ for (const ordering of ["summary-first", "receipt-first"]) {
     if (ordering === "receipt-first")
       assert.equal(result.status, 0, result.stderr);
     else assert.notEqual(result.status, 0);
+  });
+}
+
+for (const scenario of ["newer-pending", "prerequest", "edited-unknown"]) {
+  test(`actual gate rejects static edit renewal: ${scenario}`, () => {
+    const request = {
+      ...comment(`@codex review ${HEAD}`, {
+        id: 79,
+        created_at: "2026-10-20T12:01:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const edited = comment(
+      presentationReceipt(
+        HEAD,
+        scenario === "edited-unknown" ? "Unseen closing!" : ":rocket:",
+      ),
+      {
+        id: 80,
+        created_at:
+          scenario === "newer-pending"
+            ? "2026-10-20T12:02:00Z"
+            : "2026-10-20T12:00:00Z",
+        updated_at: "2026-10-20T12:05:00Z",
+      },
+    );
+    const snapshot = comment(
+      scenario === "newer-pending"
+        ? cleanStateBody(HEAD).replaceAll(
+            '"status":"completed"',
+            '"status":"running"',
+          )
+        : cleanStateBody(HEAD),
+      { id: 81, created_at: "2026-10-20T12:03:00Z" },
+    );
+    const events = [
+      { ...activation, created_at: "2026-10-20T11:59:00Z" },
+      request,
+      edited,
+      ...(scenario === "prerequest" ? [] : [snapshot]),
+    ];
+    const result = runGate({ comments: events });
+    assert.notEqual(result.status, 0, result.stdout);
   });
 }
