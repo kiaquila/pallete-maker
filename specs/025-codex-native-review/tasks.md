@@ -1,19 +1,42 @@
 # Tasks
 
+**Status: COMPLETE.** Implementation, protected merge and production smoke are
+complete. The production PNG checks used desktop and mobile browser viewports;
+physical-device coverage is outside this smoke result.
+
 - [x] Verify GitHub identity, refs, protection and isolated worktree.
 - [x] Reproduce the receipt regression on main.
 - [x] Implement strict receipt validation and actual gate integration.
 - [x] Implement edited-event and active-gate recovery.
 - [x] Add regression coverage and update durable docs.
 - [x] Pass full preflight and publish ready-for-review PR #48.
-- [ ] Obtain native Codex review for final HEAD and resolve all threads.
-- [ ] Verify protected merge readiness and wait 120 seconds.
-- [ ] Merge normally and confirm GitHub result.
+- [x] Obtain native Codex review for final HEAD and resolve all threads.
+- [x] Verify protected merge readiness and wait 120 seconds.
+- [x] Merge normally and confirm GitHub result.
+- [x] Verify production PNG downloads on desktop and mobile viewports, inspect both images and preserve the evidence.
+
+## Completion evidence
+
+- [PR #48](https://github.com/kiaquila/pallete-maker/pull/48) merged normally on
+  2026-10-15 at 23:22:52 UTC. Reviewed head:
+  `91854434c15948d689c407e3137c9677753983ad`; production merge commit:
+  `d72989a7a41b6c0c8e5bb27027329eb2f0127fa5`.
+- Final native review had no findings; all five review threads were resolved.
+  Required checks were green, with a verified 175-second stability window before
+  merge. Full preflight passed, including 145 tests.
+- Vercel production deployment succeeded. Desktop (1440 × 900) and mobile
+  (390 × 844) viewport exports both downloaded valid, visually correct PNGs.
+  The two files are byte-for-byte identical. See the
+  [production smoke record and saved artifacts](../../docs_pallete_maker/project/devops/delivery-playbook.md#pr-48--complete)
+  for dimensions, checksums and the mobile coverage limit.
+
+## Review history
 
 Native review of the initial implementation completed without findings. The
 connector ignored both requests for a legacy/formal bootstrap result and emitted
-v1 receipts only. The existing required gate therefore remains red until a
-trusted deployment path is available; no bypass or policy change was used.
+v1 receipts only. This initially left the existing required gate red until a
+trusted deployment path became available; no bypass or policy change was used.
+The final passing checks and protected merge above supersede that initial blocker.
 The subsequent native review identified P1: GitHub may append `@ref` to the
 workflow path. Normalize the path before matching and exercise completion
 reconciliation with branch, pull-request and commit refs. Final-head acceptance

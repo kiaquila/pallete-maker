@@ -35,3 +35,6 @@ validated by the repository's required checks before merge.
 | #45 | Claude Code Action    | 1.0.231 → 1.0.236 | Inactive Claude workflow runtime   |
 | #46 | Claude Code Action    | 1.0.236 → 1.0.242 | Inactive Claude workflow runtime   |
 | #47 | html-validate         | 11.16.1 → 11.16.2 | Development HTML validation tool   |
+| #50 | actions/setup-node    | 7.0.0 → 7.1.0     | GitHub Actions Node.js setup       |
+| #50 | Claude Code Action    | 1.0.242 → 1.0.248 | Inactive Claude workflow runtime   |
+| #50 | OSV Scanner Action    | 2.6.0 → 2.7.0     | Dependency vulnerability scan      |

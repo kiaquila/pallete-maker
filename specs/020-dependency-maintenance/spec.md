@@ -23,6 +23,10 @@ gates.
   while keeping the action pinned to an immutable commit SHA.
 - PR #47 updates `html-validate` from `11.16.1` to `11.16.2` together with its
   generated lockfile dependencies.
+- PR #50 updates `actions/setup-node` from `7.0.0` to `7.1.0`,
+  `anthropics/claude-code-action` from `1.0.242` to `1.0.248`, and
+  `google/osv-scanner-action/osv-scanner-action` from `2.6.0` to `2.7.0`,
+  while keeping every action pinned to an immutable commit SHA.
 
 ## Acceptance criteria
 
