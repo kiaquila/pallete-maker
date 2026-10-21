@@ -653,3 +653,247 @@ for (const scenario of ["newer-pending", "prerequest", "edited-unknown"]) {
     assert.notEqual(result.status, 0, result.stdout);
   });
 }
+
+const securityHistoryBody = (negative, time) =>
+  cleanStateBody(HEAD, (state) => ({
+    ...state,
+    security_review: {
+      ...state.code_review,
+      has_any_findings: negative,
+      has_unresolved_findings: negative,
+    },
+  })).replaceAll("2026-10-20T12:02:00Z", time) +
+  `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+for (const mode of [
+  "formal",
+  "static",
+  "security-null",
+  "newer-clear",
+  "equal-clear",
+  "old-security-clock",
+  "missing-security-clock",
+  "malformed-old",
+  "wrong-actor",
+]) {
+  test(`actual gate retains section-specific security history: ${mode}`, () => {
+    const old = comment(securityHistoryBody(true, "2026-10-20T12:02:00Z"), {
+      id: 930,
+      created_at: "2026-10-20T12:02:00Z",
+    });
+    if (mode === "malformed-old")
+      old.body = old.body.replace("state:v1", "state:v2");
+    if (mode === "wrong-actor") old.user = { login: "attacker" };
+    const request = {
+      ...comment(`@codex review ${HEAD}`, {
+        id: 931,
+        created_at: "2026-10-20T12:03:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const receipt = comment(presentationReceipt(HEAD, ":rocket:"), {
+      id: 932,
+      created_at: "2026-10-20T12:04:00Z",
+    });
+    const newer = comment(
+      mode === "security-null"
+        ? cleanStateBody(HEAD).replaceAll(
+            "2026-10-20T12:02:00Z",
+            "2026-10-20T12:05:00Z",
+          )
+        : securityHistoryBody(
+            false,
+            mode === "equal-clear"
+              ? "2026-10-20T12:02:00Z"
+              : "2026-10-20T12:05:00Z",
+          ),
+      { id: 933, created_at: "2026-10-20T12:05:00Z" },
+    );
+    if (mode === "old-security-clock")
+      newer.body = newer.body
+        .split("\n")
+        .map((line) =>
+          line.includes("**Security Review**")
+            ? line.replaceAll("2026-10-20T12:05:00Z", "2026-10-20T12:02:00Z")
+            : line,
+        )
+        .join("\n");
+    if (mode === "missing-security-clock")
+      newer.body = newer.body.replace(
+        /(Security Review\*\* \| ✅ \*\*Completed\*\*) <relative-time[^>]+>[^<]+<\/relative-time>/,
+        "$1",
+      );
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      request,
+      ...(mode === "formal" ? [] : [receipt]),
+      ...([
+        "security-null",
+        "newer-clear",
+        "equal-clear",
+        "old-security-clock",
+        "missing-security-clock",
+      ].includes(mode)
+        ? [newer]
+        : []),
+    ];
+    const reviews =
+      mode === "formal"
+        ? [
+            {
+              id: 934,
+              node_id: "history-review",
+              commit_id: HEAD,
+              body: "Codex Review",
+              state: "APPROVED",
+              user: { login: "chatgpt-codex-connector[bot]" },
+              submitted_at: "2026-10-20T12:04:00Z",
+            },
+          ]
+        : [];
+    const result = runGate({
+      comments: events,
+      reviews,
+      reviewUpdatedAt: "2026-10-20T12:04:00Z",
+    });
+    assert.equal(
+      result.status === 0,
+      ["newer-clear", "malformed-old", "wrong-actor"].includes(mode),
+      result.stderr || result.stdout,
+    );
+  });
+}
+
+for (const section of ["code_review", "security_review"])
+  test(`actual gate uses ${section} completion despite later shared edit`, () => {
+    const old = comment(
+      securityHistoryBody(false, "2026-10-20T12:01:00Z").replace(
+        `"${section}":{"commit_sha":"${HEAD}","has_any_findings":false,"has_unresolved_findings":false`,
+        `"${section}":{"commit_sha":"${HEAD}","has_any_findings":true,"has_unresolved_findings":true`,
+      ),
+      {
+        id: 940,
+        created_at: "2026-10-20T12:01:00Z",
+        updated_at: "2026-10-20T12:05:00Z",
+      },
+    );
+    const request = {
+      ...comment(`@codex review ${HEAD}`, {
+        id: 941,
+        created_at: "2026-10-20T12:02:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+      id: 942,
+      created_at: "2026-10-20T12:04:00Z",
+    });
+    const events = [
+      { event: "committed", sha: HEAD, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      request,
+      clean,
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  });
+
+test("actual gate preserves concurrent running section observed clock", () => {
+  const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+    id: 950,
+    created_at: "2026-10-20T12:04:00Z",
+  });
+  let pendingBody = securityHistoryBody(true, "2026-10-20T12:01:00Z").replace(
+    /"security_review":\{[^}]+\}/,
+    `"security_review":{"commit_sha":"${HEAD}","has_any_findings":null,"has_unresolved_findings":null,"status":"running"}`,
+  );
+  pendingBody = pendingBody
+    .split("\n")
+    .map((line) =>
+      line.includes("**Security Review**")
+        ? line
+            .replace("✅ **Completed**", "🔄 **Running** since")
+            .replaceAll("2026-10-20T12:01:00Z", "2026-10-20T12:05:00Z")
+        : line,
+    )
+    .join("\n");
+  const pending = comment(pendingBody, {
+    id: 951,
+    created_at: "2026-10-20T12:01:00Z",
+    updated_at: "2026-10-20T12:05:00Z",
+  });
+  const events = [
+    { event: "committed", sha: HEAD, created_at: "2026-10-20T12:00:00Z" },
+    clean,
+    pending,
+  ];
+  const result = runGate({ timeline: events, comments: events });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+for (const clear of [false, true, "inactive-code"])
+  test(`actual gate section head history ignores foreign other head: ${clear}`, () => {
+    const foreign = "b".repeat(40);
+    const mixed = (negative, time) =>
+      securityHistoryBody(negative, time)
+        .replace(
+          `"code_review":{"commit_sha":"${HEAD}"`,
+          `"code_review":{"commit_sha":"${foreign}"`,
+        )
+        .split("\n")
+        .map((line) =>
+          line.includes("**Code Review**")
+            ? line.replace(HEAD.slice(0, 7), foreign.slice(0, 7))
+            : line,
+        )
+        .join("\n");
+    const old = comment(
+      clear
+        ? securityHistoryBody(true, "2026-10-20T12:01:00Z")
+        : mixed(true, "2026-10-20T12:01:00Z"),
+      { id: 960, created_at: "2026-10-20T12:01:00Z" },
+    );
+    const cleared = comment(mixed(false, "2026-10-20T12:02:00Z"), {
+      id: 961,
+      created_at: "2026-10-20T12:02:00Z",
+    });
+    if (clear === "inactive-code")
+      cleared.body = cleared.body
+        .replace(
+          /"code_review":\{[^}]+\}/,
+          '"code_review":{"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null,"status":null}',
+        )
+        .split("\n")
+        .filter((line) => !line.includes("**Code Review**"))
+        .join("\n");
+    const request = {
+      ...comment(`@codex review ${HEAD}`, {
+        id: 962,
+        created_at: "2026-10-20T12:03:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const receipt = comment(presentationReceipt(HEAD, ":rocket:"), {
+      id: 963,
+      created_at: "2026-10-20T12:04:00Z",
+    });
+    const events = [
+      { event: "committed", sha: HEAD, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      ...(clear ? [cleared] : []),
+      request,
+      receipt,
+    ];
+    const result = runGate({ timeline: events, comments: events });
+    assert.equal(
+      result.status === 0,
+      Boolean(clear),
+      result.stderr || result.stdout,
+    );
+  });
