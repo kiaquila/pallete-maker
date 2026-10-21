@@ -42,7 +42,11 @@ const renderedVisibleText = (text) =>
         ? String.fromCodePoint(point)
         : entity;
     })
-    .replace(/&(?:nbsp|ensp|emsp|thinsp|Tab|NewLine);/gi, " ")
+    .replace(
+      /&(?:nbsp|NonBreakingSpace|ensp|emsp|emsp13|emsp14|numsp|puncsp|thinsp|ThinSpace|hairsp|VeryThinSpace|MediumSpace|ThickSpace|Tab|NewLine);/gi,
+      " ",
+    )
+    .replace(/\p{Cf}/gu, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[*_~]/g, "");
 
@@ -82,10 +86,19 @@ export const parseCodexState = (
             offset,
           );
           const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
-          return /^<!--\s*codex-/i.test(comment) || indentedCode ? comment : "";
+          return /^<!--\s*codex-/i.test(comment) || indentedCode
+            ? comment
+            : comment.replace(/[^\r\n]/g, "");
         })
         .trim()
     : String(body || "").trim();
+  // Comment removal must not turn a code-indented or BOM-prefixed heading
+  // into live Markdown. Validate the effective line before capture trimming.
+  const effectiveHeading = source.match(
+    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
+  )?.[0];
+  if (!/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || ""))
+    return false;
   const match = source.match(
     sectionHeads
       ? /^<!-- codex-pull-request-review-summary -->\s*<!-- codex-review-state:v1 (\{[\s\S]*?\}) -->\s*([\s\S]*)$/

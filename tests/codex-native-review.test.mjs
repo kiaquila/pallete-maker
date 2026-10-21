@@ -684,6 +684,12 @@ for (const mode of [
   "quoted-fence-old",
   "spaced-heading-old",
   "contradictory-trigger-clear",
+  "embedded-bom-clear",
+  "comment-heading-clear",
+  "mediumspace-clear",
+  "hairspace-clear",
+  "multiline-comment-clear",
+  "zerowidth-priority-clear",
   "code-heading-space-clear",
   "code-heading-tab-clear",
   "markdown-trigger-clear",
@@ -829,6 +835,30 @@ for (const mode of [
         (mode === "code-heading-tab-clear" ? "\t" : "    ") +
           "## Codex Review Summary",
       );
+    if (mode === "embedded-bom-clear")
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        "\uFEFF    ## Codex Review Summary",
+      );
+    if (mode === "comment-heading-clear")
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        "<!-- presentation metadata -->    ## Codex Review Summary",
+      );
+    if (["mediumspace-clear", "hairspace-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "mediumspace-clear"
+          ? "Do&MediumSpace;not&MediumSpace;merge"
+          : "Do&hairsp;not&hairsp;merge",
+      );
+    if (mode === "zerowidth-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P&#8203;1 blocker");
+    if (mode === "multiline-comment-clear")
+      newer.body = newer.body.replace(
+        'datetime="2026-10-20T12:05:00Z"',
+        'datetime="2026-10-20T12:<!-- metadata\n-->05:00Z"',
+      );
     if (mode === "markdown-trigger-clear")
       newer.body = newer.body.replaceAll("Manual request", "Do **not** merge");
     if (["duplicate-row-clock", "hidden-row-clock"].includes(mode)) {
@@ -888,6 +918,12 @@ for (const mode of [
         "fenced-example-clear",
         "quoted-fence-clear",
         "contradictory-trigger-clear",
+        "embedded-bom-clear",
+        "comment-heading-clear",
+        "mediumspace-clear",
+        "hairspace-clear",
+        "multiline-comment-clear",
+        "zerowidth-priority-clear",
         "code-heading-space-clear",
         "code-heading-tab-clear",
         "markdown-trigger-clear",
