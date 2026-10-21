@@ -690,6 +690,9 @@ for (const mode of [
   "hairspace-clear",
   "multiline-comment-clear",
   "zerowidth-priority-clear",
+  "marker-bom-clear",
+  "zerowidth-trigger-clear",
+  "namedzero-trigger-clear",
   "code-heading-space-clear",
   "code-heading-tab-clear",
   "markdown-trigger-clear",
@@ -852,6 +855,18 @@ for (const mode of [
           ? "Do&MediumSpace;not&MediumSpace;merge"
           : "Do&hairsp;not&hairsp;merge",
       );
+    if (mode === "marker-bom-clear")
+      newer.body = newer.body.replace(
+        /^<!-- codex-pull-request-review-summary/,
+        "    \uFEFF<!-- codex-pull-request-review-summary",
+      );
+    if (["zerowidth-trigger-clear", "namedzero-trigger-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "zerowidth-trigger-clear"
+          ? "Do&#8203;not&#8203;merge"
+          : "Do&ZeroWidthSpace;not&ZeroWidthSpace;merge",
+      );
     if (mode === "zerowidth-priority-clear")
       newer.body = newer.body.replaceAll("Manual request", "P&#8203;1 blocker");
     if (mode === "multiline-comment-clear")
@@ -924,6 +939,9 @@ for (const mode of [
         "hairspace-clear",
         "multiline-comment-clear",
         "zerowidth-priority-clear",
+        "marker-bom-clear",
+        "zerowidth-trigger-clear",
+        "namedzero-trigger-clear",
         "code-heading-space-clear",
         "code-heading-tab-clear",
         "markdown-trigger-clear",

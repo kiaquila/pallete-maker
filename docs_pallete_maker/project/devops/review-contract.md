@@ -177,3 +177,5 @@ A duplicate visible canonical section row makes negative-history completion cloc
 Heading validation also checks the effective line after presentation-comment removal: an embedded BOM or comment-prefixed code indentation cannot become live Markdown through trimming. Removing ordinary HTML comments preserves line breaks, preventing split row fields from joining into a canonical completion. Visible contradiction normalization includes standard HTML whitespace entity names; protocol markers, machine JSON, hashes and completion timestamps remain raw.
 
 Decoded Unicode format characters are removed only for visible contradiction checks, so zero-width formatting cannot hide a rendered P0–P2 warning. Machine data and completion-row parsing are unchanged.
+
+Raw protocol indentation detection includes a BOM between indentation and the marker. Visible format characters are checked both as removed characters and word separators, including standard named zero-width entities, preserving existing priority and merge-warning detection without normalizing machine evidence.

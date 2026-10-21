@@ -34,7 +34,8 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
-const renderedVisibleText = (text) =>
+// Standard HTML5 whitespace/format entity categories; visible checks only.
+const renderedVisibleText = (text, formatSeparator = "") =>
   text
     .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
@@ -46,7 +47,13 @@ const renderedVisibleText = (text) =>
       /&(?:nbsp|NonBreakingSpace|ensp|emsp|emsp13|emsp14|numsp|puncsp|thinsp|ThinSpace|hairsp|VeryThinSpace|MediumSpace|ThickSpace|Tab|NewLine);/gi,
       " ",
     )
-    .replace(/\p{Cf}/gu, "")
+    .replace(
+      /&(?:af|ApplyFunction|ic|InvisibleComma|InvisibleTimes|it|lrm|NegativeMediumSpace|NegativeThickSpace|NegativeThinSpace|NegativeVeryThinSpace|NoBreak|rlm|shy|ZeroWidthSpace|zwj|zwnj);/gi,
+      "\u200b",
+    )
+    .replace(/&nbsp;?/gi, " ")
+    .replace(/&shy;?/gi, "\u00ad")
+    .replace(/\p{Cf}/gu, formatSeparator)
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/[*_~]/g, "");
 
@@ -68,7 +75,7 @@ export const parseCodexState = (
     return false;
 
   if (
-    /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
+    /^(?: {4}|[ \t]*\t)[ \t\uFEFF]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
       (negativeEnvelope
         ? String(body || "").split(
             /^ {0,3}## Codex Review Summary[ \t]*\r?$/m,
@@ -164,7 +171,13 @@ export const parseCodexState = (
       );
     return { state, times: canonical ? canonical.times : {} };
   }
-  if (/\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(renderedVisibleText(visible)))
+  if (
+    ["", " "].some((separator) =>
+      /\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(
+        renderedVisibleText(visible, separator),
+      ),
+    )
+  )
     return false;
   if (
     /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
