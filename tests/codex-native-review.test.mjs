@@ -701,6 +701,8 @@ for (const mode of [
   "empty-destination-clear",
   "escaped-opener-clear",
   "escaped-label-closer-clear",
+  "nested-link-clear",
+  "found-article-repeat-clock",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
@@ -904,6 +906,8 @@ for (const mode of [
         "empty-destination-clear",
         "escaped-opener-clear",
         "escaped-label-closer-clear",
+        "nested-link-clear",
+        "found-article-repeat-clock",
       ].includes(mode)
     ) {
       const title =
@@ -933,6 +937,17 @@ for (const mode of [
       newer.body = newer.body.replaceAll("Manual request", "\\[safe](P1)");
     if (mode === "escaped-label-closer-clear")
       newer.body = newer.body.replaceAll("Manual request", "[safe\\]( P1)");
+    if (mode === "nested-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe [inner](url)](P1)",
+      );
+    if (mode === "found-article-repeat-clock") {
+      old.body += "\nFound an issue";
+      old.updated_at = "2026-10-20T12:05:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+    }
     if (mode === "balanced-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
@@ -1067,6 +1082,8 @@ for (const mode of [
         "empty-destination-clear",
         "escaped-opener-clear",
         "escaped-label-closer-clear",
+        "nested-link-clear",
+        "found-article-repeat-clock",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",
