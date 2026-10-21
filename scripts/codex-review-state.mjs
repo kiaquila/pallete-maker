@@ -560,6 +560,48 @@ function htmlTagText(text, separator) {
   return result;
 }
 
+function indentationColumns(prefix) {
+  return Array.from(prefix).reduce(
+    (column, character) => column + (character === "\t" ? 4 - (column % 4) : 1),
+    0,
+  );
+}
+
+function consumeIndentationColumns(line, required) {
+  let column = 0,
+    index = 0;
+  while (column < required && /[ \t]/.test(line[index] || "x")) {
+    column += line[index++] === "\t" ? 4 - (column % 4) : 1;
+  }
+  return column < required
+    ? null
+    : " ".repeat(column - required) + line.slice(index);
+}
+
+// HTML tokenizer comment endings, including abrupt empty-comment closure.
+function htmlCommentEnd(source, start) {
+  if (source.startsWith("<!-->", start)) return start + 5;
+  if (source.startsWith("<!--->", start)) return start + 6;
+  const close = /--!?>/g;
+  close.lastIndex = start + 4;
+  const match = close.exec(source);
+  return match ? match.index + match[0].length : null;
+}
+
+function withoutHtmlComments(source) {
+  let result = "",
+    cursor = 0,
+    start;
+  while ((start = source.indexOf("<!--", cursor)) >= 0) {
+    const end = htmlCommentEnd(source, start) ?? source.length;
+    result +=
+      source.slice(cursor, start) +
+      source.slice(start, end).replace(/[^\r\n]/g, "");
+    cursor = end;
+  }
+  return result + source.slice(cursor);
+}
+
 function markdownContainerContext(line) {
   const frames = [];
   while (true) {
@@ -571,7 +613,7 @@ function markdownContainerContext(line) {
     }
     const list = line.match(/^ {0,3}(?:[-+*]|[0-9]{1,9}[.)])[ \t]+/);
     if (list) {
-      frames.push({ kind: "list", width: list[0].length });
+      frames.push({ kind: "list", width: indentationColumns(list[0]) });
       line = line.slice(list[0].length);
       continue;
     }
@@ -581,12 +623,14 @@ function markdownContainerContext(line) {
 
 function markdownContainerContinuation(line, frames) {
   for (const frame of frames) {
-    const prefix =
-      frame.kind === "quote"
-        ? line.match(/^ {0,3}>[ \t]?/)
-        : line.match(new RegExp("^(?: {" + frame.width + "}|\\t)"));
-    if (!prefix) return null;
-    line = line.slice(prefix[0].length);
+    if (frame.kind === "list") {
+      line = consumeIndentationColumns(line, frame.width);
+      if (line === null) return null;
+    } else {
+      const prefix = line.match(/^ {0,3}>[ \t]?/);
+      if (!prefix) return null;
+      line = line.slice(prefix[0].length);
+    }
   }
   return line;
 }
@@ -651,8 +695,7 @@ function protectLiteralCode(source) {
     .join("");
   for (let i = 0; i < raw.length; i++) {
     if (raw.startsWith("<!--", i)) {
-      const end = raw.indexOf("-->", i + 4);
-      const stop = end < 0 ? raw.length : end + 3;
+      const stop = htmlCommentEnd(raw, i) ?? raw.length;
       spans += raw.slice(i, stop);
       i = stop - 1;
       continue;
@@ -715,17 +758,25 @@ function protectLiteralCode(source) {
       let result = "";
       for (let i = 0; i < line.length; i++) {
         if (comment) {
-          if (line.startsWith("-->", i)) {
-            result += "-->";
-            i += 2;
-            comment = false;
-          } else result += line[i];
+          const close = /--!?>/.exec(line.slice(i));
+          if (!close) {
+            result += line.slice(i);
+            break;
+          }
+          const stop = i + close.index + close[0].length;
+          result += line.slice(i, stop);
+          i = stop - 1;
+          comment = false;
           continue;
         }
         if (line.startsWith("<!--", i)) {
-          result += "<!--";
-          i += 3;
-          comment = true;
+          const end = htmlCommentEnd(line, i);
+          result += line.slice(i, end ?? line.length);
+          if (end === null) {
+            comment = true;
+            break;
+          }
+          i = end - 1;
           continue;
         }
         if (line[i] === "`") {
@@ -815,10 +866,7 @@ const htmlNumericReferences = (source) => {
 // before entities; raw protocol, JSON, SHA and completion clocks are untouched.
 const renderedVisibleText = (text, formatSeparator = "") => {
   const literal = protectLiteralCode(text);
-  const raw = htmlNumericReferences(literal.text).replace(
-    /<!--[\s\S]*?(?:-->|$)/g,
-    (comment) => comment.replace(/[^\r\n]/g, ""),
-  );
+  const raw = withoutHtmlComments(htmlNumericReferences(literal.text));
   const projected = visibleLinkLabels(htmlTagText(raw, formatSeparator))
     .replace(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);

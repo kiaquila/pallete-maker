@@ -233,3 +233,5 @@ Footnote use is determined from the existing visible inline projection for both 
 Raw HTML context follows ordered quote/list frames on each continuation line. Footnote usage excludes validated ordinary-reference destinations as well as inline destinations. Affirmative article findings require a preceding word in the same paragraph, preserving blank-line boundaries without a reporting-verb allowlist.
 
 Footnote label keys use Unicode 16.0 full case folding without compatibility normalization. Visible affirmative bug counts and article statements share the existing issue/finding/problem contradiction grammar; raw protocol fields remain unchanged.
+
+Visible warning projection follows HTML abrupt-comment endings and tab-stop display columns when continuing Markdown list containers. These presentation rules do not alter raw protocol or canonical completion authority.
