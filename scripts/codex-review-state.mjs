@@ -34,7 +34,7 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
-const renderedTrigger = (text) =>
+const renderedVisibleText = (text) =>
   text
     .replace(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (entity, hex, decimal) => {
       const point = Number.parseInt(hex || decimal, hex ? 16 : 10);
@@ -147,6 +147,8 @@ export const parseCodexState = (
     );
     return { state, times: canonical ? canonical.times : {} };
   }
+  if (/\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(renderedVisibleText(visible)))
+    return false;
   if (
     /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,
@@ -188,7 +190,6 @@ export const parseCodexState = (
     const section = label === "Code Review" ? "code_review" : "security_review";
     if (
       !row ||
-      /\bdo\s+not\s+merge\b/i.test(renderedTrigger(row[5])) ||
       !lines[4 + index].includes(
         state[section].status === "completed"
           ? "✅ **Completed**"

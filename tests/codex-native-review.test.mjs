@@ -688,6 +688,9 @@ for (const mode of [
   "code-heading-tab-clear",
   "markdown-trigger-clear",
   "entity-trigger-clear",
+  "numeric-priority-clear",
+  "markdown-priority-clear",
+  "numeric-trigger-clear",
   "trailing-marker-old",
   "duplicate-leading-old",
   "whole-fenced-old",
@@ -826,6 +829,15 @@ for (const mode of [
       );
     if (mode === "markdown-trigger-clear")
       newer.body = newer.body.replaceAll("Manual request", "Do **not** merge");
+    if (mode === "numeric-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P&#49; blocker");
+    if (mode === "markdown-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P*1* blocker");
+    if (mode === "numeric-trigger-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Do&#32;not&#32;merge",
+      );
     if (mode === "entity-trigger-clear")
       newer.body = newer.body.replaceAll("Manual request", "Do not&nbsp;merge");
     if (mode === "contradictory-trigger-clear")
@@ -867,6 +879,9 @@ for (const mode of [
         "code-heading-tab-clear",
         "markdown-trigger-clear",
         "entity-trigger-clear",
+        "numeric-priority-clear",
+        "markdown-priority-clear",
+        "numeric-trigger-clear",
         "trailing-marker-clear",
         "bom-space-clear",
         "bom-tab-clear",
