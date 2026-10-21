@@ -681,6 +681,13 @@ for (const mode of [
   "marker-prose-old",
   "trailing-example-old",
   "fenced-example-old",
+  "quoted-fence-old",
+  "trailing-marker-old",
+  "duplicate-leading-old",
+  "whole-fenced-old",
+  "whole-quoted-old",
+  "trailing-marker-clear",
+  "quoted-fence-clear",
   "fenced-example-clear",
   "bom-space-clear",
   "bom-tab-clear",
@@ -714,6 +721,22 @@ for (const mode of [
         /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
         (mode === "tabbed-old" ? "\t" : "    ") + "$1",
       );
+    if (mode === "duplicate-leading-old")
+      old.body = old.body.replace(
+        "<!-- codex-review-state:v1",
+        "<!-- codex-review-state:v1 {} -->\n<!-- codex-review-state:v1",
+      );
+    if (mode === "whole-fenced-old")
+      old.body = "```html\n" + old.body + "\n```";
+    if (mode === "whole-quoted-old")
+      old.body = old.body
+        .split("\n")
+        .map((line) => "> " + line)
+        .join("\n");
+    if (mode === "trailing-marker-old")
+      old.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (mode === "quoted-fence-old")
+      old.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
     if (mode === "fenced-example-old")
       old.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
     if (mode === "trailing-example-old")
@@ -781,6 +804,10 @@ for (const mode of [
         '"status":"completed"',
         '"status":"running"',
       );
+    if (mode === "trailing-marker-clear")
+      newer.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (mode === "quoted-fence-clear")
+      newer.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
     if (mode === "fenced-example-clear")
       newer.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
     if (mode === "example-clear")
@@ -810,6 +837,8 @@ for (const mode of [
         "security-null",
         "example-clear",
         "fenced-example-clear",
+        "quoted-fence-clear",
+        "trailing-marker-clear",
         "bom-space-clear",
         "bom-tab-clear",
         "warning-clear",
@@ -851,6 +880,9 @@ for (const mode of [
         "newer-clear",
         "ordinary-comment-clear",
         "malformed-old",
+        "duplicate-leading-old",
+        "whole-fenced-old",
+        "whole-quoted-old",
         "wrong-actor",
         "indented-old",
         "tabbed-old",

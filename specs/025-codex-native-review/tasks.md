@@ -96,3 +96,5 @@ Strict valid same-head structured finding flags latch per review section across 
 Historical negative snapshots accept multiline machine JSON and presentation-only nonprotocol HTML comments, retaining unique protocol markers, closed fields, duplicate-key rejection, exact affected-section head and visible-row validation. This formatting tolerance never grants affirmative review authority.
 
 - [x] Reject code-indented nonprotocol comments as historical clearing evidence; verify four-space and tab actual-gate regressions.
+
+- [x] Preserve explicit findings from a strict leading envelope independently of trailing presentation; keep complete-body clean/clear validation strict.
