@@ -165,3 +165,5 @@ Negative completion ordering considers only affected sections bound to the curre
 A strict leading live snapshot may retain only explicit current-head negative facts when followed solely by trailing Markdown-indented protocol example lines. This fallback cannot approve, clear history, or retire the original body’s observed pending timestamp. Whole indented envelopes remain examples.
 
 History validation preserves nonprotocol HTML comments on Markdown code-indented lines; those snapshots cannot clear earlier findings. Unindented presentation metadata remains supported.
+
+A trailing fenced protocol example preserves strictly validated leading negative facts only; it cannot supply clean approval or historical clearing evidence. A leading BOM does not remove Markdown code indentation protection.

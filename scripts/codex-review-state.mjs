@@ -41,7 +41,7 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
   if (
     /^(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
-      String(body || ""),
+      String(body || "").replace(/^\uFEFF/, ""),
     )
   )
     return false;
@@ -177,7 +177,11 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
     let negativeOnly = false;
     if (!parsed) {
       const original = String(entry.body || "");
-      const leading = original.replace(
+      const withoutFence = original.replace(
+        /\r?\n(`{3}|~{3})(?:html)?[ \t]*\r?\n<!--[ \t]*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*\r?\n\1[ \t]*\s*$/i,
+        "",
+      );
+      const leading = withoutFence.replace(
         /(?:\r?\n(?: {4}|[ \t]*\t)[ \t]*<!--\s*codex-(?:review-state|pull-request-review-summary|review-receipt)[^\r\n]*-->[ \t]*)+\s*$/i,
         "",
       );
