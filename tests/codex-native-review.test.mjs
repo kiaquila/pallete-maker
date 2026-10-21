@@ -670,6 +670,8 @@ for (const mode of [
   "security-null",
   "newer-clear",
   "ordinary-comment-clear",
+  "indented-comment-clear",
+  "tabbed-comment-clear",
   "uppercase-clear",
   "equal-clear",
   "old-security-clock",
@@ -738,10 +740,21 @@ for (const mode of [
           ),
       { id: 933, created_at: "2026-10-20T12:05:00Z" },
     );
-    if (["ordinary-comment-clear", "uppercase-clear"].includes(mode))
+    if (
+      [
+        "ordinary-comment-clear",
+        "indented-comment-clear",
+        "tabbed-comment-clear",
+        "uppercase-clear",
+      ].includes(mode)
+    )
       receipt.created_at = "2026-10-20T12:06:00Z";
     if (mode === "ordinary-comment-clear")
       newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (mode === "indented-comment-clear")
+      newer.body += "\n    <!-- TODO: presentation metadata -->";
+    if (mode === "tabbed-comment-clear")
+      newer.body += "\n\t<!-- TODO: presentation metadata -->";
     if (mode === "example-clear")
       newer.body += "\n\t<!-- codex-pull-request-review-summary -->";
     if (mode === "uppercase-clear")
@@ -770,6 +783,8 @@ for (const mode of [
         "example-clear",
         "newer-clear",
         "ordinary-comment-clear",
+        "indented-comment-clear",
+        "tabbed-comment-clear",
         "uppercase-clear",
         "equal-clear",
         "old-security-clock",

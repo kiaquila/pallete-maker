@@ -163,3 +163,5 @@ Protocol-marker uniqueness counts actual HTML comment markers, not bare marker w
 Negative completion ordering considers only affected sections bound to the current full head. Protocol marker lines indented as Markdown code (four spaces or a tab) are examples, not live structured snapshots.
 
 A strict leading live snapshot may retain only explicit current-head negative facts when followed solely by trailing Markdown-indented protocol example lines. This fallback cannot approve, clear history, or retire the original body’s observed pending timestamp. Whole indented envelopes remain examples.
+
+History validation preserves nonprotocol HTML comments on Markdown code-indented lines; those snapshots cannot clear earlier findings. Unindented presentation metadata remains supported.

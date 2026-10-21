@@ -47,9 +47,14 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
     return false;
   const source = sectionHeads
     ? String(body || "")
-        .replace(/<!--[\s\S]*?-->/g, (comment) =>
-          /^<!--\s*codex-/i.test(comment) ? comment : "",
-        )
+        .replace(/<!--[\s\S]*?-->/g, (comment, offset, raw) => {
+          const linePrefix = raw.slice(
+            raw.lastIndexOf("\n", offset - 1) + 1,
+            offset,
+          );
+          const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
+          return /^<!--\s*codex-/i.test(comment) || indentedCode ? comment : "";
+        })
         .trim()
     : String(body || "").trim();
   const match = source.match(
