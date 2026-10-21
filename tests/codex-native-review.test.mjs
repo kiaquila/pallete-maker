@@ -689,6 +689,8 @@ for (const mode of [
   "markdown-trigger-clear",
   "entity-trigger-clear",
   "numeric-priority-clear",
+  "duplicate-row-clock",
+  "hidden-row-clock",
   "markdown-priority-clear",
   "numeric-trigger-clear",
   "trailing-marker-old",
@@ -829,6 +831,17 @@ for (const mode of [
       );
     if (mode === "markdown-trigger-clear")
       newer.body = newer.body.replaceAll("Manual request", "Do **not** merge");
+    if (["duplicate-row-clock", "hidden-row-clock"].includes(mode)) {
+      old.updated_at = "2026-10-20T12:05:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+      newer.created_at = "2026-10-20T12:03:00Z";
+      newer.body = securityHistoryBody(false, "2026-10-20T12:03:00Z");
+      if (mode === "duplicate-row-clock")
+        old.body +=
+          "\n " + old.body.split("\n").find((line) => line.startsWith("| 🔒"));
+      else old.body = old.body.replace(/^(\| 🔒[^\n]+)$/m, "<!--\n$1\n-->");
+    }
     if (mode === "numeric-priority-clear")
       newer.body = newer.body.replaceAll("Manual request", "P&#49; blocker");
     if (mode === "markdown-priority-clear")
@@ -880,6 +893,8 @@ for (const mode of [
         "markdown-trigger-clear",
         "entity-trigger-clear",
         "numeric-priority-clear",
+        "duplicate-row-clock",
+        "hidden-row-clock",
         "markdown-priority-clear",
         "numeric-trigger-clear",
         "trailing-marker-clear",

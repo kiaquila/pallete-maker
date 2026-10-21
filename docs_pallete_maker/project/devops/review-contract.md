@@ -171,3 +171,5 @@ The leading negative boundary recognizes the supported one-to-three-space Markdo
 Canonical summary headings allow zero to three leading spaces; four spaces or a tab cannot supply authority. Trigger contradiction checks normalize inline Markdown emphasis/links and character entities, so rendered “Do not merge” remains contradictory.
 
 Known P0–P2 severity and “Do not merge” contradictions are checked on normalized visible presentation, including numeric character entities and inline emphasis. Machine metadata, SHA and time validation continues to use the original raw values.
+
+A duplicate visible canonical section row makes negative-history completion clocks ambiguous, including accepted leading-space indentation. The explicit finding remains, ordered by observed update time. Hidden comment rows cannot provide completion clocks.

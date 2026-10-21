@@ -134,17 +134,21 @@ export const parseCodexState = (
     const rows = Object.values(state).filter(
       (review) => !inactiveReview(review),
     ).length;
-    const canonicalVisible = visible
+    const visibleLines = visible
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 4 + rows)
-      .join("\n");
-    const canonical = parseCodexState(
-      source.slice(0, source.length - match[2].length) + canonicalVisible,
-      head,
-      { sectionHeads: true },
+      .filter(Boolean);
+    const sectionRows = visibleLines.filter((line) =>
+      /^\| (?:📝|🔒|🛡️) \*\*(?:Code Review|Security Review)\*\* \|/.test(line),
     );
+    const canonicalVisible = visibleLines.slice(0, 4 + rows).join("\n");
+    const canonical =
+      sectionRows.length === rows &&
+      parseCodexState(
+        source.slice(0, source.length - match[2].length) + canonicalVisible,
+        head,
+        { sectionHeads: true },
+      );
     return { state, times: canonical ? canonical.times : {} };
   }
   if (/\b(?:P[0-2]|do\s+not\s+merge)\b/i.test(renderedVisibleText(visible)))
