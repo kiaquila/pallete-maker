@@ -682,6 +682,8 @@ for (const mode of [
   "trailing-example-old",
   "fenced-example-old",
   "quoted-fence-old",
+  "spaced-heading-old",
+  "contradictory-trigger-clear",
   "trailing-marker-old",
   "duplicate-leading-old",
   "whole-fenced-old",
@@ -735,6 +737,12 @@ for (const mode of [
         .join("\n");
     if (mode === "trailing-marker-old")
       old.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (mode === "spaced-heading-old")
+      old.body =
+        old.body.replace(
+          "## Codex Review Summary",
+          "  ## Codex Review Summary",
+        ) + "\n    <!-- codex-review-state:v1 {} -->";
     if (mode === "quoted-fence-old")
       old.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
     if (mode === "fenced-example-old")
@@ -806,6 +814,8 @@ for (const mode of [
       );
     if (mode === "trailing-marker-clear")
       newer.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (mode === "contradictory-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do not merge");
     if (mode === "quoted-fence-clear")
       newer.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
     if (mode === "fenced-example-clear")
@@ -838,6 +848,7 @@ for (const mode of [
         "example-clear",
         "fenced-example-clear",
         "quoted-fence-clear",
+        "contradictory-trigger-clear",
         "trailing-marker-clear",
         "bom-space-clear",
         "bom-tab-clear",
