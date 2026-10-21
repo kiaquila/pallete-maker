@@ -697,6 +697,9 @@ for (const mode of [
   "title-single-clear",
   "title-paren-clear",
   "escaped-space-clear",
+  "space-destination-clear",
+  "empty-destination-clear",
+  "escaped-opener-clear",
   "inactive-numeric-row-clock",
   "inactive-nbsp-row-clock",
   "inactive-html-row-clock",
@@ -896,6 +899,9 @@ for (const mode of [
         "title-single-clear",
         "title-paren-clear",
         "escaped-space-clear",
+        "space-destination-clear",
+        "empty-destination-clear",
+        "escaped-opener-clear",
       ].includes(mode)
     ) {
       const title =
@@ -914,6 +920,15 @@ for (const mode of [
         "Manual request",
         "[safe](P1\\ blocker)",
       );
+    if (["space-destination-clear", "empty-destination-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "space-destination-clear"
+          ? "Do [not]( https://example.com ) merge"
+          : "Do [not]() merge",
+      );
+    if (mode === "escaped-opener-clear")
+      newer.body = newer.body.replaceAll("Manual request", "\\[safe](P1)");
     if (mode === "balanced-link-clear")
       newer.body = newer.body.replaceAll(
         "Manual request",
@@ -1044,6 +1059,9 @@ for (const mode of [
         "title-single-clear",
         "title-paren-clear",
         "escaped-space-clear",
+        "space-destination-clear",
+        "empty-destination-clear",
+        "escaped-opener-clear",
         "inactive-numeric-row-clock",
         "inactive-nbsp-row-clock",
         "inactive-html-row-clock",
