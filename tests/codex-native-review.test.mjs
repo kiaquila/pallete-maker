@@ -669,6 +669,8 @@ for (const mode of [
   "static",
   "security-null",
   "newer-clear",
+  "ordinary-comment-clear",
+  "uppercase-clear",
   "equal-clear",
   "old-security-clock",
   "missing-security-clock",
@@ -732,6 +734,12 @@ for (const mode of [
           ),
       { id: 933, created_at: "2026-10-20T12:05:00Z" },
     );
+    if (["ordinary-comment-clear", "uppercase-clear"].includes(mode))
+      receipt.created_at = "2026-10-20T12:06:00Z";
+    if (mode === "ordinary-comment-clear")
+      newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (mode === "uppercase-clear")
+      newer.body += "\n<!-- CODEX-review-state:v1 {} -->";
     if (mode === "old-security-clock")
       newer.body = newer.body
         .split("\n")
@@ -754,6 +762,8 @@ for (const mode of [
       ...([
         "security-null",
         "newer-clear",
+        "ordinary-comment-clear",
+        "uppercase-clear",
         "equal-clear",
         "old-security-clock",
         "missing-security-clock",
@@ -784,6 +794,7 @@ for (const mode of [
       result.status === 0,
       [
         "newer-clear",
+        "ordinary-comment-clear",
         "malformed-old",
         "wrong-actor",
         "indented-old",
