@@ -844,7 +844,7 @@ test("actual gate preserves concurrent running section observed clock", () => {
   assert.notEqual(result.status, 0, result.stdout);
 });
 
-for (const clear of [false, true, "inactive-code"])
+for (const clear of [false, true, "inactive-code", "edited-mixed"])
   test(`actual gate section head history ignores foreign other head: ${clear}`, () => {
     const foreign = "b".repeat(40);
     const mixed = (negative, time) =>
@@ -866,6 +866,10 @@ for (const clear of [false, true, "inactive-code"])
         : mixed(true, "2026-10-20T12:01:00Z"),
       { id: 960, created_at: "2026-10-20T12:01:00Z" },
     );
+    if (clear === "edited-mixed") {
+      old.body = mixed(true, "2026-10-20T12:01:00Z");
+      old.updated_at = "2026-10-20T12:05:00Z";
+    }
     const cleared = comment(mixed(false, "2026-10-20T12:02:00Z"), {
       id: 961,
       created_at: "2026-10-20T12:02:00Z",
