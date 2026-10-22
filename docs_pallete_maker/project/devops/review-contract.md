@@ -239,3 +239,8 @@ Visible warning projection follows HTML abrupt-comment endings and tab-stop disp
 Warning projection removes only active Markdown emphasis delimiters, keeps type-7 HTML tags inside existing paragraphs, and excludes validated continuation titles from footnote usage. Finding statements scope negation to the matched finding, preserve unresolved findings despite unrelated negation, and recognize grouped numeric counts with whole noun boundaries, including bug-free compounds. Historical negative completion coherence is evaluated per section after structurally validating the companion row; a companion warning cannot renew an already-cleared section.
 
 Historical clock checks preserve harmless metalinguistic prose and zero-after-colon reports, hide only validated link-reference definitions, and treat indented code as a paragraph boundary before type-7 HTML. Trigger isolation applies only to a companion with explicit typed findings; contradictory false/false companion presentation retains the observation timestamp.
+
+Predicate-nominal, modal and active finding assertions, positive worded counts,
+and explicit exceptions to an otherwise empty result retain the observation
+clock. Resolution adjectives alone remain benign; a subsequent reappearance or
+persistence predicate remains a finding.

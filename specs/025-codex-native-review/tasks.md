@@ -100,3 +100,7 @@ Historical negative snapshots accept multiline machine JSON and presentation-onl
 - [x] Preserve explicit findings from a strict leading envelope independently of trailing presentation; keep complete-body clean/clear validation strict.
 
 - [x] Reject embedded-BOM/comment-prefixed code headings and rendered whitespace-entity warnings; preserve comment line breaks so split completion fields cannot clear historical findings. Exact actual-gate regressions cover each case.
+
+- [x] Cover nominal/modal findings, qualified empty results, explicit exceptions,
+      worded positive counts and resolved-adjective reappearance in actual gate
+      regressions while preserving strict newer canonical recovery.
