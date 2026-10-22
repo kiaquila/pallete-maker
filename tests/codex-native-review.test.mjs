@@ -756,6 +756,11 @@ for (const mode of [
   "regression-repeat-clock",
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
+  "users-bypass-repeat-clock",
+  "mentioned-repeat-clock",
+  "documents-repeat-clock",
+  "includes-repeat-clock",
+  "discussed-repeat-clock",
   "vulnerable-repeat-clock",
   "bypassed-repeat-clock",
   "see-repeat-clock",
@@ -1140,6 +1145,11 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "users-bypass-repeat-clock",
+        "mentioned-repeat-clock",
+        "documents-repeat-clock",
+        "includes-repeat-clock",
+        "discussed-repeat-clock",
         "vulnerable-repeat-clock",
         "bypassed-repeat-clock",
         "see-repeat-clock",
@@ -1290,6 +1300,11 @@ for (const mode of [
                               "regression-repeat-clock",
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
+                              "users-bypass-repeat-clock",
+                              "mentioned-repeat-clock",
+                              "documents-repeat-clock",
+                              "includes-repeat-clock",
+                              "discussed-repeat-clock",
                               "vulnerable-repeat-clock",
                               "bypassed-repeat-clock",
                               "see-repeat-clock",
@@ -1364,6 +1379,15 @@ for (const mode of [
                                   "The application is vulnerable to SQL injection.",
                                 "bypassed-repeat-clock":
                                   "Authentication can be bypassed.",
+                                "users-bypass-repeat-clock":
+                                  "Users can bypass authentication.",
+                                "mentioned-repeat-clock":
+                                  "The review mentioned a bug fix.",
+                                "documents-repeat-clock":
+                                  "This patch documents a bug fix.",
+                                "includes-repeat-clock":
+                                  "This release includes a bug fix.",
+                                "discussed-repeat-clock": "We discussed a bug.",
                                 "security-risk-repeat-clock":
                                   "A security risk remains.",
                                 "qualified-absence-repeat-clock":
@@ -1969,6 +1993,11 @@ for (const mode of [
         "regression-repeat-clock",
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
+        "users-bypass-repeat-clock",
+        "mentioned-repeat-clock",
+        "documents-repeat-clock",
+        "includes-repeat-clock",
+        "discussed-repeat-clock",
         "vulnerable-repeat-clock",
         "bypassed-repeat-clock",
         "see-repeat-clock",
@@ -2120,6 +2149,10 @@ for (const mode of [
     assert.equal(
       result.status === 0,
       [
+        "mentioned-repeat-clock",
+        "documents-repeat-clock",
+        "includes-repeat-clock",
+        "discussed-repeat-clock",
         "none-exist-repeat-clock",
         "harmless-repeat-clock",
         "regression-tests-repeat-clock",
