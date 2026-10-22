@@ -752,6 +752,22 @@ for (const mode of [
   "none-current-repeat-clock",
   "none-were-repeat-clock",
   "may-reappear-repeat-clock",
+  "defect-repeat-clock",
+  "regression-repeat-clock",
+  "direct-reappeared-repeat-clock",
+  "perfect-reappeared-repeat-clock",
+  "recurred-repeat-clock",
+  "reopened-repeat-clock",
+  "qualified-harmless-repeat-clock",
+  "already-fixed-exception-repeat-clock",
+  "bare-critical-repeat-clock",
+  "bare-authentication-repeat-clock",
+  "most-count-repeat-clock",
+  "every-count-repeat-clock",
+  "numerous-count-repeat-clock",
+  "no-exist-repeat-clock",
+  "no-remain-repeat-clock",
+
   "both-count-repeat-clock",
   "many-count-repeat-clock",
   "all-count-repeat-clock",
@@ -1091,6 +1107,22 @@ for (const mode of [
         "none-current-repeat-clock",
         "none-were-repeat-clock",
         "may-reappear-repeat-clock",
+        "defect-repeat-clock",
+        "regression-repeat-clock",
+        "direct-reappeared-repeat-clock",
+        "perfect-reappeared-repeat-clock",
+        "recurred-repeat-clock",
+        "reopened-repeat-clock",
+        "qualified-harmless-repeat-clock",
+        "already-fixed-exception-repeat-clock",
+        "bare-critical-repeat-clock",
+        "bare-authentication-repeat-clock",
+        "most-count-repeat-clock",
+        "every-count-repeat-clock",
+        "numerous-count-repeat-clock",
+        "no-exist-repeat-clock",
+        "no-remain-repeat-clock",
+
         "both-count-repeat-clock",
         "many-count-repeat-clock",
         "all-count-repeat-clock",
@@ -1194,11 +1226,59 @@ for (const mode of [
                             "</details>",
                             "Security issue: none were found.</details>",
                           )
-                        : mode === "may-reappear-repeat-clock"
+                        : [
+                              "may-reappear-repeat-clock",
+                              "defect-repeat-clock",
+                              "regression-repeat-clock",
+                              "reappeared-repeat-clock",
+                              "perfect-reappeared-repeat-clock",
+                              "recurred-repeat-clock",
+                              "reopened-repeat-clock",
+                              "qualified-harmless-repeat-clock",
+                              "already-fixed-exception-repeat-clock",
+                              "bare-critical-repeat-clock",
+                              "bare-authentication-repeat-clock",
+                              "most-count-repeat-clock",
+                              "every-count-repeat-clock",
+                              "numerous-count-repeat-clock",
+                              "no-exist-repeat-clock",
+                              "no-remain-repeat-clock",
+                            ].includes(mode)
                           ? "\n" +
                             helpFooter.replace(
                               "</details>",
-                              "An eliminated issue may reappear.</details>",
+                              ({
+                                "direct-reappeared-repeat-clock":
+                                  "An eliminated issue reappeared.",
+                                "perfect-reappeared-repeat-clock":
+                                  "An eliminated issue has reappeared.",
+                                "recurred-repeat-clock":
+                                  "A fixed bug recurred.",
+                                "reopened-repeat-clock":
+                                  "A resolved issue reopened.",
+                                "qualified-harmless-repeat-clock":
+                                  "The security issue is harmless in tests but exploitable in production.",
+                                "already-fixed-exception-repeat-clock":
+                                  "No issues were found except one already fixed.",
+                                "bare-critical-repeat-clock":
+                                  "Critical security issue remains.",
+                                "bare-authentication-repeat-clock":
+                                  "Authentication vulnerability exists.",
+                                "most-count-repeat-clock":
+                                  "Most issues remain.",
+                                "every-count-repeat-clock":
+                                  "Every issue remains.",
+                                "numerous-count-repeat-clock":
+                                  "Numerous issues remain.",
+                                "no-exist-repeat-clock": "Issues do not exist.",
+                                "no-remain-repeat-clock": "Bugs do not remain.",
+                              }[mode] ??
+                                (mode === "defect-repeat-clock"
+                                  ? "A defect remains."
+                                  : mode === "regression-repeat-clock"
+                                    ? "A regression remains."
+                                    : "An eliminated issue may reappear.")) +
+                                "</details>",
                             )
                           : mode === "both-count-repeat-clock"
                             ? "\n" +
@@ -1748,6 +1828,22 @@ for (const mode of [
         "none-current-repeat-clock",
         "none-were-repeat-clock",
         "may-reappear-repeat-clock",
+        "defect-repeat-clock",
+        "regression-repeat-clock",
+        "direct-reappeared-repeat-clock",
+        "perfect-reappeared-repeat-clock",
+        "recurred-repeat-clock",
+        "reopened-repeat-clock",
+        "qualified-harmless-repeat-clock",
+        "already-fixed-exception-repeat-clock",
+        "bare-critical-repeat-clock",
+        "bare-authentication-repeat-clock",
+        "most-count-repeat-clock",
+        "every-count-repeat-clock",
+        "numerous-count-repeat-clock",
+        "no-exist-repeat-clock",
+        "no-remain-repeat-clock",
+
         "both-count-repeat-clock",
         "many-count-repeat-clock",
         "all-count-repeat-clock",
@@ -1860,6 +1956,9 @@ for (const mode of [
       [
         "none-exist-repeat-clock",
         "harmless-repeat-clock",
+        "already-fixed-exception-repeat-clock",
+        "no-exist-repeat-clock",
+        "no-remain-repeat-clock",
         "benign-repeat-clock",
         "except-fixed-repeat-clock",
         "none-current-repeat-clock",
