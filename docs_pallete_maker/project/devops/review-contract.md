@@ -244,3 +244,7 @@ Predicate-nominal, modal and active finding assertions, positive worded counts,
 and explicit exceptions to an otherwise empty result retain the observation
 clock. Resolution adjectives alone remain benign; a subsequent reappearance or
 persistence predicate remains a finding.
+
+Rendered soft breaks preserve one finding assertion. Qualified empty results,
+neutral benign descriptions and resolved exceptions do not renew findings;
+modal recurrence, quantified subjects and continued existence remain active.
