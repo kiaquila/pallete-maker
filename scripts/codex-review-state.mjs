@@ -1178,7 +1178,7 @@ function hasPositiveFindingStatement(text) {
             "|(?<![\\p{L}\\p{N}_] )" +
             noun +
             ")" +
-            " +(?:(?:is|are|was|were|has|have|been) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
+            " +(?:(?:is|are|was|were|has|have|been|get|gets|got) +)*(?:found|[\\p{L}]+ed|remains?|exists?)\\b",
           "\\bthere +(?:is|are) +(?:[\\p{L}-]+ +)*?" + noun,
           "\\b(?:a|an) +(?:[\\p{L}-]+ +)*?" +
             noun +
