@@ -235,3 +235,5 @@ Raw HTML context follows ordered quote/list frames on each continuation line. Fo
 Footnote label keys use Unicode 16.0 full case folding without compatibility normalization. Visible affirmative bug counts and article statements share the existing issue/finding/problem contradiction grammar; raw protocol fields remain unchanged.
 
 Visible warning projection follows HTML abrupt-comment endings and tab-stop display columns when continuing Markdown list containers. These presentation rules do not alter raw protocol or canonical completion authority.
+
+Warning projection removes only active Markdown emphasis delimiters, keeps type-7 HTML tags inside existing paragraphs, and excludes validated continuation titles from footnote usage. Finding statements use clause negation and whole noun boundaries, including bug-free compounds. Historical negative completion coherence is evaluated per section after structurally validating the companion row; a companion warning cannot renew an already-cleared section.
