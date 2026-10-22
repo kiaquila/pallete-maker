@@ -1194,6 +1194,13 @@ function hasPositiveFindingStatement(text) {
             !/\b(?:not|never) +(?:reappear|reappeared|recur|recurred|reopen|reopened|persist|remain|exist)\b/iu.test(
               tail,
             );
+          if (
+            /\b(?:resolves|fixes|addresses|clears|removes|closes|eliminates) +(?:a|an) +/iu.test(
+              modifiers,
+            ) &&
+            !recurrence
+          )
+            return false;
           const obligation =
             /\b(?:can|could|may|might|will|would|must|should) +(?:(?:be|been|being|get|gets|got) +)*(?:resolved|fixed|addressed|cleared|removed|closed|eliminated)\b/iu.test(
               tail,
@@ -1271,8 +1278,8 @@ function hasPositiveFindingStatement(text) {
           "(?<![\\p{L}\\p{N}_] )\\b(?:(?:a|an|one|some|several|multiple) +)?(?:(?!(?:the|this|that|these|those)\\b)[\\p{L}-]+ +)*?" +
             headingNoun +
             "(?= *(?::|[–—-]) *[^ \\t])",
-          "\\b(?:found|introduces|creates|contains|has|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" +
-            noun,
+          "\\b(?:found|[\\p{L}]+ed) +(?:[\\p{L}-]+ +)*?" + noun,
+          "\\b[\\p{L}]+s +(?:a|an) +(?:[\\p{L}-]+ +)*?" + noun,
           "(?:\\b(?:a|an|one|some|several|multiple|[0-9]+) +(?:[\\p{L}-]+ +)*?" +
             noun +
             "|\\bthe +" +
