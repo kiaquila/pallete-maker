@@ -1195,12 +1195,6 @@ function hasPositiveFindingStatement(text) {
             ? match[0].slice(0, matchedNoun.index)
             : "";
           const tail = predicate + after;
-          if (
-            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
-              modifiers,
-            )
-          )
-            return false;
           // Absence/resolution is evidence only for an unqualified completed assertion.
           if (
             /^ +(?:do|does|did) +not +(?:exist|exists|remain|remains) *$/iu.test(
@@ -1221,6 +1215,13 @@ function hasPositiveFindingStatement(text) {
             !/\b(?:not|never) +(?:reappear|reappeared|recur|recurred|reopen|reopened|persist|remain|exist)\b/iu.test(
               tail,
             );
+          if (
+            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
+              modifiers,
+            ) &&
+            !recurrence
+          )
+            return false;
           if (
             /\b(?:resolves?|fix(?:es)?|address(?:es)?|clears?|removes?|closes?|eliminates?|prevents?|avoids?|mitigates?) +(?:a|an) +/iu.test(
               modifiers,
@@ -1286,7 +1287,7 @@ function hasPositiveFindingStatement(text) {
         )
           return true;
         const patterns = [
-          "\\b(?:can|could|may|might) +bypass +authentication\\b",
+          "\\b(?:no +)?[\\p{L}-]+ +(?:can|could|may|might) +bypass +authentication\\b",
           "\\b(?:is|are) +vulnerable +to\\b",
           "\\bauthentication +(?:can|could|may|might) +be +bypassed\\b",
           "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +

@@ -757,6 +757,12 @@ for (const mode of [
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
   "users-bypass-repeat-clock",
+  "mentioned-unresolved-repeat-clock",
+  "discussed-open-repeat-clock",
+  "mentioned-remains-repeat-clock",
+  "discussed-persists-repeat-clock",
+  "no-users-repeat-clock",
+
   "mentioned-repeat-clock",
   "documents-repeat-clock",
   "includes-repeat-clock",
@@ -1146,6 +1152,12 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-unresolved-repeat-clock",
+        "discussed-open-repeat-clock",
+        "mentioned-remains-repeat-clock",
+        "discussed-persists-repeat-clock",
+        "no-users-repeat-clock",
+
         "mentioned-repeat-clock",
         "documents-repeat-clock",
         "includes-repeat-clock",
@@ -1301,6 +1313,12 @@ for (const mode of [
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
                               "users-bypass-repeat-clock",
+                              "mentioned-unresolved-repeat-clock",
+                              "discussed-open-repeat-clock",
+                              "mentioned-remains-repeat-clock",
+                              "discussed-persists-repeat-clock",
+                              "no-users-repeat-clock",
+
                               "mentioned-repeat-clock",
                               "documents-repeat-clock",
                               "includes-repeat-clock",
@@ -1381,6 +1399,16 @@ for (const mode of [
                                   "Authentication can be bypassed.",
                                 "users-bypass-repeat-clock":
                                   "Users can bypass authentication.",
+                                "mentioned-unresolved-repeat-clock":
+                                  "The review mentioned a bug that remains unresolved.",
+                                "discussed-open-repeat-clock":
+                                  "We discussed a bug that remains open.",
+                                "mentioned-remains-repeat-clock":
+                                  "The review mentioned a bug that remains.",
+                                "discussed-persists-repeat-clock":
+                                  "We discussed a bug that persists.",
+                                "no-users-repeat-clock":
+                                  "No users can bypass authentication.",
                                 "mentioned-repeat-clock":
                                   "The review mentioned a bug fix.",
                                 "documents-repeat-clock":
@@ -1994,6 +2022,12 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-unresolved-repeat-clock",
+        "discussed-open-repeat-clock",
+        "mentioned-remains-repeat-clock",
+        "discussed-persists-repeat-clock",
+        "no-users-repeat-clock",
+
         "mentioned-repeat-clock",
         "documents-repeat-clock",
         "includes-repeat-clock",
@@ -2149,6 +2183,7 @@ for (const mode of [
     assert.equal(
       result.status === 0,
       [
+        "no-users-repeat-clock",
         "mentioned-repeat-clock",
         "documents-repeat-clock",
         "includes-repeat-clock",
