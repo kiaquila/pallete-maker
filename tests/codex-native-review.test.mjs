@@ -757,6 +757,10 @@ for (const mode of [
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
   "users-bypass-repeat-clock",
+  "mentioned-is-open-repeat-clock",
+  "discussed-is-outstanding-repeat-clock",
+  "entity-colon-repeat-clock",
+  "nobody-repeat-clock",
   "subjectless-bypass-repeat-clock",
   "qualified-no-repeat-clock",
   "mentioned-fixed-repeat-clock",
@@ -1160,6 +1164,10 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-is-open-repeat-clock",
+        "discussed-is-outstanding-repeat-clock",
+        "entity-colon-repeat-clock",
+        "nobody-repeat-clock",
         "subjectless-bypass-repeat-clock",
         "qualified-no-repeat-clock",
         "mentioned-fixed-repeat-clock",
@@ -1329,6 +1337,10 @@ for (const mode of [
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
                               "users-bypass-repeat-clock",
+                              "mentioned-is-open-repeat-clock",
+                              "discussed-is-outstanding-repeat-clock",
+                              "entity-colon-repeat-clock",
+                              "nobody-repeat-clock",
                               "subjectless-bypass-repeat-clock",
                               "qualified-no-repeat-clock",
                               "mentioned-fixed-repeat-clock",
@@ -1423,6 +1435,14 @@ for (const mode of [
                                   "Authentication can be bypassed.",
                                 "users-bypass-repeat-clock":
                                   "Users can bypass authentication.",
+                                "mentioned-is-open-repeat-clock":
+                                  "The review mentioned a bug that is open.",
+                                "discussed-is-outstanding-repeat-clock":
+                                  "We discussed a vulnerability that is outstanding.",
+                                "entity-colon-repeat-clock":
+                                  "Security issue&colon; remains unresolved.",
+                                "nobody-repeat-clock":
+                                  "Nobody can bypass authentication.",
                                 "subjectless-bypass-repeat-clock":
                                   "Can bypass authentication without credentials.",
                                 "qualified-no-repeat-clock":
@@ -2060,6 +2080,10 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-is-open-repeat-clock",
+        "discussed-is-outstanding-repeat-clock",
+        "entity-colon-repeat-clock",
+        "nobody-repeat-clock",
         "subjectless-bypass-repeat-clock",
         "qualified-no-repeat-clock",
         "mentioned-fixed-repeat-clock",
@@ -2234,6 +2258,7 @@ for (const mode of [
         "mentioned-fixed-repeat-clock",
         "mentioned-resolved-repeat-clock",
         "mentioned-closed-repeat-clock",
+        "nobody-repeat-clock",
         "mentioned-repeat-clock",
         "documents-repeat-clock",
         "includes-repeat-clock",
