@@ -757,6 +757,16 @@ for (const mode of [
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
   "users-bypass-repeat-clock",
+  "mentioned-not-fixed-repeat-clock",
+  "neither-repeat-clock",
+  "none-repeat-clock",
+  "still-open-repeat-clock",
+  "indefinite-not-found-repeat-clock",
+  "raw-nbsp-repeat-clock",
+  "raw-shy-repeat-clock",
+  "markdown-legacy-repeat-clock",
+  "code-legacy-repeat-clock",
+
   "adjectival-mention-repeat-clock",
   "adjectival-discussion-repeat-clock",
   "adverb-bypass-repeat-clock",
@@ -1167,6 +1177,16 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-not-fixed-repeat-clock",
+        "neither-repeat-clock",
+        "none-repeat-clock",
+        "still-open-repeat-clock",
+        "indefinite-not-found-repeat-clock",
+        "raw-nbsp-repeat-clock",
+        "raw-shy-repeat-clock",
+        "markdown-legacy-repeat-clock",
+        "code-legacy-repeat-clock",
+
         "adjectival-mention-repeat-clock",
         "adjectival-discussion-repeat-clock",
         "adverb-bypass-repeat-clock",
@@ -1343,6 +1363,16 @@ for (const mode of [
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
                               "users-bypass-repeat-clock",
+                              "mentioned-not-fixed-repeat-clock",
+                              "neither-repeat-clock",
+                              "none-repeat-clock",
+                              "still-open-repeat-clock",
+                              "indefinite-not-found-repeat-clock",
+                              "raw-nbsp-repeat-clock",
+                              "raw-shy-repeat-clock",
+                              "markdown-legacy-repeat-clock",
+                              "code-legacy-repeat-clock",
+
                               "adjectival-mention-repeat-clock",
                               "adjectival-discussion-repeat-clock",
                               "adverb-bypass-repeat-clock",
@@ -1444,6 +1474,24 @@ for (const mode of [
                                   "Authentication can be bypassed.",
                                 "users-bypass-repeat-clock":
                                   "Users can bypass authentication.",
+                                "mentioned-not-fixed-repeat-clock":
+                                  "The review mentioned a bug that has not been fixed.",
+                                "neither-repeat-clock":
+                                  "Neither user can bypass authentication.",
+                                "none-repeat-clock":
+                                  "None can bypass authentication.",
+                                "still-open-repeat-clock":
+                                  "We discussed a security issue that is still open.",
+                                "indefinite-not-found-repeat-clock":
+                                  "A security issue was not found.",
+                                "raw-nbsp-repeat-clock":
+                                  "<div>\nDo&nbspnot&nbspmerge\n</div>",
+                                "raw-shy-repeat-clock": "<div>\nP&shy1\n</div>",
+                                "markdown-legacy-repeat-clock":
+                                  "Do&nbspnot&nbspmerge",
+                                "code-legacy-repeat-clock":
+                                  "`Do&nbspnot&nbspmerge`",
+
                                 "adjectival-mention-repeat-clock":
                                   "The mentioned vulnerability allows code execution.",
                                 "adjectival-discussion-repeat-clock":
@@ -2095,6 +2143,16 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "mentioned-not-fixed-repeat-clock",
+        "neither-repeat-clock",
+        "none-repeat-clock",
+        "still-open-repeat-clock",
+        "indefinite-not-found-repeat-clock",
+        "raw-nbsp-repeat-clock",
+        "raw-shy-repeat-clock",
+        "markdown-legacy-repeat-clock",
+        "code-legacy-repeat-clock",
+
         "adjectival-mention-repeat-clock",
         "adjectival-discussion-repeat-clock",
         "adverb-bypass-repeat-clock",
@@ -2268,66 +2326,13 @@ for (const mode of [
       reviews,
       reviewUpdatedAt: "2026-10-20T12:04:00Z",
     });
+    // Unknown presentation cannot establish an earlier completion clock,
+    // even if English/Markdown might render it harmless. Keep exact native
+    // cases and malformed/untrusted envelopes distinct from opaque bodies.
     assert.equal(
       result.status === 0,
       [
-        "no-users-repeat-clock",
-        "qualified-no-repeat-clock",
-        "mentioned-fixed-repeat-clock",
-        "mentioned-resolved-repeat-clock",
-        "mentioned-closed-repeat-clock",
-        "nobody-repeat-clock",
-        "mentioned-repeat-clock",
-        "documents-repeat-clock",
-        "includes-repeat-clock",
-        "discussed-repeat-clock",
-        "none-exist-repeat-clock",
-        "harmless-repeat-clock",
-        "regression-tests-repeat-clock",
-        "regression-test-count-repeat-clock",
-        "defect-report-count-repeat-clock",
-        "fixed-one-repeat-clock",
-        "prevents-repeat-clock",
-        "avoids-repeat-clock",
-
-        "already-fixed-exception-repeat-clock",
-        "no-exist-repeat-clock",
-        "no-remain-repeat-clock",
-        "benign-repeat-clock",
-        "except-fixed-repeat-clock",
-        "none-current-repeat-clock",
-        "none-were-repeat-clock",
-        "eliminated-documented-repeat-clock",
         "newer-clear",
-        "coordinated-nouns-repeat-clock",
-        "eliminated-repeat-clock",
-        "documented-meta-repeat-clock",
-        "ordinary-definition-repeat-clock",
-        "zero-after-colon-repeat-clock",
-        "emphasized-repeat-clock",
-        "allzero-finding-count-repeat-clock",
-        "footnote-destination-repeat-clock",
-        "footnote-reference-destination-repeat-clock",
-        "footnote-reference-title-repeat-clock",
-        "bugfree-repeat-clock",
-        "type7-paragraph-repeat-clock",
-        "unmatched-underscore-repeat-clock",
-        "unmatched-star-repeat-clock",
-
-        "footnote-transitive-reference-repeat-clock",
-        "footnote-transitive-destination-repeat-clock",
-        "invalid-footnote-reference-repeat-clock",
-        "footnote-two-space-repeat-clock",
-        "footnote-four-space-repeat-clock",
-
-        "quoted-html-exit-repeat-clock",
-        "list-html-exit-repeat-clock",
-        "unused-footnote-repeat-clock",
-        "markdown-numeric-repeat-clock",
-        "code-numeric-repeat-clock",
-        "finding-blankline-repeat-clock",
-        "found-html-no-repeat-clock",
-        "found-html-zero-repeat-clock",
         "ordinary-comment-clear",
         "malformed-old",
         "duplicate-leading-old",
@@ -2339,6 +2344,19 @@ for (const mode of [
       ].includes(mode),
       result.stderr || result.stdout,
     );
+    if (mode.endsWith("-repeat-clock")) {
+      const recovery = comment(
+        securityHistoryBody(false, "2026-10-20T12:09:00Z"),
+        { id: 934, created_at: "2026-10-20T12:09:00Z" },
+      );
+      const recoveredEvents = [...events, recovery];
+      const recovered = runGate({
+        comments: recoveredEvents,
+        timeline: recoveredEvents,
+        reviews,
+      });
+      assert.equal(recovered.status, 0, recovered.stderr || recovered.stdout);
+    }
   });
 }
 
@@ -2503,7 +2521,7 @@ test("actual gate preserves latest foreign negative observation", () => {
   assert.notEqual(result.status, 0, result.stdout);
 });
 
-test("actual gate scopes edited warning clocks to their canonical section", () => {
+test("unknown presentation retains both negatives until canonical recovery", () => {
   const body = (code, security, time) =>
     cleanStateBody(HEAD, (state) => ({
       ...state,
@@ -2564,7 +2582,13 @@ test("actual gate scopes edited warning clocks to their canonical section", () =
       created_at: "2026-10-20T12:08:00Z",
     }),
   ];
-  assert.equal(runGate({ timeline: events, comments: events }).status, 0);
+  assert.notEqual(runGate({ timeline: events, comments: events }).status, 0);
+  const freshClear = comment(body(false, false, "2026-10-20T12:09:00Z"), {
+    id: 945,
+    created_at: "2026-10-20T12:09:00Z",
+  });
+  const recovered = [...events, freshClear];
+  assert.equal(runGate({ timeline: recovered, comments: recovered }).status, 0);
   const uncleared = events.filter((event) => event.id !== 944);
   assert.notEqual(
     runGate({ timeline: uncleared, comments: uncleared }).status,
