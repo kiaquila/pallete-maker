@@ -254,6 +254,30 @@ export const parseCodexState = (
   return { state, times };
 };
 
+// Every completed companion must fit the observation upper bound before this
+// snapshot supplies historical clocks. Carried companions may predate creation.
+const completionClocksWithinObservation = (parsed, observed) =>
+  Number.isFinite(observed) &&
+  Object.entries(parsed.state).every(
+    ([section, review]) =>
+      review.status !== "completed" ||
+      (Number.isFinite(parsed.times[section]) &&
+        parsed.times[section] < observed + 1000),
+  );
+
+export const hasCodexStateClockBounds = (entry, head) => {
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
+  return Boolean(
+    parsed &&
+    completionClocksWithinObservation(
+      parsed,
+      Date.parse(entry.updated_at || entry.created_at || ""),
+    ),
+  );
+};
+
 export const hasCleanCodexState = (body, head) => {
   const parsed = parseCodexState(body, head);
   return Boolean(
@@ -309,7 +333,8 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
         sections[section].push({
           negative: true,
           time: Math.floor(
-            (review.status === "completed" &&
+            (completionClocksWithinObservation(parsed, observed) &&
+            review.status === "completed" &&
             Number.isFinite(parsed.times[section]) &&
             Number.isFinite(created) &&
             Math.floor(parsed.times[section] / 1000) >=
@@ -319,7 +344,11 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
               : observed) / 1000,
           ),
         });
-      else if (!negativeOnly && cleanReview(review, head)) {
+      else if (
+        !negativeOnly &&
+        completionClocksWithinObservation(parsed, observed) &&
+        cleanReview(review, head)
+      ) {
         const completed = parsed.times[section];
         if (
           Number.isFinite(completed) &&
@@ -376,6 +405,7 @@ export const codexNegativeCompletionTime = (entry, head) => {
   if (!negatives.length) return NaN;
   return Math.max(
     ...negatives.map(([section, review]) =>
+      completionClocksWithinObservation(parsed, observed) &&
       review.status === "completed" &&
       Number.isFinite(parsed.times[section]) &&
       Number.isFinite(created) &&

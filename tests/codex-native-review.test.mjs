@@ -2,6 +2,10 @@ import {
   cleanStateBody,
   presentationReceipt,
 } from "./fixtures/codex-state.mjs";
+import {
+  hasCodexNegativeHistory,
+  codexNegativeCompletionTime,
+} from "../scripts/codex-review-state.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -2711,4 +2715,119 @@ for (const recover of [false, true]) {
     const result = runGate({ comments: events, timeline: events });
     assert.equal(result.status === 0, recover, result.stderr || result.stdout);
   });
+}
+
+for (const section of ["code_review", "security_review"]) {
+  for (const companionHead of [HEAD, OLD]) {
+    test(`future companion clocks cannot backdate ${section} with ${companionHead === HEAD ? "current" : "foreign"} SHA`, () => {
+      const own = "2026-10-23T21:47:00Z";
+      const observed = "2026-10-23T21:55:00Z";
+      const at = (minute) => `2026-10-23T21:${minute}:00Z`;
+      const stateBody = (negative, ownTime, companionTime, foreign = false) => {
+        const clean = {
+          commit_sha: HEAD,
+          has_any_findings: false,
+          has_unresolved_findings: false,
+          status: "completed",
+        };
+        const state = {
+          code_review: { ...clean },
+          security_review: { ...clean },
+        };
+        if (negative) {
+          state[section].has_any_findings = true;
+          if (foreign)
+            state[
+              section === "code_review" ? "security_review" : "code_review"
+            ].commit_sha = companionHead;
+        }
+        const row = (key, label, icon) => {
+          const time = negative && key !== section ? companionTime : ownTime;
+          return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+        };
+        return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n${row("code_review", "Code Review", "📝")}\n${row("security_review", "Security Review", "🛡️")}`;
+      };
+      const record = (id, body, created, updated = created) =>
+        comment(body, { id, created_at: created, updated_at: updated });
+      const old = (companionTime) =>
+        record(11, stateBody(true, own, companionTime, true), own, observed);
+      const clear = record(13, stateBody(false, at("50")), at("50"));
+      const receipt = record(
+        15,
+        presentationReceipt(HEAD, "Breezy!"),
+        at("58"),
+      );
+      const before = [
+        { ...activation, created_at: at("46") },
+        { ...trigger, id: 12, created_at: at("48") },
+      ];
+      const future = old("2026-10-23T22:40:00Z");
+      const history = [future, clear, receipt];
+      assert.equal(
+        hasCodexNegativeHistory(history, HEAD, () => true),
+        true,
+      );
+      assert.equal(
+        codexNegativeCompletionTime(future, HEAD),
+        Date.parse(observed),
+      );
+      const blocked = runGate({ comments: [...before, ...history] });
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      const carried = old(at("46"));
+      assert.equal(codexNegativeCompletionTime(carried, HEAD), Date.parse(own));
+      const carriedResult = runGate({
+        comments: [...before, carried, clear, receipt],
+      });
+      assert.equal(
+        carriedResult.status,
+        0,
+        carriedResult.stdout + carriedResult.stderr,
+      );
+      const cleanCompanion =
+        section === "code_review" ? "Security Review" : "Code Review";
+      const cleanCompanionIcon = section === "code_review" ? "🛡️" : "📝";
+      const invalidClear = record(
+        16,
+        stateBody(false, at("50")).replace(
+          `| ${cleanCompanionIcon} **${cleanCompanion}** | ✅ **Completed** <relative-time datetime="${at("50")}">${at("50")}</relative-time>`,
+          `| ${cleanCompanionIcon} **${cleanCompanion}** | ✅ **Completed** <relative-time datetime="2026-10-23T22:40:00Z">2026-10-23T22:40:00Z</relative-time>`,
+        ),
+        at("50"),
+      );
+      const earlierNegative = record(
+        17,
+        stateBody(true, at("49"), at("46"), true),
+        at("49"),
+      );
+      assert.equal(
+        hasCodexNegativeHistory(
+          [earlierNegative, invalidClear],
+          HEAD,
+          () => true,
+        ),
+        true,
+      );
+      const invalidClearResult = runGate({
+        comments: [...before, earlierNegative, invalidClear, receipt],
+      });
+      assert.notEqual(
+        invalidClearResult.status,
+        0,
+        invalidClearResult.stdout + invalidClearResult.stderr,
+      );
+      const invalidApprovalResult = runGate({
+        comments: [...before, invalidClear],
+      });
+      assert.notEqual(
+        invalidApprovalResult.status,
+        0,
+        invalidApprovalResult.stdout + invalidApprovalResult.stderr,
+      );
+      const newer = record(14, stateBody(false, at("56")), at("56"));
+      const recovered = runGate({
+        comments: [...before, future, clear, newer, receipt],
+      });
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+    });
+  }
 }

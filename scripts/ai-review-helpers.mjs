@@ -1,5 +1,6 @@
 import {
   hasCleanCodexState,
+  hasCodexStateClockBounds,
   codexNegativeCompletionTime,
   isCodexStateBody,
   codexCodeReviewCompletionTime,
@@ -357,7 +358,8 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     );
   const stateBoundaryTime = Date.parse(events[boundaryIndex]?.created_at || "");
   const eligibleState = (entry) => {
-    if (activationIndex < 0) return false;
+    if (activationIndex < 0 || !hasCodexStateClockBounds(entry, headSha))
+      return false;
     const completedAt = codexCodeReviewCompletionTime(getBody(entry));
     const activationTime = Date.parse(
       events[activationIndex]?.created_at || "",

@@ -124,9 +124,17 @@ green required checks and a stable 120-second window precede ordinary merge.
 - [x] Replace open-ended prose/rendering interpretation with closed native proof.
 - [x] Preserve Palette-specific trust, SHA resolution and section-history rules.
 - [x] Exercise real native receipts and null lifecycle/receipt chronology.
-- [x] Pass the full current preflight (490 tests) and feature-memory check.
+- [x] Pass the full current preflight (494 tests) and feature-memory check.
 - [ ] Obtain native review and green checks for the final current SHA.
 - [ ] Merge normally after 120 seconds of stability and verify main/deployment.
 
 Current OSV validation also requires transitive `fast-uri >=4.2.3`; the final
 lockfile must exclude vulnerable 4.2.2 (GHSA-w74x-v6f9-j3xg and related advisories).
+
+A canonical snapshot supplies historical clocks only when every completed
+section, including a companion for another SHA, is no later than the observed
+comment update plus GitHub's second precision. A future companion preserves a
+negative at observation time and cannot clear history or supply approval. A
+legitimate carried companion may predate comment creation; only the section's
+own completion must meet its existing creation lower bound. A newer canonical
+clean completion for that section can recover.

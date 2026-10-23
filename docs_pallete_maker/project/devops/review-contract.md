@@ -144,3 +144,11 @@ green required checks and a stable 120-second window precede ordinary merge.
 
 The CI dependency audit remains required. The existing fast-uri security override
 requires 4.2.3 or newer; a native review pass never bypasses OSV findings.
+
+A canonical snapshot supplies historical clocks only when every completed
+section, including a companion for another SHA, is no later than the observed
+comment update plus GitHub's second precision. A future companion preserves a
+negative at observation time and cannot clear history or supply approval. A
+legitimate carried companion may predate comment creation; only the section's
+own completion must meet its existing creation lower bound. A newer canonical
+clean completion for that section can recover.
