@@ -47,3 +47,6 @@ stored by this change. Native formal and inline finding safeguards remain
 independent. Trusted human requests still require OWNER, MEMBER or COLLABORATOR
 association and a non-bot identity. Full preflight, native current-head review,
 green required checks and a stable 120-second window precede ordinary merge.
+
+Current OSV validation also requires transitive `fast-uri >=4.2.3`; the final
+lockfile must exclude vulnerable 4.2.2 (GHSA-w74x-v6f9-j3xg and related advisories).

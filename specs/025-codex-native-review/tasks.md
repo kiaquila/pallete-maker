@@ -127,3 +127,6 @@ green required checks and a stable 120-second window precede ordinary merge.
 - [x] Pass the full current preflight (490 tests) and feature-memory check.
 - [ ] Obtain native review and green checks for the final current SHA.
 - [ ] Merge normally after 120 seconds of stability and verify main/deployment.
+
+Current OSV validation also requires transitive `fast-uri >=4.2.3`; the final
+lockfile must exclude vulnerable 4.2.2 (GHSA-w74x-v6f9-j3xg and related advisories).

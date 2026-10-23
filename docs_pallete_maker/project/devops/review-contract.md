@@ -141,3 +141,6 @@ stored by this change. Native formal and inline finding safeguards remain
 independent. Trusted human requests still require OWNER, MEMBER or COLLABORATOR
 association and a non-bot identity. Full preflight, native current-head review,
 green required checks and a stable 120-second window precede ordinary merge.
+
+The CI dependency audit remains required. The existing fast-uri security override
+requires 4.2.3 or newer; a native review pass never bypasses OSV findings.
