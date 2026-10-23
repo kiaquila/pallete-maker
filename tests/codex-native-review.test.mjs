@@ -757,6 +757,9 @@ for (const mode of [
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
   "users-bypass-repeat-clock",
+  "adjectival-mention-repeat-clock",
+  "adjectival-discussion-repeat-clock",
+  "adverb-bypass-repeat-clock",
   "mentioned-is-open-repeat-clock",
   "discussed-is-outstanding-repeat-clock",
   "entity-colon-repeat-clock",
@@ -1164,6 +1167,9 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "adjectival-mention-repeat-clock",
+        "adjectival-discussion-repeat-clock",
+        "adverb-bypass-repeat-clock",
         "mentioned-is-open-repeat-clock",
         "discussed-is-outstanding-repeat-clock",
         "entity-colon-repeat-clock",
@@ -1337,6 +1343,9 @@ for (const mode of [
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
                               "users-bypass-repeat-clock",
+                              "adjectival-mention-repeat-clock",
+                              "adjectival-discussion-repeat-clock",
+                              "adverb-bypass-repeat-clock",
                               "mentioned-is-open-repeat-clock",
                               "discussed-is-outstanding-repeat-clock",
                               "entity-colon-repeat-clock",
@@ -1435,6 +1444,12 @@ for (const mode of [
                                   "Authentication can be bypassed.",
                                 "users-bypass-repeat-clock":
                                   "Users can bypass authentication.",
+                                "adjectival-mention-repeat-clock":
+                                  "The mentioned vulnerability allows code execution.",
+                                "adjectival-discussion-repeat-clock":
+                                  "The discussed vulnerability is exploitable.",
+                                "adverb-bypass-repeat-clock":
+                                  "Users can trivially bypass authentication.",
                                 "mentioned-is-open-repeat-clock":
                                   "The review mentioned a bug that is open.",
                                 "discussed-is-outstanding-repeat-clock":
@@ -2080,6 +2095,9 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "adjectival-mention-repeat-clock",
+        "adjectival-discussion-repeat-clock",
+        "adverb-bypass-repeat-clock",
         "mentioned-is-open-repeat-clock",
         "discussed-is-outstanding-repeat-clock",
         "entity-colon-repeat-clock",

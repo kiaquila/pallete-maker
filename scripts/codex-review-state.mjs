@@ -3317,7 +3317,7 @@ function hasPositiveFindingStatement(text) {
           )
             return false;
           if (
-            /^\s*nobody +(?:(?:can|could|may|might) +|(?:is|are) +able +to +)bypass +authentication\b/iu.test(
+            /^\s*nobody +(?:(?:can|could|may|might) +(?:[\p{L}]+ly +)*|(?:is|are) +able +to +)bypass +authentication\b/iu.test(
               match[0],
             )
           )
@@ -3354,7 +3354,7 @@ function hasPositiveFindingStatement(text) {
             );
           if (/^ +fix(?:es)?\b/iu.test(tail) && !recurrence) return false;
           if (
-            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +/iu.test(
+            /\b(?:mention(?:s|ed|ing)?|discuss(?:es|ed|ing)?) +(?:a|an|one|some|several|multiple|the) +/iu.test(
               modifiers,
             ) &&
             !recurrence
@@ -3425,7 +3425,7 @@ function hasPositiveFindingStatement(text) {
         )
           return true;
         const patterns = [
-          "\\b(?:(?:no +(?:(?!(?:is|are|was|were|has|have|had|can|could|may|might)\\b)[\\p{L}-]+ +)*?)?[\\p{L}-]+ +)?(?:(?:can|could|may|might) +|(?:is|are) +able +to +)bypass +authentication\\b",
+          "\\b(?:(?:no +(?:(?!(?:is|are|was|were|has|have|had|can|could|may|might)\\b)[\\p{L}-]+ +)*?)?[\\p{L}-]+ +)?(?:(?:can|could|may|might) +(?:[\\p{L}]+ly +)*|(?:is|are) +able +to +)bypass +authentication\\b",
           "\\b(?:is|are) +vulnerable +to\\b",
           "\\bauthentication +(?:can|could|may|might) +be +bypassed\\b",
           "\\b(?:most|every|numerous) +(?:[\\p{L}-]+ +)*?" +
