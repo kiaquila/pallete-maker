@@ -337,11 +337,13 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   timelineEvents,
   headSha,
   issueComments = [],
+  pendingOnlyWithoutTimeline = false,
 }) => {
   if (!headSha) return null;
   const events = Array.isArray(timelineEvents) ? timelineEvents : [];
   const activationIndex = findLatestHeadActivationIndex(events, headSha);
-  if (activationIndex < 0) return null;
+  const pendingOnly = pendingOnlyWithoutTimeline && events.length === 0;
+  if (activationIndex < 0 && !pendingOnly) return null;
 
   let boundaryIndex = activationIndex;
   for (let index = activationIndex + 1; index < events.length; index += 1) {
@@ -358,7 +360,10 @@ export const pickAuthoritativeCodexSkipModeComment = ({
     );
   const stateBoundaryTime = Date.parse(events[boundaryIndex]?.created_at || "");
   const eligibleState = (entry) => {
-    if (activationIndex < 0 || !hasCodexStateClockBounds(entry, headSha))
+    if (
+      (activationIndex < 0 && !pendingOnly) ||
+      !hasCodexStateClockBounds(entry, headSha)
+    )
       return false;
     const completedAt = codexCodeReviewCompletionTime(getBody(entry));
     const activationTime = Date.parse(
@@ -386,6 +391,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
           statePosition(entry) > boundaryIndex)
       );
     }
+    if (pendingOnly) return true;
     return (
       statePosition(entry) > boundaryIndex &&
       time === Date.parse(entry.created_at)
@@ -504,15 +510,12 @@ export const pickAuthoritativeCodexSkipModeComment = ({
   // before this final summary edit. Pair only a fresh immutable SHA-bound
   // receipt with the same code completion; null alone never grants approval.
   // Other states (including running/security/unknown text) keep their veto.
-  const authoritativeCandidates = candidates.filter((entry) => {
-    if (
-      !eligibleState(entry) ||
-      !isCompletedCodexLifecycle(getBody(entry), headSha)
-    )
-      return true;
+  const isEligibleLifecycle = (entry) =>
+    eligibleState(entry) && isCompletedCodexLifecycle(getBody(entry), headSha);
+  const hasPairedReceipt = (entry) => {
     const created = Date.parse(entry.created_at || "");
     const completed = codexCodeReviewCompletionTime(getBody(entry));
-    return !candidates.some((receipt) => {
+    return candidates.some((receipt) => {
       const published = Date.parse(receipt.created_at || "");
       return (
         !isCodexStateBody(getBody(receipt)) &&
@@ -524,7 +527,43 @@ export const pickAuthoritativeCodexSkipModeComment = ({
         published <= completed
       );
     });
-  });
+  };
+  const unpairedLifecycle = candidates
+    .filter((entry) => isEligibleLifecycle(entry) && !hasPairedReceipt(entry))
+    .filter((entry) => {
+      const observed = Math.floor(codexCommentTimestamp(entry) / 1000);
+      return !candidates.some(
+        (clear) =>
+          eligibleState(clear) &&
+          hasCleanCodexState(getBody(clear), headSha) &&
+          Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
+            observed,
+      );
+    })
+    .sort((left, right) => evidenceTime(right) - evidenceTime(left))[0];
+  // A late static receipt or formal approval cannot turn an unpaired unknown
+  // lifecycle into a verdict. Only its valid pair or newer canonical clear can.
+  if (unpairedLifecycle) {
+    return {
+      comment: unpairedLifecycle,
+      classification: {
+        outcome: "pending",
+        reason:
+          "Completed Codex lifecycle lacks an independent in-window verdict.",
+        details: [unpairedLifecycle.html_url],
+        evidenceTimestamp: evidenceTime(unpairedLifecycle),
+        unpairedLifecycle: true,
+      },
+      reviewState: "PENDING",
+      boundaryType:
+        boundaryIndex === activationIndex ? "head-activation" : "human-trigger",
+    };
+  }
+  // Timeline outages may expose persisted blockers, never create approval.
+  if (pendingOnly) return null;
+  const authoritativeCandidates = candidates.filter(
+    (entry) => !isEligibleLifecycle(entry) || !hasPairedReceipt(entry),
+  );
   const latestTimestamp = Math.max(
     0,
     ...authoritativeCandidates.map(evidenceTime),

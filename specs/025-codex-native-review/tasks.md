@@ -124,7 +124,7 @@ green required checks and a stable 120-second window precede ordinary merge.
 - [x] Replace open-ended prose/rendering interpretation with closed native proof.
 - [x] Preserve Palette-specific trust, SHA resolution and section-history rules.
 - [x] Exercise real native receipts and null lifecycle/receipt chronology.
-- [x] Pass the full current preflight (494 tests) and feature-memory check.
+- [x] Pass the full current preflight (497 tests) and feature-memory check.
 - [ ] Obtain native review and green checks for the final current SHA.
 - [ ] Merge normally after 120 seconds of stability and verify main/deployment.
 
@@ -138,3 +138,17 @@ negative at observation time and cannot clear history or supply approval. A
 legitimate carried companion may predate comment creation; only the section's
 own completion must meet its existing creation lower bound. A newer canonical
 clean completion for that section can recover.
+
+An eligible canonical completed null/null lifecycle remains pending until an
+independent immutable clean receipt falls inside its creation-to-completion
+window, or a canonical clean own completion strictly newer than the lifecycle
+observation second clears it. An unpaired null lifecycle cannot supply a
+historical completion clock. A receipt
+created after completion or a later formal approval cannot supply the missing
+verdict. The production gate includes REST comments and enforces this pending
+lifecycle before choosing between comment and formal review evidence.
+
+If the timeline request fails, persisted REST lifecycle evidence still enforces
+the pending latch before formal approval. This fallback may return only a
+pending blocker or no blocker; it never supplies positive comment approval
+without genuine head activation.

@@ -2831,3 +2831,181 @@ for (const section of ["code_review", "security_review"]) {
     });
   }
 }
+
+for (const pair of JSON.parse(
+  readFileSync(
+    new URL("./fixtures/native-codex-corpus.json", import.meta.url),
+    "utf8",
+  ),
+).lifecyclePairs) {
+  test(`unpaired native lifecycle cannot be bypassed by later receipts or formal reviews: ${pair.repo}`, () => {
+    const bind = (body) =>
+      body
+        .replaceAll(pair.head, HEAD)
+        .replaceAll(pair.head.slice(0, 10), HEAD.slice(0, 10))
+        .replaceAll(pair.head.slice(0, 7), HEAD.slice(0, 7));
+    const lifecycle = {
+      ...pair.lifecycle,
+      id: 51,
+      event: "commented",
+      body: bind(pair.lifecycle.body),
+    };
+    const done = Date.parse(lifecycle.body.match(/datetime="([^"<>]+)"/)[1]);
+    const when = (offset) => new Date(done + offset).toISOString();
+    const goodReceipt = {
+      ...pair.receipt,
+      id: 52,
+      event: "commented",
+      body: bind(pair.receipt.body),
+    };
+    const late = {
+      ...goodReceipt,
+      id: 53,
+      created_at: when(1000),
+      updated_at: when(1000),
+    };
+    const before = [
+      {
+        ...activation,
+        created_at: new Date(
+          Date.parse(lifecycle.created_at) - 60000,
+        ).toISOString(),
+      },
+      {
+        ...trigger,
+        created_at: new Date(
+          Date.parse(lifecycle.created_at) - 30000,
+        ).toISOString(),
+      },
+    ];
+    const afterFormal = formal({
+      submitted_at: when(2000),
+      state: "APPROVED",
+      body: "",
+    });
+    const args = { comments: [...before, lifecycle, late] };
+    const result = runGate(args);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    const laterFormal = runGate({ ...args, reviews: [afterFormal] });
+    assert.notEqual(
+      laterFormal.status,
+      0,
+      laterFormal.stdout + laterFormal.stderr,
+    );
+    const restOnly = runGate({
+      comments: before,
+      issueComments: [lifecycle, late],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(restOnly.status, 0, restOnly.stdout + restOnly.stderr);
+    const unavailable = runGate({
+      comments: before,
+      timelineUnavailable: true,
+      issueComments: [lifecycle, late],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(
+      unavailable.status,
+      0,
+      unavailable.stdout + unavailable.stderr,
+    );
+    const unavailableWithoutLifecycle = runGate({
+      comments: before,
+      timelineUnavailable: true,
+      issueComments: [late],
+      reviews: [afterFormal],
+    });
+    assert.equal(
+      unavailableWithoutLifecycle.status,
+      0,
+      unavailableWithoutLifecycle.stdout + unavailableWithoutLifecycle.stderr,
+    );
+    const noPositiveFallback = pickAuthoritativeCodexSkipModeComment({
+      timelineEvents: [],
+      issueComments: [late],
+      headSha: HEAD,
+      pendingOnlyWithoutTimeline: true,
+    });
+    assert.equal(noPositiveFallback, null);
+    const validPair = runGate({
+      comments: [...before, lifecycle, goodReceipt],
+    });
+    assert.equal(validPair.status, 0, validPair.stdout + validPair.stderr);
+    const clean = (offset) => {
+      const state = JSON.parse(
+        lifecycle.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+      );
+      state.code_review.has_any_findings = false;
+      state.code_review.has_unresolved_findings = false;
+      return {
+        ...lifecycle,
+        id: 54,
+        created_at: when(offset),
+        updated_at: when(offset),
+        body: lifecycle.body
+          .replace(
+            /codex-review-state:v1 (.+?) -->/,
+            "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+          )
+          .replace(
+            /<relative-time datetime="[^"<>]+">[^<>]+<\/relative-time>/,
+            `<relative-time datetime="${when(offset)}">${when(offset)}</relative-time>`,
+          ),
+      };
+    };
+    const sameSecond = runGate({
+      comments: [
+        ...before,
+        lifecycle,
+        late,
+        clean(Math.floor(done / 1000) * 1000 + 500 - done),
+      ],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(
+      sameSecond.status,
+      0,
+      sameSecond.stdout + sameSecond.stderr,
+    );
+    const laterObservation = { ...lifecycle, updated_at: when(120000) };
+    const muchLater = {
+      ...late,
+      created_at: when(240000),
+      updated_at: when(240000),
+    };
+    const muchLaterFormal = formal({
+      submitted_at: when(250000),
+      state: "APPROVED",
+      body: "",
+    });
+    const intermediate = runGate({
+      comments: [...before, laterObservation, clean(60000), muchLater],
+      reviews: [muchLaterFormal],
+    });
+    assert.notEqual(
+      intermediate.status,
+      0,
+      intermediate.stdout + intermediate.stderr,
+    );
+    const afterObservation = runGate({
+      comments: [...before, laterObservation, clean(300000), muchLater],
+      reviews: [muchLaterFormal],
+    });
+    assert.equal(
+      afterObservation.status,
+      0,
+      afterObservation.stdout + afterObservation.stderr,
+    );
+    const recovered = runGate({
+      comments: [...before, lifecycle, late, clean(60000)],
+      reviews: [afterFormal],
+    });
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+    const editedReceipt = { ...goodReceipt, updated_at: when(1000) };
+    const edited = runGate({
+      comments: [...before, lifecycle, editedReceipt],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(edited.status, 0, edited.stdout + edited.stderr);
+  });
+}
