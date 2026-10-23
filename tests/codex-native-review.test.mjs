@@ -757,6 +757,14 @@ for (const mode of [
   "qualified-absence-repeat-clock",
   "security-risk-repeat-clock",
   "users-bypass-repeat-clock",
+  "subjectless-bypass-repeat-clock",
+  "qualified-no-repeat-clock",
+  "mentioned-fixed-repeat-clock",
+  "mentioned-resolved-repeat-clock",
+  "mentioned-closed-repeat-clock",
+
+  "incomplete-fix-repeat-clock",
+  "able-bypass-repeat-clock",
   "mentioned-unresolved-repeat-clock",
   "discussed-open-repeat-clock",
   "mentioned-remains-repeat-clock",
@@ -1152,6 +1160,14 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "subjectless-bypass-repeat-clock",
+        "qualified-no-repeat-clock",
+        "mentioned-fixed-repeat-clock",
+        "mentioned-resolved-repeat-clock",
+        "mentioned-closed-repeat-clock",
+
+        "incomplete-fix-repeat-clock",
+        "able-bypass-repeat-clock",
         "mentioned-unresolved-repeat-clock",
         "discussed-open-repeat-clock",
         "mentioned-remains-repeat-clock",
@@ -1313,6 +1329,14 @@ for (const mode of [
                               "qualified-absence-repeat-clock",
                               "security-risk-repeat-clock",
                               "users-bypass-repeat-clock",
+                              "subjectless-bypass-repeat-clock",
+                              "qualified-no-repeat-clock",
+                              "mentioned-fixed-repeat-clock",
+                              "mentioned-resolved-repeat-clock",
+                              "mentioned-closed-repeat-clock",
+
+                              "incomplete-fix-repeat-clock",
+                              "able-bypass-repeat-clock",
                               "mentioned-unresolved-repeat-clock",
                               "discussed-open-repeat-clock",
                               "mentioned-remains-repeat-clock",
@@ -1399,6 +1423,20 @@ for (const mode of [
                                   "Authentication can be bypassed.",
                                 "users-bypass-repeat-clock":
                                   "Users can bypass authentication.",
+                                "subjectless-bypass-repeat-clock":
+                                  "Can bypass authentication without credentials.",
+                                "qualified-no-repeat-clock":
+                                  "No unauthenticated users can bypass authentication.",
+                                "mentioned-fixed-repeat-clock":
+                                  "The review mentioned a bug that remains fixed.",
+                                "mentioned-resolved-repeat-clock":
+                                  "The review mentioned a bug that remains resolved.",
+                                "mentioned-closed-repeat-clock":
+                                  "The review mentioned a bug that remains closed.",
+                                "incomplete-fix-repeat-clock":
+                                  "One bug fix remains incomplete.",
+                                "able-bypass-repeat-clock":
+                                  "Users are able to bypass authentication.",
                                 "mentioned-unresolved-repeat-clock":
                                   "The review mentioned a bug that remains unresolved.",
                                 "discussed-open-repeat-clock":
@@ -2022,6 +2060,14 @@ for (const mode of [
         "qualified-absence-repeat-clock",
         "security-risk-repeat-clock",
         "users-bypass-repeat-clock",
+        "subjectless-bypass-repeat-clock",
+        "qualified-no-repeat-clock",
+        "mentioned-fixed-repeat-clock",
+        "mentioned-resolved-repeat-clock",
+        "mentioned-closed-repeat-clock",
+
+        "incomplete-fix-repeat-clock",
+        "able-bypass-repeat-clock",
         "mentioned-unresolved-repeat-clock",
         "discussed-open-repeat-clock",
         "mentioned-remains-repeat-clock",
@@ -2184,6 +2230,10 @@ for (const mode of [
       result.status === 0,
       [
         "no-users-repeat-clock",
+        "qualified-no-repeat-clock",
+        "mentioned-fixed-repeat-clock",
+        "mentioned-resolved-repeat-clock",
+        "mentioned-closed-repeat-clock",
         "mentioned-repeat-clock",
         "documents-repeat-clock",
         "includes-repeat-clock",
