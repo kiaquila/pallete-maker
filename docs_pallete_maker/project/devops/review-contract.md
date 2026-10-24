@@ -46,8 +46,8 @@ Full backend matrix and mitigation Tiers: see `review-trigger-automation.md`. Ca
   formal verdict takes precedence over a passing counterpart, including ties
   between multiple formal reviews regardless of REST list order.
 - Pick the freshest formal review or eligible receipt using edit timestamps;
-  malformed newer evidence cannot expose an older positive comment. A receipt
-  edited after the current trusted trigger may be reused even if created earlier.
+  malformed newer evidence cannot expose an older positive comment. Clean static
+  approval uses original creation time; an edit cannot renew an old approval.
 - Before success, inspect all review-thread pages for unresolved native Codex
   P0–P2 or untagged findings, including older heads. New request markers never
   erase them; P3-only findings remain advisory. Re-read the PR head immediately
@@ -100,58 +100,84 @@ For `pallete-maker`, reviewers should prioritize:
 - CDN supply-chain risks (chroma-js, html2canvas, Tailwind)
 - maintainability risks in the static app
 
-## Strict native structured state
+## Closed native evidence contract
 
-Modern connector replies can vary their friendly closing without changing the
-review verdict. The gate therefore accepts the connector's official mutable
-summary as independent proof, rather than interpreting arbitrary closing prose.
-Standalone legacy replies and receipts retain their strict verdict rules.
+A structured summary proves completion only when its unique leading official
+markers contain closed, duplicate-free typed JSON for the full current head and
+its complete native body matches the supported heading, introduction, contiguous
+four-column table, canonical section rows and exact optional service help footer.
+Both observed triggers, `Manual request` and `PR opened`, are supported. Unknown
+prose, arbitrary links, HTML or Markdown variants remain pending; the gate does
+not try to interpret general English or reproduce GitHub Markdown rendering.
 
-A trusted `chatgpt-codex-connector[bot]` summary must contain exactly one supported
-summary marker and one compact `codex-review-state:v1` JSON object. The closed
-schema requires exactly `code_review` and `security_review`, each with exactly
-`commit_sha`, `has_any_findings`, `has_unresolved_findings` and `status`. Code
-review must bind the full current 40-character SHA, have status `completed`, and
-both flags must be boolean `false`. Security must either have all four fields
-`null`, or independently satisfy the same current-head clean condition. Duplicate
-keys, unknown keys/versions, wrong types, partial security state and stale SHAs
-remain pending. The matching native visible review table is required; extra or
-contradictory visible text, stale commits and unknown help content fail closed.
+An explicit current-head TRUE finding from a valid leading envelope survives
+unknown presentation at the server observation time. Only a complete canonical
+body may supply section completion clocks or clear history. Clocks must fall
+between the original comment creation and observed update, using GitHub's whole
+second precision. A carried companion row may precede the comment's creation,
+but cannot grant authority to its own section. Strict newer canonical clean
+completion clears only the matching finding section; independent security
+findings, malformed envelopes, timestamp ties, formal findings and unresolved
+threads retain their existing safeguards.
 
-The visible code-row completion datetime is required and must follow both the
-current head activation and latest request boundary. Security-only summary edits
-cannot refresh an older code verdict. The snapshot's `updated_at` must also follow
-the same boundary; an older creation can qualify only through a fresh edit.
-Clean snapshot ordering uses its actual code completion time, conservatively
-bucketed to GitHub seconds. Completion in a request, activation, receipt or
-formal-withdrawal second cannot prove a later review. A security-only
-edit cannot reorder that code verdict after a later unknown receipt. Completion
-must not exceed the comment update clock (allowing GitHub second truncation).
-Invalid snapshots use their mutable update time as conservative veto signals.
-The latest summary supersedes older clean state even when malformed, negative,
-for another head or still running. A non-passing snapshot wins timestamp ties.
-No timeline means no structured-state approval.
+The receipt parser recognizes the 19 observed native closing phrases recorded
+with provenance in `tests/fixtures/native-codex-corpus.json`. A receipt still
+requires one explicit no-major-issues verdict, one current-head SHA line, exact
+optional native help content and at most one exact trailing native task link.
+Unknown closings remain pending until a newer independent canonical clean
+summary supplies proof. Clean static replies retain immutable creation time;
+editing an old reply cannot renew approval. Abbreviated SHAs are resolved through
+GitHub before success. Legacy unbound replies require trusted timeline ordering.
 
-Unknown receipt closings remain pending evidence under the existing strict
-receipt parser. A later strict completed-clean snapshot may supersede that
-receipt; an unknown receipt arriving after a clean snapshot makes the result
-pending again. On equal timestamps, non-passing evidence wins. Request a fresh
-native review when the connector publishes ambiguous evidence last. This keeps
-future neutral phrases independent of a positive suffix allowlist without
-interpreting arbitrary prose or weakening contradictory-finding invalidation.
-Malformed envelopes, extra lines, duplicate metadata, unsupported footers and
-explicit negative/provisional findings retain their normal invalidating role.
-Native P0–P2 findings, unresolved threads, formal retractions, abbreviated receipt
-SHA resolution and final-head checks keep their existing blocking rules.
+A canonical completed code lifecycle with null/null finding flags never grants
+approval alone. It may accompany an independently clean, immutable SHA-bound
+receipt created after the current trusted request and before that completion.
+Running or active security, mixed flags, negative flags, edited receipts and
+unknown presentation retain their pending/negative effect.
 
-Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
+The history guard evaluates snapshots present in the current REST timeline.
+GitHub exposes only current mutable comment bodies; unseen revisions are not
+stored by this change. Native formal and inline finding safeguards remain
+independent. Trusted human requests still require OWNER, MEMBER or COLLABORATOR
+association and a non-bot identity. Full preflight, native current-head review,
+green required checks and a stable 120-second window precede ordinary merge.
 
-A fresh unedited static receipt at the same timestamp second as a request or head activation may use observed timeline order after that boundary. Edited or unordered equal-second receipts remain pending.
+The CI dependency audit remains required. The existing fast-uri security override
+requires 4.2.3 or newer; a native review pass never bypasses OSV findings.
 
-Strict valid same-head structured finding flags persist per section across repeated review requests. Only a strictly newer canonical completed false/false result for the affected section clears them. Security null and later code-only/formal/static approvals cannot clear security findings; equal-second evidence stays blocked. Malformed and untrusted historical snapshots cannot create a permanent latch.
+A canonical snapshot supplies historical clocks only when every completed
+section, including a companion for another SHA, is no later than the observed
+comment update plus GitHub's second precision. A future companion preserves a
+negative at observation time and cannot clear history or supply approval. A
+legitimate carried companion may predate comment creation; only the section's
+own completion must meet its existing creation lower bound. A newer canonical
+clean completion for that section can recover.
 
-Completed negative state uses the affected section’s canonical completion clock for ordering and clearing. Edits to another section cannot renew that negative verdict; running or invalid completion clocks retain the observed comment timestamp fallback.
+An eligible canonical completed null/null lifecycle remains pending until an
+independent immutable clean receipt falls inside its creation-to-completion
+window, or a canonical clean own completion strictly newer than the lifecycle
+observation second clears it. An unpaired null lifecycle cannot supply a
+historical completion clock. A receipt
+created after completion or a later formal approval cannot supply the missing
+verdict. The production gate includes REST comments and enforces this pending
+lifecycle before choosing between comment and formal review evidence.
 
-The history guard covers strict snapshots present in the current REST issue-comment/timeline response. GitHub exposes only the current body of a mutable comment; this contract does not retain unseen prior revisions. Lifecycle fixtures use distinct persisted comment IDs. Native inline findings and unresolved review-thread guards remain authoritative. Durable webhook revision capture is outside this change.
+If the timeline request fails, persisted REST lifecycle evidence still enforces
+the pending latch before formal approval. This fallback may return only a
+pending blocker or no blocker; it never supplies positive comment approval
+without genuine head activation.
 
-Historical negative latching and clearing match the affected section’s exact head and canonical row independently of the other section’s head. This partial historical evidence never grants whole-PR approval or suppresses current pending signals.
+### Canonical calendar clocks and independent channel recovery
+
+Native table clocks use real UTC ISO calendar dates, including native fractional
+seconds. Prose dates and calendar rollover dates supply neither approval nor
+historical clearance; typed findings still remain at their observed time.
+Every completed section must precede the exclusive end of the observed GitHub
+server second: `floor(observed / 1000) * 1000 + 1000`. A fractional observation
+never widens that bucket; `.999999` within it remains valid.
+
+A strictly newer canonical CODE FALSE/FALSE completion retires an unknown CODE
+lifecycle independently of the security verdict in that snapshot. Security
+findings and their later own-section clearance remain separate requirements.
+A later receipt cannot replace a missing or equal-second CODE completion, and
+an uncleared security finding still blocks approval.

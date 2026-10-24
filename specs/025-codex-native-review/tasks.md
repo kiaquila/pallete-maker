@@ -1,8 +1,9 @@
 # Tasks
 
-**Status: COMPLETE.** Implementation, protected merge and production smoke are
-complete. The production PNG checks used desktop and mobile browser viewports;
-physical-device coverage is outside this smoke result.
+**Current follow-up: IN PROGRESS (PR #55).** The earlier PR #48 implementation,
+protected merge and production smoke below are complete. Its PNG checks used
+desktop and mobile browser viewports; physical-device coverage is outside that
+historical smoke result.
 
 - [x] Verify GitHub identity, refs, protection and isolated worktree.
 - [x] Reproduce the receipt regression on main.
@@ -76,19 +77,98 @@ without findings (receipt 6204216828). Its observed `Bravo.` sign-off exposed
 another strict compatibility gap; add that exact harmless presentation phrase
 without accepting arbitrary or contradictory prose. Re-review the changed head.
 
-## Structured-state compatibility
+## Closed native evidence contract
 
-Support unseen friendly closings through independent official structured proof,
-not an open-ended prose verdict. Validate one closed-schema native v1 snapshot,
-full current head, completed clean code/security state and matching visible table.
-Use mutable update time and request/head boundaries; newer malformed, stale,
-pending or negative state invalidates old clean state, including timestamp ties.
-Keep standalone receipts strict: unknown later/equal receipts stay pending until
-a newer strict clean summary. Preserve exact SHA resolution and finding vetoes. Preserve blocking threads, formal
-review and final-head checks. Regression coverage exercises actual gates, both
-arrival orders, schemas, freshness, spoofing, contradictions and native blockers.
-Run full preflight and obtain current-head native review before protected merge.
+A structured summary proves completion only when its unique leading official
+markers contain closed, duplicate-free typed JSON for the full current head and
+its complete native body matches the supported heading, introduction, contiguous
+four-column table, canonical section rows and exact optional service help footer.
+Both observed triggers, `Manual request` and `PR opened`, are supported. Unknown
+prose, arbitrary links, HTML or Markdown variants remain pending; the gate does
+not try to interpret general English or reproduce GitHub Markdown rendering.
 
-Static clean receipts use immutable creation time for approval ordering and current-request/head freshness. Editing a receipt cannot renew approval; unknown, pending and negative edits retain update time to invalidate older proof. Strict structured approvals continue to use code-row completion time.
+An explicit current-head TRUE finding from a valid leading envelope survives
+unknown presentation at the server observation time. Only a complete canonical
+body may supply section completion clocks or clear history. Clocks must fall
+between the original comment creation and observed update, using GitHub's whole
+second precision. A carried companion row may precede the comment's creation,
+but cannot grant authority to its own section. Strict newer canonical clean
+completion clears only the matching finding section; independent security
+findings, malformed envelopes, timestamp ties, formal findings and unresolved
+threads retain their existing safeguards.
 
-Strict valid same-head structured finding flags latch per review section across repeated requests. Only a strictly newer canonical completed false/false result for that section clears its latch; security null, code-only/formal/static positives and equal-second completions cannot clear security findings. Malformed or untrusted history does not create permanent latches.
+The receipt parser recognizes the 19 observed native closing phrases recorded
+with provenance in `tests/fixtures/native-codex-corpus.json`. A receipt still
+requires one explicit no-major-issues verdict, one current-head SHA line, exact
+optional native help content and at most one exact trailing native task link.
+Unknown closings remain pending until a newer independent canonical clean
+summary supplies proof. Clean static replies retain immutable creation time;
+editing an old reply cannot renew approval. Abbreviated SHAs are resolved through
+GitHub before success. Legacy unbound replies require trusted timeline ordering.
+
+A canonical completed code lifecycle with null/null finding flags never grants
+approval alone. It may accompany an independently clean, immutable SHA-bound
+receipt created after the current trusted request and before that completion.
+Running or active security, mixed flags, negative flags, edited receipts and
+unknown presentation retain their pending/negative effect.
+
+The history guard evaluates snapshots present in the current REST timeline.
+GitHub exposes only current mutable comment bodies; unseen revisions are not
+stored by this change. Native formal and inline finding safeguards remain
+independent. Trusted human requests still require OWNER, MEMBER or COLLABORATOR
+association and a non-bot identity. Full preflight, native current-head review,
+green required checks and a stable 120-second window precede ordinary merge.
+
+## Current PR #55 follow-up
+
+- [x] Replace open-ended prose/rendering interpretation with closed native proof.
+- [x] Preserve Palette-specific trust, SHA resolution and section-history rules.
+- [x] Exercise real native receipts and null lifecycle/receipt chronology.
+- [x] Pass the full current preflight (497 tests) and feature-memory check.
+- [ ] Obtain native review and green checks for the final current SHA.
+- [ ] Merge normally after 120 seconds of stability and verify main/deployment.
+
+Current OSV validation also requires transitive `fast-uri >=4.2.3`; the final
+lockfile must exclude vulnerable 4.2.2 (GHSA-w74x-v6f9-j3xg and related advisories).
+
+A canonical snapshot supplies historical clocks only when every completed
+section, including a companion for another SHA, is no later than the observed
+comment update plus GitHub's second precision. A future companion preserves a
+negative at observation time and cannot clear history or supply approval. A
+legitimate carried companion may predate comment creation; only the section's
+own completion must meet its existing creation lower bound. A newer canonical
+clean completion for that section can recover.
+
+An eligible canonical completed null/null lifecycle remains pending until an
+independent immutable clean receipt falls inside its creation-to-completion
+window, or a canonical clean own completion strictly newer than the lifecycle
+observation second clears it. An unpaired null lifecycle cannot supply a
+historical completion clock. A receipt
+created after completion or a later formal approval cannot supply the missing
+verdict. The production gate includes REST comments and enforces this pending
+lifecycle before choosing between comment and formal review evidence.
+
+If the timeline request fails, persisted REST lifecycle evidence still enforces
+the pending latch before formal approval. This fallback may return only a
+pending blocker or no blocker; it never supplies positive comment approval
+without genuine head activation.
+
+### Canonical calendar clocks and independent channel recovery
+
+Native table clocks use real UTC ISO calendar dates, including native fractional
+seconds. Prose dates and calendar rollover dates supply neither approval nor
+historical clearance; typed findings still remain at their observed time.
+Every completed section must precede the exclusive end of the observed GitHub
+server second: `floor(observed / 1000) * 1000 + 1000`. A fractional observation
+never widens that bucket; `.999999` within it remains valid.
+
+A strictly newer canonical CODE FALSE/FALSE completion retires an unknown CODE
+lifecycle independently of the security verdict in that snapshot. Security
+findings and their later own-section clearance remain separate requirements.
+A later receipt cannot replace a missing or equal-second CODE completion, and
+an uncleared security finding still blocks approval.
+
+- [x] Reproduce fractional observation/calendar and independent-channel cases.
+- [x] Pass eleven focused groups with CODE/SEC, foreign companion and negative controls.
+- [x] Pass the updated full preflight (508 tests) and feature-memory check.
+- [ ] Publish the final clock/channel fix and obtain its own native review.

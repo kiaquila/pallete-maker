@@ -775,11 +775,18 @@ while (Date.now() < deadline) {
       historyComments.push(...timelineEvents);
       commentEvidence = pickAuthoritativeCodexSkipModeComment({
         timelineEvents,
+        issueComments: formalEditComments,
         headSha,
       });
     } catch (error) {
+      commentEvidence = pickAuthoritativeCodexSkipModeComment({
+        timelineEvents: [],
+        issueComments: formalEditComments,
+        headSha,
+        pendingOnlyWithoutTimeline: true,
+      });
       codexTimelineWarning =
-        "Codex timeline unavailable; only formal review can be accepted.";
+        "Codex timeline unavailable; formal review still requires no persisted unpaired lifecycle.";
       if (!codexTimelineWarningLogged) {
         console.warn(`${codexTimelineWarning} ${error.message}`);
         codexTimelineWarningLogged = true;
@@ -796,7 +803,8 @@ while (Date.now() < deadline) {
     }
     const useComment =
       commentEvidence &&
-      (!formal ||
+      (commentEvidence.classification.unpairedLifecycle === true ||
+        !formal ||
         (commentEvidence.classification.evidenceTimestamp ??
           codexCommentTimestamp(commentEvidence.comment)) >
           reviewTimestamp(formal) ||

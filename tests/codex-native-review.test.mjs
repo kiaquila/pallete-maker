@@ -2,6 +2,13 @@ import {
   cleanStateBody,
   presentationReceipt,
 } from "./fixtures/codex-state.mjs";
+import {
+  hasCodexNegativeHistory,
+  hasCodexStateClockBounds,
+  hasCleanCodexState,
+  codexCodeReviewCompletionTime,
+  codexNegativeCompletionTime,
+} from "../scripts/codex-review-state.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -17,6 +24,9 @@ import {
   matchesCodexSummaryComment,
   pickAuthoritativeCodexSkipModeComment,
 } from "../scripts/ai-review-helpers.mjs";
+
+const helpFooter =
+  '<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment "@codex review".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting "@codex address that feedback".\n            \n</details>';
 
 const HEAD = "2667f79cd7676ff331730cabf661d38dbbcddb0d";
 const OLD = "b".repeat(40);
@@ -669,10 +679,252 @@ for (const mode of [
   "static",
   "security-null",
   "newer-clear",
+  "ordinary-comment-clear",
+  "indented-comment-clear",
+  "tabbed-comment-clear",
+  "uppercase-clear",
   "equal-clear",
   "old-security-clock",
   "missing-security-clock",
   "malformed-old",
+  "multiline-old",
+  "marker-prose-old",
+  "trailing-example-old",
+  "fenced-example-old",
+  "quoted-fence-old",
+  "spaced-heading-old",
+  "contradictory-trigger-clear",
+  "embedded-bom-clear",
+  "comment-heading-clear",
+  "mediumspace-clear",
+  "hairspace-clear",
+  "multiline-comment-clear",
+  "zerowidth-priority-clear",
+  "variation-priority-clear",
+  "balanced-link-clear",
+  "malformed-link-clear",
+  "title-double-clear",
+  "title-single-clear",
+  "title-paren-clear",
+  "escaped-space-clear",
+  "space-destination-clear",
+  "empty-destination-clear",
+  "escaped-opener-clear",
+  "escaped-label-closer-clear",
+  "nested-link-clear",
+  "found-article-repeat-clock",
+  "found-html-article-repeat-clock",
+  "found-word-count-repeat-clock",
+  "blank-label-repeat-clock",
+  "html-break-repeat-clock",
+  "code-priority-repeat-clock",
+  "code-warning-repeat-clock",
+  "raw-html-link-repeat-clock",
+  "quoted-raw-html-repeat-clock",
+  "quoted-html-exit-repeat-clock",
+  "list-html-exit-repeat-clock",
+  "list-raw-html-repeat-clock",
+  "mixed-finding-count-repeat-clock",
+  "existential-finding-repeat-clock",
+  "detected-finding-repeat-clock",
+  "detected-article-repeat-clock",
+  "reverse-container-repeat-clock",
+  "unresolved-count-repeat-clock",
+  "used-footnote-repeat-clock",
+  "invalid-footnote-label-repeat-clock",
+  "invalid-footnote-reference-repeat-clock",
+  "footnote-two-space-repeat-clock",
+  "footnote-four-space-repeat-clock",
+  "used-footnote-four-space-repeat-clock",
+  "transitive-footnote-repeat-clock",
+  "footnote-destination-repeat-clock",
+  "footnote-reference-destination-repeat-clock",
+  "footnote-reference-title-repeat-clock",
+  "bugfree-repeat-clock",
+  "type7-paragraph-repeat-clock",
+  "unmatched-underscore-repeat-clock",
+  "unmatched-star-repeat-clock",
+
+  "unicode-footnote-repeat-clock",
+  "bug-repeat-clock",
+  "not-fixed-repeat-clock",
+  "not-resolved-repeat-clock",
+  "unrelated-negation-repeat-clock",
+  "flaw-repeat-clock",
+  "worded-count-repeat-clock",
+  "br-finding-repeat-clock",
+  "harmless-repeat-clock",
+  "benign-repeat-clock",
+  "except-fixed-repeat-clock",
+  "none-current-repeat-clock",
+  "none-were-repeat-clock",
+  "may-reappear-repeat-clock",
+  "defect-repeat-clock",
+  "regression-repeat-clock",
+  "qualified-absence-repeat-clock",
+  "security-risk-repeat-clock",
+  "users-bypass-repeat-clock",
+  "mentioned-not-fixed-repeat-clock",
+  "neither-repeat-clock",
+  "none-repeat-clock",
+  "still-open-repeat-clock",
+  "indefinite-not-found-repeat-clock",
+  "raw-nbsp-repeat-clock",
+  "raw-shy-repeat-clock",
+  "markdown-legacy-repeat-clock",
+  "code-legacy-repeat-clock",
+
+  "adjectival-mention-repeat-clock",
+  "adjectival-discussion-repeat-clock",
+  "adverb-bypass-repeat-clock",
+  "mentioned-is-open-repeat-clock",
+  "discussed-is-outstanding-repeat-clock",
+  "entity-colon-repeat-clock",
+  "nobody-repeat-clock",
+  "subjectless-bypass-repeat-clock",
+  "qualified-no-repeat-clock",
+  "mentioned-fixed-repeat-clock",
+  "mentioned-resolved-repeat-clock",
+  "mentioned-closed-repeat-clock",
+
+  "incomplete-fix-repeat-clock",
+  "able-bypass-repeat-clock",
+  "mentioned-unresolved-repeat-clock",
+  "discussed-open-repeat-clock",
+  "mentioned-remains-repeat-clock",
+  "discussed-persists-repeat-clock",
+  "no-users-repeat-clock",
+
+  "mentioned-repeat-clock",
+  "documents-repeat-clock",
+  "includes-repeat-clock",
+  "discussed-repeat-clock",
+  "vulnerable-repeat-clock",
+  "bypassed-repeat-clock",
+  "see-repeat-clock",
+  "identify-repeat-clock",
+  "prevents-repeat-clock",
+  "avoids-repeat-clock",
+  "introduces-plural-repeat-clock",
+  "contains-plural-repeat-clock",
+  "has-plural-repeat-clock",
+
+  "causes-repeat-clock",
+  "exposes-repeat-clock",
+  "qualified-fixed-repeat-clock",
+  "regression-tests-repeat-clock",
+  "not-remain-fixed-repeat-clock",
+  "exception-recurred-repeat-clock",
+  "regression-test-count-repeat-clock",
+  "defect-report-count-repeat-clock",
+  "must-fixed-repeat-clock",
+  "should-fixed-repeat-clock",
+  "fixed-one-repeat-clock",
+
+  "introduces-repeat-clock",
+  "creates-repeat-clock",
+  "contains-repeat-clock",
+  "has-finding-repeat-clock",
+
+  "direct-reappeared-repeat-clock",
+  "perfect-reappeared-repeat-clock",
+  "recurred-repeat-clock",
+  "reopened-repeat-clock",
+  "qualified-harmless-repeat-clock",
+  "already-fixed-exception-repeat-clock",
+  "bare-critical-repeat-clock",
+  "bare-authentication-repeat-clock",
+  "most-count-repeat-clock",
+  "every-count-repeat-clock",
+  "numerous-count-repeat-clock",
+  "no-exist-repeat-clock",
+  "no-remain-repeat-clock",
+
+  "both-count-repeat-clock",
+  "many-count-repeat-clock",
+  "all-count-repeat-clock",
+  "still-bug-repeat-clock",
+  "there-still-bug-repeat-clock",
+  "have-one-repeat-clock",
+  "eliminated-documented-repeat-clock",
+  "center-repeat-clock",
+  "exception-one-repeat-clock",
+  "reappeared-repeat-clock",
+  "none-exist-repeat-clock",
+  "nominal-this-repeat-clock",
+  "nominal-that-repeat-clock",
+  "grouped-count-repeat-clock",
+  "vulnerability-repeat-clock",
+  "coordinated-nouns-repeat-clock",
+  "colon-security-repeat-clock",
+  "colon-passive-repeat-clock",
+  "eliminated-repeat-clock",
+  "contextual-unresolved-repeat-clock",
+  "plural-persist-repeat-clock",
+  "plural-outstanding-repeat-clock",
+  "mixed-needed-repeat-clock",
+  "got-passive-repeat-clock",
+  "documented-meta-repeat-clock",
+  "positive-count-zero-colon-repeat-clock",
+  "indefinite-present-repeat-clock",
+  "indefinite-happens-repeat-clock",
+  "indefinite-exists-repeat-clock",
+  "ordinary-definition-repeat-clock",
+  "zero-after-colon-repeat-clock",
+  "colon-count-repeat-clock",
+  "emphasized-repeat-clock",
+  "type7-indented-repeat-clock",
+
+  "wrapped-numeric-repeat-clock",
+  "passive-finding-repeat-clock",
+  "abrupt-comment-repeat-clock",
+  "abrupt-dash-comment-repeat-clock",
+  "tab-list-repeat-clock",
+  "footnote-transitive-reference-repeat-clock",
+  "footnote-transitive-destination-repeat-clock",
+  "unused-footnote-repeat-clock",
+  "deep-destination-repeat-clock",
+  "allzero-finding-count-repeat-clock",
+  "finding-softbreak-repeat-clock",
+  "raw-html-numeric-repeat-clock",
+  "markdown-numeric-repeat-clock",
+  "code-numeric-repeat-clock",
+  "finding-blankline-repeat-clock",
+  "found-html-no-repeat-clock",
+  "found-html-zero-repeat-clock",
+  "comment-pipe-clear",
+  "inactive-numeric-row-clock",
+  "inactive-nbsp-row-clock",
+  "inactive-html-row-clock",
+  "inactive-optional-pipe-row-clock",
+  "inactive-quoted-row-clock",
+  "marker-bom-clear",
+  "marker-nbsp-clear",
+  "zerowidth-trigger-clear",
+  "namedzero-trigger-clear",
+  "code-heading-space-clear",
+  "code-heading-tab-clear",
+  "markdown-trigger-clear",
+  "entity-trigger-clear",
+  "numeric-priority-clear",
+  "duplicate-row-clock",
+  "hidden-row-clock",
+  "markdown-priority-clear",
+  "numeric-trigger-clear",
+  "trailing-marker-old",
+  "duplicate-leading-old",
+  "whole-fenced-old",
+  "whole-quoted-old",
+  "trailing-marker-clear",
+  "quoted-fence-clear",
+  "fenced-example-clear",
+  "bom-space-clear",
+  "bom-tab-clear",
+  "warning-clear",
+  "running-visible-clear",
+  "example-clear",
+  "indented-old",
+  "tabbed-old",
   "wrong-actor",
 ]) {
   test(`actual gate retains section-specific security history: ${mode}`, () => {
@@ -680,6 +932,50 @@ for (const mode of [
       id: 930,
       created_at: "2026-10-20T12:02:00Z",
     });
+    if (mode === "multiline-old")
+      old.body =
+        "<!-- presentation-only metadata -->\n" +
+        old.body.replace(
+          /(codex-review-state:v1 )(\{[^\n]+\})( -->)/,
+          (_, prefix, json, suffix) =>
+            prefix + JSON.stringify(JSON.parse(json), null, 2) + suffix,
+        );
+    if (mode === "marker-prose-old")
+      old.body = old.body.replaceAll(
+        "Manual request",
+        "codex-review-state: parser review",
+      );
+    if (["indented-old", "tabbed-old"].includes(mode))
+      old.body = old.body.replace(
+        /^(<!-- codex-(?:pull-request-review-summary|review-state)[^\n]*)/gm,
+        (mode === "tabbed-old" ? "\t" : "    ") + "$1",
+      );
+    if (mode === "duplicate-leading-old")
+      old.body = old.body.replace(
+        "<!-- codex-review-state:v1",
+        "<!-- codex-review-state:v1 {} -->\n<!-- codex-review-state:v1",
+      );
+    if (mode === "whole-fenced-old")
+      old.body = "```html\n" + old.body + "\n```";
+    if (mode === "whole-quoted-old")
+      old.body = old.body
+        .split("\n")
+        .map((line) => "> " + line)
+        .join("\n");
+    if (mode === "trailing-marker-old")
+      old.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (mode === "spaced-heading-old")
+      old.body =
+        old.body.replace(
+          "## Codex Review Summary",
+          "  ## Codex Review Summary",
+        ) + "\n    <!-- codex-review-state:v1 {} -->";
+    if (mode === "quoted-fence-old")
+      old.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
+    if (mode === "fenced-example-old")
+      old.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
+    if (mode === "trailing-example-old")
+      old.body += "\n    <!-- codex-review-state:v1 example -->";
     if (mode === "malformed-old")
       old.body = old.body.replace("state:v1", "state:v2");
     if (mode === "wrong-actor") old.user = { login: "attacker" };
@@ -710,6 +1006,1055 @@ for (const mode of [
           ),
       { id: 933, created_at: "2026-10-20T12:05:00Z" },
     );
+    if (
+      [
+        "ordinary-comment-clear",
+        "indented-comment-clear",
+        "tabbed-comment-clear",
+        "uppercase-clear",
+      ].includes(mode)
+    )
+      receipt.created_at = "2026-10-20T12:06:00Z";
+    if (mode === "ordinary-comment-clear")
+      newer.body += "\n<!-- TODO: presentation metadata -->";
+    if (mode === "indented-comment-clear")
+      newer.body += "\n    <!-- TODO: presentation metadata -->";
+    if (mode === "tabbed-comment-clear")
+      newer.body += "\n\t<!-- TODO: presentation metadata -->";
+    if (["bom-space-clear", "bom-tab-clear"].includes(mode))
+      newer.body =
+        "\uFEFF" +
+        newer.body.replace(
+          /^<!-- codex-pull-request-review-summary/,
+          (mode === "bom-tab-clear" ? "\t" : "    ") +
+            "<!-- codex-pull-request-review-summary",
+        );
+    if (mode === "warning-clear")
+      newer.body = newer.body.replace(
+        "🔒 **Security Review**",
+        "⚠️ 🔒 **Security Review**",
+      );
+    if (mode === "running-visible-clear")
+      newer.body = newer.body.replaceAll(
+        '"status":"completed"',
+        '"status":"running"',
+      );
+    if (mode === "trailing-marker-clear")
+      newer.body += "\n<!-- codex-review-state:v1 {} -->";
+    if (["code-heading-space-clear", "code-heading-tab-clear"].includes(mode))
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        (mode === "code-heading-tab-clear" ? "\t" : "    ") +
+          "## Codex Review Summary",
+      );
+    if (mode === "embedded-bom-clear")
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        "\uFEFF    ## Codex Review Summary",
+      );
+    if (mode === "comment-heading-clear")
+      newer.body = newer.body.replace(
+        "## Codex Review Summary",
+        "<!-- presentation metadata -->    ## Codex Review Summary",
+      );
+    if (["mediumspace-clear", "hairspace-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "mediumspace-clear"
+          ? "Do&MediumSpace;not&MediumSpace;merge"
+          : "Do&hairsp;not&hairsp;merge",
+      );
+    if (mode === "marker-nbsp-clear")
+      newer.body = newer.body.replace(
+        /^<!-- codex-pull-request-review-summary/,
+        "    \u00A0<!-- codex-pull-request-review-summary",
+      );
+    if (mode === "marker-bom-clear")
+      newer.body = newer.body.replace(
+        /^<!-- codex-pull-request-review-summary/,
+        "    \uFEFF<!-- codex-pull-request-review-summary",
+      );
+    if (["zerowidth-trigger-clear", "namedzero-trigger-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "zerowidth-trigger-clear"
+          ? "Do&#8203;not&#8203;merge"
+          : "Do&ZeroWidthSpace;not&ZeroWidthSpace;merge",
+      );
+    if (mode === "malformed-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe](P1 blocker)",
+      );
+    if (
+      [
+        "title-double-clear",
+        "title-single-clear",
+        "title-paren-clear",
+      ].includes(mode)
+    ) {
+      const title =
+        mode === "title-double-clear"
+          ? '\"title\"'
+          : mode === "title-single-clear"
+            ? "'title'"
+            : "(title)";
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        `Do [not](https://example.com ${title}) merge`,
+      );
+    }
+    if (mode === "escaped-space-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe](P1\\ blocker)",
+      );
+    if (["space-destination-clear", "empty-destination-clear"].includes(mode))
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        mode === "space-destination-clear"
+          ? "Do [not]( https://example.com ) merge"
+          : "Do [not]() merge",
+      );
+    if (mode === "escaped-opener-clear")
+      newer.body = newer.body.replaceAll("Manual request", "\\[safe](P1)");
+    if (mode === "escaped-label-closer-clear")
+      newer.body = newer.body.replaceAll("Manual request", "[safe\\]( P1)");
+    if (mode === "comment-pipe-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Manual <!-- | --> request",
+      );
+    if (mode === "nested-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "[safe [inner](url)](P1)",
+      );
+    if (
+      [
+        "found-article-repeat-clock",
+        "found-html-article-repeat-clock",
+        "found-word-count-repeat-clock",
+        "blank-label-repeat-clock",
+        "html-break-repeat-clock",
+        "code-priority-repeat-clock",
+        "code-warning-repeat-clock",
+        "raw-html-link-repeat-clock",
+        "quoted-raw-html-repeat-clock",
+        "quoted-html-exit-repeat-clock",
+        "list-html-exit-repeat-clock",
+        "list-raw-html-repeat-clock",
+        "mixed-finding-count-repeat-clock",
+        "existential-finding-repeat-clock",
+        "detected-finding-repeat-clock",
+        "detected-article-repeat-clock",
+        "reverse-container-repeat-clock",
+        "unresolved-count-repeat-clock",
+        "used-footnote-repeat-clock",
+        "invalid-footnote-label-repeat-clock",
+        "invalid-footnote-reference-repeat-clock",
+        "footnote-two-space-repeat-clock",
+        "footnote-four-space-repeat-clock",
+        "used-footnote-four-space-repeat-clock",
+        "transitive-footnote-repeat-clock",
+        "footnote-destination-repeat-clock",
+        "footnote-reference-destination-repeat-clock",
+        "footnote-reference-title-repeat-clock",
+        "bugfree-repeat-clock",
+        "type7-paragraph-repeat-clock",
+        "unmatched-underscore-repeat-clock",
+        "unmatched-star-repeat-clock",
+
+        "unicode-footnote-repeat-clock",
+        "bug-repeat-clock",
+        "not-fixed-repeat-clock",
+        "not-resolved-repeat-clock",
+        "unrelated-negation-repeat-clock",
+        "flaw-repeat-clock",
+        "worded-count-repeat-clock",
+        "br-finding-repeat-clock",
+        "harmless-repeat-clock",
+        "benign-repeat-clock",
+        "except-fixed-repeat-clock",
+        "none-current-repeat-clock",
+        "none-were-repeat-clock",
+        "may-reappear-repeat-clock",
+        "defect-repeat-clock",
+        "regression-repeat-clock",
+        "qualified-absence-repeat-clock",
+        "security-risk-repeat-clock",
+        "users-bypass-repeat-clock",
+        "mentioned-not-fixed-repeat-clock",
+        "neither-repeat-clock",
+        "none-repeat-clock",
+        "still-open-repeat-clock",
+        "indefinite-not-found-repeat-clock",
+        "raw-nbsp-repeat-clock",
+        "raw-shy-repeat-clock",
+        "markdown-legacy-repeat-clock",
+        "code-legacy-repeat-clock",
+
+        "adjectival-mention-repeat-clock",
+        "adjectival-discussion-repeat-clock",
+        "adverb-bypass-repeat-clock",
+        "mentioned-is-open-repeat-clock",
+        "discussed-is-outstanding-repeat-clock",
+        "entity-colon-repeat-clock",
+        "nobody-repeat-clock",
+        "subjectless-bypass-repeat-clock",
+        "qualified-no-repeat-clock",
+        "mentioned-fixed-repeat-clock",
+        "mentioned-resolved-repeat-clock",
+        "mentioned-closed-repeat-clock",
+
+        "incomplete-fix-repeat-clock",
+        "able-bypass-repeat-clock",
+        "mentioned-unresolved-repeat-clock",
+        "discussed-open-repeat-clock",
+        "mentioned-remains-repeat-clock",
+        "discussed-persists-repeat-clock",
+        "no-users-repeat-clock",
+
+        "mentioned-repeat-clock",
+        "documents-repeat-clock",
+        "includes-repeat-clock",
+        "discussed-repeat-clock",
+        "vulnerable-repeat-clock",
+        "bypassed-repeat-clock",
+        "see-repeat-clock",
+        "identify-repeat-clock",
+        "prevents-repeat-clock",
+        "avoids-repeat-clock",
+        "introduces-plural-repeat-clock",
+        "contains-plural-repeat-clock",
+        "has-plural-repeat-clock",
+
+        "causes-repeat-clock",
+        "exposes-repeat-clock",
+        "qualified-fixed-repeat-clock",
+        "regression-tests-repeat-clock",
+        "not-remain-fixed-repeat-clock",
+        "exception-recurred-repeat-clock",
+        "regression-test-count-repeat-clock",
+        "defect-report-count-repeat-clock",
+        "must-fixed-repeat-clock",
+        "should-fixed-repeat-clock",
+        "fixed-one-repeat-clock",
+
+        "introduces-repeat-clock",
+        "creates-repeat-clock",
+        "contains-repeat-clock",
+        "has-finding-repeat-clock",
+
+        "direct-reappeared-repeat-clock",
+        "perfect-reappeared-repeat-clock",
+        "recurred-repeat-clock",
+        "reopened-repeat-clock",
+        "qualified-harmless-repeat-clock",
+        "already-fixed-exception-repeat-clock",
+        "bare-critical-repeat-clock",
+        "bare-authentication-repeat-clock",
+        "most-count-repeat-clock",
+        "every-count-repeat-clock",
+        "numerous-count-repeat-clock",
+        "no-exist-repeat-clock",
+        "no-remain-repeat-clock",
+
+        "both-count-repeat-clock",
+        "many-count-repeat-clock",
+        "all-count-repeat-clock",
+        "still-bug-repeat-clock",
+        "there-still-bug-repeat-clock",
+        "have-one-repeat-clock",
+        "eliminated-documented-repeat-clock",
+        "center-repeat-clock",
+        "exception-one-repeat-clock",
+        "reappeared-repeat-clock",
+        "none-exist-repeat-clock",
+        "nominal-this-repeat-clock",
+        "nominal-that-repeat-clock",
+        "grouped-count-repeat-clock",
+        "vulnerability-repeat-clock",
+        "coordinated-nouns-repeat-clock",
+        "colon-security-repeat-clock",
+        "colon-passive-repeat-clock",
+        "eliminated-repeat-clock",
+        "contextual-unresolved-repeat-clock",
+        "plural-persist-repeat-clock",
+        "plural-outstanding-repeat-clock",
+        "mixed-needed-repeat-clock",
+        "got-passive-repeat-clock",
+        "documented-meta-repeat-clock",
+        "positive-count-zero-colon-repeat-clock",
+        "indefinite-present-repeat-clock",
+        "indefinite-happens-repeat-clock",
+        "indefinite-exists-repeat-clock",
+        "ordinary-definition-repeat-clock",
+        "zero-after-colon-repeat-clock",
+        "colon-count-repeat-clock",
+        "emphasized-repeat-clock",
+        "type7-indented-repeat-clock",
+
+        "wrapped-numeric-repeat-clock",
+        "passive-finding-repeat-clock",
+        "abrupt-comment-repeat-clock",
+        "abrupt-dash-comment-repeat-clock",
+        "tab-list-repeat-clock",
+        "footnote-transitive-reference-repeat-clock",
+        "footnote-transitive-destination-repeat-clock",
+        "unused-footnote-repeat-clock",
+        "deep-destination-repeat-clock",
+        "allzero-finding-count-repeat-clock",
+        "finding-softbreak-repeat-clock",
+        "raw-html-numeric-repeat-clock",
+        "markdown-numeric-repeat-clock",
+        "code-numeric-repeat-clock",
+        "finding-blankline-repeat-clock",
+        "found-html-no-repeat-clock",
+        "found-html-zero-repeat-clock",
+      ].includes(mode)
+    ) {
+      old.body +=
+        mode === "flaw-repeat-clock"
+          ? "\n" +
+            helpFooter.replace(
+              "</details>",
+              "A security flaw was found.</details>",
+            )
+          : mode === "worded-count-repeat-clock"
+            ? "\n" +
+              helpFooter.replace(
+                "</details>",
+                "Two security issues were found.</details>",
+              )
+            : mode === "br-finding-repeat-clock"
+              ? "\n" +
+                helpFooter.replace(
+                  "</details>",
+                  "A security issue<br>was found.</details>",
+                )
+              : mode === "harmless-repeat-clock"
+                ? "\n" +
+                  helpFooter.replace(
+                    "</details>",
+                    "The issue is harmless.</details>",
+                  )
+                : mode === "benign-repeat-clock"
+                  ? "\n" +
+                    helpFooter.replace(
+                      "</details>",
+                      "The issue is benign.</details>",
+                    )
+                  : mode === "except-fixed-repeat-clock"
+                    ? "\n" +
+                      helpFooter.replace(
+                        "</details>",
+                        "No issues or findings were found—except one, which was fixed.</details>",
+                      )
+                    : mode === "none-current-repeat-clock"
+                      ? "\n" +
+                        helpFooter.replace(
+                          "</details>",
+                          "Security issue: none currently exist.</details>",
+                        )
+                      : mode === "none-were-repeat-clock"
+                        ? "\n" +
+                          helpFooter.replace(
+                            "</details>",
+                            "Security issue: none were found.</details>",
+                          )
+                        : [
+                              "may-reappear-repeat-clock",
+                              "defect-repeat-clock",
+                              "regression-repeat-clock",
+                              "qualified-absence-repeat-clock",
+                              "security-risk-repeat-clock",
+                              "users-bypass-repeat-clock",
+                              "mentioned-not-fixed-repeat-clock",
+                              "neither-repeat-clock",
+                              "none-repeat-clock",
+                              "still-open-repeat-clock",
+                              "indefinite-not-found-repeat-clock",
+                              "raw-nbsp-repeat-clock",
+                              "raw-shy-repeat-clock",
+                              "markdown-legacy-repeat-clock",
+                              "code-legacy-repeat-clock",
+
+                              "adjectival-mention-repeat-clock",
+                              "adjectival-discussion-repeat-clock",
+                              "adverb-bypass-repeat-clock",
+                              "mentioned-is-open-repeat-clock",
+                              "discussed-is-outstanding-repeat-clock",
+                              "entity-colon-repeat-clock",
+                              "nobody-repeat-clock",
+                              "subjectless-bypass-repeat-clock",
+                              "qualified-no-repeat-clock",
+                              "mentioned-fixed-repeat-clock",
+                              "mentioned-resolved-repeat-clock",
+                              "mentioned-closed-repeat-clock",
+
+                              "incomplete-fix-repeat-clock",
+                              "able-bypass-repeat-clock",
+                              "mentioned-unresolved-repeat-clock",
+                              "discussed-open-repeat-clock",
+                              "mentioned-remains-repeat-clock",
+                              "discussed-persists-repeat-clock",
+                              "no-users-repeat-clock",
+
+                              "mentioned-repeat-clock",
+                              "documents-repeat-clock",
+                              "includes-repeat-clock",
+                              "discussed-repeat-clock",
+                              "vulnerable-repeat-clock",
+                              "bypassed-repeat-clock",
+                              "see-repeat-clock",
+                              "identify-repeat-clock",
+                              "prevents-repeat-clock",
+                              "avoids-repeat-clock",
+                              "introduces-plural-repeat-clock",
+                              "contains-plural-repeat-clock",
+                              "has-plural-repeat-clock",
+
+                              "causes-repeat-clock",
+                              "exposes-repeat-clock",
+                              "qualified-fixed-repeat-clock",
+                              "regression-tests-repeat-clock",
+                              "not-remain-fixed-repeat-clock",
+                              "exception-recurred-repeat-clock",
+                              "regression-test-count-repeat-clock",
+                              "defect-report-count-repeat-clock",
+                              "must-fixed-repeat-clock",
+                              "should-fixed-repeat-clock",
+                              "fixed-one-repeat-clock",
+
+                              "introduces-repeat-clock",
+                              "creates-repeat-clock",
+                              "contains-repeat-clock",
+                              "has-finding-repeat-clock",
+
+                              "reappeared-repeat-clock",
+                              "perfect-reappeared-repeat-clock",
+                              "recurred-repeat-clock",
+                              "reopened-repeat-clock",
+                              "qualified-harmless-repeat-clock",
+                              "already-fixed-exception-repeat-clock",
+                              "bare-critical-repeat-clock",
+                              "bare-authentication-repeat-clock",
+                              "most-count-repeat-clock",
+                              "every-count-repeat-clock",
+                              "numerous-count-repeat-clock",
+                              "no-exist-repeat-clock",
+                              "no-remain-repeat-clock",
+                            ].includes(mode)
+                          ? "\n" +
+                            helpFooter.replace(
+                              "</details>",
+                              ({
+                                "introduces-repeat-clock":
+                                  "This change introduces a bug.",
+                                "creates-repeat-clock":
+                                  "This change creates a bug.",
+                                "contains-repeat-clock":
+                                  "This change contains a bug.",
+                                "has-finding-repeat-clock":
+                                  "This change has a bug.",
+                                "causes-repeat-clock":
+                                  "This change causes a regression.",
+                                "exposes-repeat-clock":
+                                  "This patch exposes a vulnerability.",
+                                "prevents-repeat-clock":
+                                  "This patch prevents a vulnerability.",
+                                "avoids-repeat-clock":
+                                  "This change avoids a regression.",
+                                "introduces-plural-repeat-clock":
+                                  "This change introduces multiple bugs.",
+                                "contains-plural-repeat-clock":
+                                  "This change contains some issues.",
+                                "has-plural-repeat-clock":
+                                  "This change has several regressions.",
+                                "see-repeat-clock": "I see a bug.",
+                                "identify-repeat-clock":
+                                  "We identify an issue.",
+                                "vulnerable-repeat-clock":
+                                  "The application is vulnerable to SQL injection.",
+                                "bypassed-repeat-clock":
+                                  "Authentication can be bypassed.",
+                                "users-bypass-repeat-clock":
+                                  "Users can bypass authentication.",
+                                "mentioned-not-fixed-repeat-clock":
+                                  "The review mentioned a bug that has not been fixed.",
+                                "neither-repeat-clock":
+                                  "Neither user can bypass authentication.",
+                                "none-repeat-clock":
+                                  "None can bypass authentication.",
+                                "still-open-repeat-clock":
+                                  "We discussed a security issue that is still open.",
+                                "indefinite-not-found-repeat-clock":
+                                  "A security issue was not found.",
+                                "raw-nbsp-repeat-clock":
+                                  "<div>\nDo&nbspnot&nbspmerge\n</div>",
+                                "raw-shy-repeat-clock": "<div>\nP&shy1\n</div>",
+                                "markdown-legacy-repeat-clock":
+                                  "Do&nbspnot&nbspmerge",
+                                "code-legacy-repeat-clock":
+                                  "`Do&nbspnot&nbspmerge`",
+
+                                "adjectival-mention-repeat-clock":
+                                  "The mentioned vulnerability allows code execution.",
+                                "adjectival-discussion-repeat-clock":
+                                  "The discussed vulnerability is exploitable.",
+                                "adverb-bypass-repeat-clock":
+                                  "Users can trivially bypass authentication.",
+                                "mentioned-is-open-repeat-clock":
+                                  "The review mentioned a bug that is open.",
+                                "discussed-is-outstanding-repeat-clock":
+                                  "We discussed a vulnerability that is outstanding.",
+                                "entity-colon-repeat-clock":
+                                  "Security issue&colon; remains unresolved.",
+                                "nobody-repeat-clock":
+                                  "Nobody can bypass authentication.",
+                                "subjectless-bypass-repeat-clock":
+                                  "Can bypass authentication without credentials.",
+                                "qualified-no-repeat-clock":
+                                  "No unauthenticated users can bypass authentication.",
+                                "mentioned-fixed-repeat-clock":
+                                  "The review mentioned a bug that remains fixed.",
+                                "mentioned-resolved-repeat-clock":
+                                  "The review mentioned a bug that remains resolved.",
+                                "mentioned-closed-repeat-clock":
+                                  "The review mentioned a bug that remains closed.",
+                                "incomplete-fix-repeat-clock":
+                                  "One bug fix remains incomplete.",
+                                "able-bypass-repeat-clock":
+                                  "Users are able to bypass authentication.",
+                                "mentioned-unresolved-repeat-clock":
+                                  "The review mentioned a bug that remains unresolved.",
+                                "discussed-open-repeat-clock":
+                                  "We discussed a bug that remains open.",
+                                "mentioned-remains-repeat-clock":
+                                  "The review mentioned a bug that remains.",
+                                "discussed-persists-repeat-clock":
+                                  "We discussed a bug that persists.",
+                                "no-users-repeat-clock":
+                                  "No users can bypass authentication.",
+                                "mentioned-repeat-clock":
+                                  "The review mentioned a bug fix.",
+                                "documents-repeat-clock":
+                                  "This patch documents a bug fix.",
+                                "includes-repeat-clock":
+                                  "This release includes a bug fix.",
+                                "discussed-repeat-clock": "We discussed a bug.",
+                                "security-risk-repeat-clock":
+                                  "A security risk remains.",
+                                "qualified-absence-repeat-clock":
+                                  "The security issue does not exist locally but remains in production.",
+                                "qualified-fixed-repeat-clock":
+                                  "A security issue is already fixed in tests but exploitable in production.",
+                                "regression-tests-repeat-clock":
+                                  "Regression tests passed.",
+                                "not-remain-fixed-repeat-clock":
+                                  "The issue does not remain fixed.",
+                                "exception-recurred-repeat-clock":
+                                  "No issues were found except one already fixed that has reappeared.",
+                                "regression-test-count-repeat-clock":
+                                  "One regression test passed.",
+                                "defect-report-count-repeat-clock":
+                                  "One defect report was closed.",
+                                "must-fixed-repeat-clock":
+                                  "A bug must be fixed.",
+                                "should-fixed-repeat-clock":
+                                  "A bug should be fixed.",
+                                "fixed-one-repeat-clock": "Fixed one issue.",
+                                "direct-reappeared-repeat-clock":
+                                  "An eliminated issue reappeared.",
+                                "perfect-reappeared-repeat-clock":
+                                  "An eliminated issue has reappeared.",
+                                "recurred-repeat-clock":
+                                  "A fixed bug recurred.",
+                                "reopened-repeat-clock":
+                                  "A resolved issue reopened.",
+                                "qualified-harmless-repeat-clock":
+                                  "The security issue is harmless in tests but exploitable in production.",
+                                "already-fixed-exception-repeat-clock":
+                                  "No issues were found except one already fixed.",
+                                "bare-critical-repeat-clock":
+                                  "Critical security issue remains.",
+                                "bare-authentication-repeat-clock":
+                                  "Authentication vulnerability exists.",
+                                "most-count-repeat-clock":
+                                  "Most issues remain.",
+                                "every-count-repeat-clock":
+                                  "Every issue remains.",
+                                "numerous-count-repeat-clock":
+                                  "Numerous issues remain.",
+                                "no-exist-repeat-clock": "Issues do not exist.",
+                                "no-remain-repeat-clock": "Bugs do not remain.",
+                              }[mode] ??
+                                (mode === "defect-repeat-clock"
+                                  ? "A defect remains."
+                                  : mode === "regression-repeat-clock"
+                                    ? "A regression remains."
+                                    : "An eliminated issue may reappear.")) +
+                                "</details>",
+                            )
+                          : mode === "both-count-repeat-clock"
+                            ? "\n" +
+                              helpFooter.replace(
+                                "</details>",
+                                "Both issues remain.</details>",
+                              )
+                            : mode === "many-count-repeat-clock"
+                              ? "\n" +
+                                helpFooter.replace(
+                                  "</details>",
+                                  "Many issues remain.</details>",
+                                )
+                              : mode === "all-count-repeat-clock"
+                                ? "\n" +
+                                  helpFooter.replace(
+                                    "</details>",
+                                    "All issues remain unresolved.</details>",
+                                  )
+                                : mode === "still-bug-repeat-clock"
+                                  ? "\n" +
+                                    helpFooter.replace(
+                                      "</details>",
+                                      "The bug still exists.</details>",
+                                    )
+                                  : mode === "there-still-bug-repeat-clock"
+                                    ? "\n" +
+                                      helpFooter.replace(
+                                        "</details>",
+                                        "There still is a bug.</details>",
+                                      )
+                                    : mode === "have-one-repeat-clock"
+                                      ? "\n" +
+                                        helpFooter.replace(
+                                          "</details>",
+                                          "We have one security issue.</details>",
+                                        )
+                                      : mode ===
+                                          "eliminated-documented-repeat-clock"
+                                        ? "\n" +
+                                          helpFooter.replace(
+                                            "</details>",
+                                            "An eliminated issue was documented.</details>",
+                                          )
+                                        : mode === "center-repeat-clock"
+                                          ? "\n" +
+                                            helpFooter.replace(
+                                              "</details>",
+                                              "No<center>An issue remains</center></details>",
+                                            )
+                                          : mode ===
+                                              "exception-one-repeat-clock"
+                                            ? "\n" +
+                                              helpFooter.replace(
+                                                "</details>",
+                                                "No issues or findings were found—except one.</details>",
+                                              )
+                                            : mode === "reappeared-repeat-clock"
+                                              ? "\n" +
+                                                helpFooter.replace(
+                                                  "</details>",
+                                                  "An eliminated issue was found again.</details>",
+                                                )
+                                              : mode ===
+                                                  "none-exist-repeat-clock"
+                                                ? "\n" +
+                                                  helpFooter.replace(
+                                                    "</details>",
+                                                    "Security issue: none exist.</details>",
+                                                  )
+                                                : mode ===
+                                                    "nominal-this-repeat-clock"
+                                                  ? "\n" +
+                                                    helpFooter.replace(
+                                                      "</details>",
+                                                      "This is an issue.</details>",
+                                                    )
+                                                  : mode ===
+                                                      "nominal-that-repeat-clock"
+                                                    ? "\n" +
+                                                      helpFooter.replace(
+                                                        "</details>",
+                                                        "That is a bug.</details>",
+                                                      )
+                                                    : mode ===
+                                                        "raw-html-numeric-repeat-clock"
+                                                      ? "\n<div>\nP&#49 blocker\n</div>"
+                                                      : mode ===
+                                                          "markdown-numeric-repeat-clock"
+                                                        ? "\n<span>P&#49</span> blocker"
+                                                        : mode ===
+                                                            "code-numeric-repeat-clock"
+                                                          ? "\n`P&#49` blocker"
+                                                          : mode ===
+                                                              "finding-softbreak-repeat-clock"
+                                                            ? "\nFound\nan issue."
+                                                            : mode ===
+                                                                "finding-blankline-repeat-clock"
+                                                              ? "\nFound\n\nan issue."
+                                                              : mode ===
+                                                                  "quoted-raw-html-repeat-clock"
+                                                                ? "\n> <div>\n> [safe](P1)\n> </div>"
+                                                                : mode ===
+                                                                    "quoted-html-exit-repeat-clock"
+                                                                  ? "\n> <div>\n[safe](P1)"
+                                                                  : mode ===
+                                                                      "list-html-exit-repeat-clock"
+                                                                    ? "\n- <div>\n[safe](P1)"
+                                                                    : mode ===
+                                                                        "list-raw-html-repeat-clock"
+                                                                      ? "\n- <div>\n  [safe](P1)\n  </div>"
+                                                                      : mode ===
+                                                                          "mixed-finding-count-repeat-clock"
+                                                                        ? "\nFound 0 code issues and 1 security issue."
+                                                                        : mode ===
+                                                                            "existential-finding-repeat-clock"
+                                                                          ? "\nThere is an issue."
+                                                                          : mode ===
+                                                                              "detected-finding-repeat-clock"
+                                                                            ? "\nDetected 1 issue."
+                                                                            : mode ===
+                                                                                "detected-article-repeat-clock"
+                                                                              ? "\nDetected an issue."
+                                                                              : mode ===
+                                                                                  "reverse-container-repeat-clock"
+                                                                                ? "\n- > <div>\n  > [safe](P1)"
+                                                                                : mode ===
+                                                                                    "unresolved-count-repeat-clock"
+                                                                                  ? "\n1 unresolved finding."
+                                                                                  : mode ===
+                                                                                      "used-footnote-repeat-clock"
+                                                                                    ? "\nnote[^doc]\n\n[^doc]: P1"
+                                                                                    : mode ===
+                                                                                        "invalid-footnote-label-repeat-clock"
+                                                                                      ? "\n[^bad label]: P1 blocker"
+                                                                                      : mode ===
+                                                                                          "invalid-footnote-reference-repeat-clock"
+                                                                                        ? "\n[^bad label]: P1"
+                                                                                        : mode ===
+                                                                                            "footnote-two-space-repeat-clock"
+                                                                                          ? "\n[^doc]: safe\n  P1"
+                                                                                          : mode ===
+                                                                                              "footnote-four-space-repeat-clock"
+                                                                                            ? "\n[^doc]: safe\n    P1"
+                                                                                            : mode ===
+                                                                                                "used-footnote-four-space-repeat-clock"
+                                                                                              ? "\nnote[^doc]\n\n[^doc]: safe\n    P1"
+                                                                                              : mode ===
+                                                                                                  "transitive-footnote-repeat-clock"
+                                                                                                ? "\nroot[^a]\n\n[^a]: safe [^b]\n[^b]: P1"
+                                                                                                : mode ===
+                                                                                                    "footnote-destination-repeat-clock"
+                                                                                                  ? "\n[safe](https://example.test/[^note])\n\n[^note]: P1 example"
+                                                                                                  : mode ===
+                                                                                                      "footnote-reference-destination-repeat-clock"
+                                                                                                    ? "\n[safe]: https://example.test/[^note]\n\n[^note]: P1 example"
+                                                                                                    : mode ===
+                                                                                                        "footnote-reference-title-repeat-clock"
+                                                                                                      ? '\n[safe]: /url\n  "title [^note]"\n[^note]: P1'
+                                                                                                      : mode ===
+                                                                                                          "unicode-footnote-repeat-clock"
+                                                                                                        ? "\nnote[^SS]\n\n[^ß]: P1 blocker"
+                                                                                                        : mode ===
+                                                                                                            "bug-repeat-clock"
+                                                                                                          ? "\nThere is a bug."
+                                                                                                          : mode ===
+                                                                                                              "not-fixed-repeat-clock"
+                                                                                                            ? "\n1 bug is not fixed"
+                                                                                                            : mode ===
+                                                                                                                "not-resolved-repeat-clock"
+                                                                                                              ? "\nThere is an issue that was not resolved"
+                                                                                                              : mode ===
+                                                                                                                  "unrelated-negation-repeat-clock"
+                                                                                                                ? "\nThis is not safe because there is a bug."
+                                                                                                                : mode ===
+                                                                                                                    "grouped-count-repeat-clock"
+                                                                                                                  ? "\nFound 1,000 issues."
+                                                                                                                  : mode ===
+                                                                                                                      "vulnerability-repeat-clock"
+                                                                                                                    ? "\n" +
+                                                                                                                      helpFooter.replace(
+                                                                                                                        "</details>",
+                                                                                                                        "A vulnerability was detected.</details>",
+                                                                                                                      )
+                                                                                                                    : mode ===
+                                                                                                                        "coordinated-nouns-repeat-clock"
+                                                                                                                      ? "\n" +
+                                                                                                                        helpFooter.replace(
+                                                                                                                          "</details>",
+                                                                                                                          "No issues or findings were found.</details>",
+                                                                                                                        )
+                                                                                                                      : mode ===
+                                                                                                                          "colon-security-repeat-clock"
+                                                                                                                        ? "\n" +
+                                                                                                                          helpFooter.replace(
+                                                                                                                            "</details>",
+                                                                                                                            "Security issue: authentication bypass.</details>",
+                                                                                                                          )
+                                                                                                                        : mode ===
+                                                                                                                            "colon-passive-repeat-clock"
+                                                                                                                          ? "\n" +
+                                                                                                                            helpFooter.replace(
+                                                                                                                              "</details>",
+                                                                                                                              "A security issue: was flagged.</details>",
+                                                                                                                            )
+                                                                                                                          : mode ===
+                                                                                                                              "eliminated-repeat-clock"
+                                                                                                                            ? "\n" +
+                                                                                                                              helpFooter.replace(
+                                                                                                                                "</details>",
+                                                                                                                                "A security issue got eliminated.</details>",
+                                                                                                                              )
+                                                                                                                            : mode ===
+                                                                                                                                "contextual-unresolved-repeat-clock"
+                                                                                                                              ? "\n" +
+                                                                                                                                helpFooter.replace(
+                                                                                                                                  "</details>",
+                                                                                                                                  "This issue is not resolved.</details>",
+                                                                                                                                )
+                                                                                                                              : mode ===
+                                                                                                                                  "plural-persist-repeat-clock"
+                                                                                                                                ? "\n" +
+                                                                                                                                  helpFooter.replace(
+                                                                                                                                    "</details>",
+                                                                                                                                    "Issues persist.</details>",
+                                                                                                                                  )
+                                                                                                                                : mode ===
+                                                                                                                                    "plural-outstanding-repeat-clock"
+                                                                                                                                  ? "\n" +
+                                                                                                                                    helpFooter.replace(
+                                                                                                                                      "</details>",
+                                                                                                                                      "Findings are outstanding.</details>",
+                                                                                                                                    )
+                                                                                                                                  : mode ===
+                                                                                                                                      "mixed-needed-repeat-clock"
+                                                                                                                                    ? "\n" +
+                                                                                                                                      helpFooter.replace(
+                                                                                                                                        "</details>",
+                                                                                                                                        "No code changes were needed and one security issue remains.</details>",
+                                                                                                                                      )
+                                                                                                                                    : mode ===
+                                                                                                                                        "got-passive-repeat-clock"
+                                                                                                                                      ? "\nA security issue got flagged."
+                                                                                                                                      : mode ===
+                                                                                                                                          "documented-meta-repeat-clock"
+                                                                                                                                        ? "\nThe words security issues are documented below."
+                                                                                                                                        : mode ===
+                                                                                                                                            "positive-count-zero-colon-repeat-clock"
+                                                                                                                                          ? "\n1 issue: zero"
+                                                                                                                                          : mode ===
+                                                                                                                                              "indefinite-present-repeat-clock"
+                                                                                                                                            ? "\n" +
+                                                                                                                                              helpFooter.replace(
+                                                                                                                                                "</details>",
+                                                                                                                                                "A bug is present.\n</details>",
+                                                                                                                                              )
+                                                                                                                                            : mode ===
+                                                                                                                                                "indefinite-happens-repeat-clock"
+                                                                                                                                              ? "\n" +
+                                                                                                                                                helpFooter.replace(
+                                                                                                                                                  "</details>",
+                                                                                                                                                  "A bug happens.\n</details>",
+                                                                                                                                                )
+                                                                                                                                              : mode ===
+                                                                                                                                                  "indefinite-exists-repeat-clock"
+                                                                                                                                                ? "\n" +
+                                                                                                                                                  helpFooter.replace(
+                                                                                                                                                    "</details>",
+                                                                                                                                                    "An issue exists.\n</details>",
+                                                                                                                                                  )
+                                                                                                                                                : mode ===
+                                                                                                                                                    "ordinary-definition-repeat-clock"
+                                                                                                                                                  ? "\n\n[safe]: P1"
+                                                                                                                                                  : mode ===
+                                                                                                                                                      "zero-after-colon-repeat-clock"
+                                                                                                                                                    ? "\nFound issues: zero. Issues found: zero."
+                                                                                                                                                    : mode ===
+                                                                                                                                                        "colon-count-repeat-clock"
+                                                                                                                                                      ? "\nNo code issues: 1 security issue found"
+                                                                                                                                                      : mode ===
+                                                                                                                                                          "emphasized-repeat-clock"
+                                                                                                                                                        ? "\nThe word issues is emphasized."
+                                                                                                                                                        : mode ===
+                                                                                                                                                            "type7-indented-repeat-clock"
+                                                                                                                                                          ? "\n\n    example\n<span>\n[safe](P1)\n</span>"
+                                                                                                                                                          : mode ===
+                                                                                                                                                              "wrapped-numeric-repeat-clock"
+                                                                                                                                                            ? "\n<div>\nFound **1** issue\n</div>"
+                                                                                                                                                            : mode ===
+                                                                                                                                                                "passive-finding-repeat-clock"
+                                                                                                                                                              ? "\nAn issue was detected."
+                                                                                                                                                              : mode ===
+                                                                                                                                                                  "bugfree-repeat-clock"
+                                                                                                                                                                ? "\nThis is a bug-free change"
+                                                                                                                                                                : mode ===
+                                                                                                                                                                    "type7-paragraph-repeat-clock"
+                                                                                                                                                                  ? "\nparagraph\n<span>\n[safe](P1)"
+                                                                                                                                                                  : mode ===
+                                                                                                                                                                      "unmatched-underscore-repeat-clock"
+                                                                                                                                                                    ? "\nP_1 is not a priority token"
+                                                                                                                                                                    : mode ===
+                                                                                                                                                                        "unmatched-star-repeat-clock"
+                                                                                                                                                                      ? "\nP*1"
+                                                                                                                                                                      : mode ===
+                                                                                                                                                                          "abrupt-comment-repeat-clock"
+                                                                                                                                                                        ? "\n<!-->P1 blocker"
+                                                                                                                                                                        : mode ===
+                                                                                                                                                                            "abrupt-dash-comment-repeat-clock"
+                                                                                                                                                                          ? "\n<!--->P1 blocker"
+                                                                                                                                                                          : mode ===
+                                                                                                                                                                              "tab-list-repeat-clock"
+                                                                                                                                                                            ? "\n-  <div>\n \t[safe](P1)\n   </div>"
+                                                                                                                                                                            : mode ===
+                                                                                                                                                                                "footnote-transitive-reference-repeat-clock"
+                                                                                                                                                                              ? "\nroot[^a]\n\n[^a]: safe\n  [safe]: https://example.test/[^note]\n[^note]: P1 example"
+                                                                                                                                                                              : mode ===
+                                                                                                                                                                                  "footnote-transitive-destination-repeat-clock"
+                                                                                                                                                                                ? "\nroot[^a]\n\n[^a]: [safe](https://example.test/[^note])\n[^note]: P1 example"
+                                                                                                                                                                                : mode ===
+                                                                                                                                                                                    "unused-footnote-repeat-clock"
+                                                                                                                                                                                  ? "\n[^doc]: P1"
+                                                                                                                                                                                  : mode ===
+                                                                                                                                                                                      "deep-destination-repeat-clock"
+                                                                                                                                                                                    ? "\n[safe](" +
+                                                                                                                                                                                      "(".repeat(
+                                                                                                                                                                                        33,
+                                                                                                                                                                                      ) +
+                                                                                                                                                                                      "P1" +
+                                                                                                                                                                                      ")".repeat(
+                                                                                                                                                                                        33,
+                                                                                                                                                                                      ) +
+                                                                                                                                                                                      ")"
+                                                                                                                                                                                    : mode ===
+                                                                                                                                                                                        "allzero-finding-count-repeat-clock"
+                                                                                                                                                                                      ? "\nFound 0 code issues and 0 security issues."
+                                                                                                                                                                                      : mode ===
+                                                                                                                                                                                          "raw-html-link-repeat-clock"
+                                                                                                                                                                                        ? "\n<div>\n[safe](P1)\n</div>"
+                                                                                                                                                                                        : mode ===
+                                                                                                                                                                                            "found-html-no-repeat-clock"
+                                                                                                                                                                                          ? "\nFound <em>no</em> issues"
+                                                                                                                                                                                          : mode ===
+                                                                                                                                                                                              "found-html-zero-repeat-clock"
+                                                                                                                                                                                            ? "\nFound <code>0</code> issues"
+                                                                                                                                                                                            : mode ===
+                                                                                                                                                                                                "html-break-repeat-clock"
+                                                                                                                                                                                              ? "\nDo<br>not<br>merge"
+                                                                                                                                                                                              : mode ===
+                                                                                                                                                                                                  "code-priority-repeat-clock"
+                                                                                                                                                                                                ? "\nP`1`"
+                                                                                                                                                                                                : mode ===
+                                                                                                                                                                                                    "code-warning-repeat-clock"
+                                                                                                                                                                                                  ? "\nDo `not` merge"
+                                                                                                                                                                                                  : mode ===
+                                                                                                                                                                                                      "blank-label-repeat-clock"
+                                                                                                                                                                                                    ? "\n[safe\n\nlabel](P1)"
+                                                                                                                                                                                                    : mode ===
+                                                                                                                                                                                                        "found-word-count-repeat-clock"
+                                                                                                                                                                                                      ? "\nFound one issue"
+                                                                                                                                                                                                      : mode ===
+                                                                                                                                                                                                          "found-html-article-repeat-clock"
+                                                                                                                                                                                                        ? "\nFound <em>an</em> issue"
+                                                                                                                                                                                                        : "\nFound an issue";
+      old.updated_at = "2026-10-20T12:05:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+    }
+    if (mode === "balanced-link-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Do [not](https://example.com/(x)) merge",
+      );
+    if (
+      [
+        "inactive-numeric-row-clock",
+        "inactive-nbsp-row-clock",
+        "inactive-html-row-clock",
+        "inactive-optional-pipe-row-clock",
+        "inactive-quoted-row-clock",
+      ].includes(mode)
+    ) {
+      const codeBody = (negative, time) =>
+        cleanStateBody(HEAD, (state) => ({
+          ...state,
+          code_review: {
+            ...state.code_review,
+            has_any_findings: negative,
+            has_unresolved_findings: negative,
+          },
+        })).replaceAll("2026-10-20T12:02:00Z", time);
+      const label =
+        mode === "inactive-numeric-row-clock"
+          ? "Security&#32;Review"
+          : mode === "inactive-nbsp-row-clock"
+            ? "Security&nbsp;Review"
+            : mode === "inactive-html-row-clock"
+              ? "Security<em> Review</em>"
+              : mode === "inactive-quoted-row-clock"
+                ? "Security&#32;Review"
+                : "Security Review";
+      old.body =
+        codeBody(true, "2026-10-20T12:01:00Z") +
+        `\n| 🔒 **${label}** | ✅ **Completed** <relative-time datetime="2026-10-20T12:01:00Z">2026-10-20T12:01:00Z</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+      if (mode === "inactive-optional-pipe-row-clock")
+        old.body = old.body.replace("\n| 🔒", "\n🔒");
+      if (mode === "inactive-quoted-row-clock")
+        old.body = old.body.replace(
+          /\n(\| 🔒[^\n]+)$/,
+          "\n<details><summary>ℹ️ About Codex in GitHub</summary>\n> $1\n</details>",
+        );
+      old.updated_at = "2026-10-20T12:05:00Z";
+      newer.body = codeBody(false, "2026-10-20T12:02:00Z");
+      newer.created_at = "2026-10-20T12:02:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+    }
+    if (mode === "variation-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P\uFE0F1 blocker");
+    if (mode === "zerowidth-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P&#8203;1 blocker");
+    if (mode === "multiline-comment-clear")
+      newer.body = newer.body.replace(
+        'datetime="2026-10-20T12:05:00Z"',
+        'datetime="2026-10-20T12:<!-- metadata\n-->05:00Z"',
+      );
+    if (mode === "markdown-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do **not** merge");
+    if (["duplicate-row-clock", "hidden-row-clock"].includes(mode)) {
+      old.updated_at = "2026-10-20T12:05:00Z";
+      request.created_at = "2026-10-20T12:06:00Z";
+      receipt.created_at = "2026-10-20T12:07:00Z";
+      newer.created_at = "2026-10-20T12:03:00Z";
+      newer.body = securityHistoryBody(false, "2026-10-20T12:03:00Z");
+      if (mode === "duplicate-row-clock")
+        old.body +=
+          "\n " + old.body.split("\n").find((line) => line.startsWith("| 🔒"));
+      else old.body = old.body.replace(/^(\| 🔒[^\n]+)$/m, "<!--\n$1\n-->");
+    }
+    if (mode === "numeric-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P&#49; blocker");
+    if (mode === "markdown-priority-clear")
+      newer.body = newer.body.replaceAll("Manual request", "P*1* blocker");
+    if (mode === "numeric-trigger-clear")
+      newer.body = newer.body.replaceAll(
+        "Manual request",
+        "Do&#32;not&#32;merge",
+      );
+    if (mode === "entity-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do not&nbsp;merge");
+    if (mode === "contradictory-trigger-clear")
+      newer.body = newer.body.replaceAll("Manual request", "Do not merge");
+    if (mode === "quoted-fence-clear")
+      newer.body += "\n> ```html\n> <!-- codex-review-state:v1 {} -->\n> ```";
+    if (mode === "fenced-example-clear")
+      newer.body += "\n```html\n<!-- codex-review-state:v1 example -->\n```";
+    if (mode === "example-clear")
+      newer.body += "\n\t<!-- codex-pull-request-review-summary -->";
+    if (mode === "uppercase-clear")
+      newer.body += "\n<!-- CODEX-review-state:v1 {} -->";
     if (mode === "old-security-clock")
       newer.body = newer.body
         .split("\n")
@@ -731,7 +2076,237 @@ for (const mode of [
       ...(mode === "formal" ? [] : [receipt]),
       ...([
         "security-null",
+        "example-clear",
+        "fenced-example-clear",
+        "quoted-fence-clear",
+        "contradictory-trigger-clear",
+        "embedded-bom-clear",
+        "comment-heading-clear",
+        "mediumspace-clear",
+        "hairspace-clear",
+        "multiline-comment-clear",
+        "zerowidth-priority-clear",
+        "variation-priority-clear",
+        "balanced-link-clear",
+        "malformed-link-clear",
+        "title-double-clear",
+        "title-single-clear",
+        "title-paren-clear",
+        "escaped-space-clear",
+        "space-destination-clear",
+        "empty-destination-clear",
+        "escaped-opener-clear",
+        "escaped-label-closer-clear",
+        "nested-link-clear",
+        "found-article-repeat-clock",
+        "found-html-article-repeat-clock",
+        "found-word-count-repeat-clock",
+        "blank-label-repeat-clock",
+        "html-break-repeat-clock",
+        "code-priority-repeat-clock",
+        "code-warning-repeat-clock",
+        "raw-html-link-repeat-clock",
+        "quoted-raw-html-repeat-clock",
+        "quoted-html-exit-repeat-clock",
+        "list-html-exit-repeat-clock",
+        "list-raw-html-repeat-clock",
+        "mixed-finding-count-repeat-clock",
+        "existential-finding-repeat-clock",
+        "detected-finding-repeat-clock",
+        "detected-article-repeat-clock",
+        "reverse-container-repeat-clock",
+        "unresolved-count-repeat-clock",
+        "used-footnote-repeat-clock",
+        "invalid-footnote-label-repeat-clock",
+        "invalid-footnote-reference-repeat-clock",
+        "footnote-two-space-repeat-clock",
+        "footnote-four-space-repeat-clock",
+        "used-footnote-four-space-repeat-clock",
+        "transitive-footnote-repeat-clock",
+        "footnote-destination-repeat-clock",
+        "footnote-reference-destination-repeat-clock",
+        "footnote-reference-title-repeat-clock",
+        "bugfree-repeat-clock",
+        "type7-paragraph-repeat-clock",
+        "unmatched-underscore-repeat-clock",
+        "unmatched-star-repeat-clock",
+
+        "unicode-footnote-repeat-clock",
+        "bug-repeat-clock",
+        "not-fixed-repeat-clock",
+        "not-resolved-repeat-clock",
+        "unrelated-negation-repeat-clock",
+        "flaw-repeat-clock",
+        "worded-count-repeat-clock",
+        "br-finding-repeat-clock",
+        "harmless-repeat-clock",
+        "benign-repeat-clock",
+        "except-fixed-repeat-clock",
+        "none-current-repeat-clock",
+        "none-were-repeat-clock",
+        "may-reappear-repeat-clock",
+        "defect-repeat-clock",
+        "regression-repeat-clock",
+        "qualified-absence-repeat-clock",
+        "security-risk-repeat-clock",
+        "users-bypass-repeat-clock",
+        "mentioned-not-fixed-repeat-clock",
+        "neither-repeat-clock",
+        "none-repeat-clock",
+        "still-open-repeat-clock",
+        "indefinite-not-found-repeat-clock",
+        "raw-nbsp-repeat-clock",
+        "raw-shy-repeat-clock",
+        "markdown-legacy-repeat-clock",
+        "code-legacy-repeat-clock",
+
+        "adjectival-mention-repeat-clock",
+        "adjectival-discussion-repeat-clock",
+        "adverb-bypass-repeat-clock",
+        "mentioned-is-open-repeat-clock",
+        "discussed-is-outstanding-repeat-clock",
+        "entity-colon-repeat-clock",
+        "nobody-repeat-clock",
+        "subjectless-bypass-repeat-clock",
+        "qualified-no-repeat-clock",
+        "mentioned-fixed-repeat-clock",
+        "mentioned-resolved-repeat-clock",
+        "mentioned-closed-repeat-clock",
+
+        "incomplete-fix-repeat-clock",
+        "able-bypass-repeat-clock",
+        "mentioned-unresolved-repeat-clock",
+        "discussed-open-repeat-clock",
+        "mentioned-remains-repeat-clock",
+        "discussed-persists-repeat-clock",
+        "no-users-repeat-clock",
+
+        "mentioned-repeat-clock",
+        "documents-repeat-clock",
+        "includes-repeat-clock",
+        "discussed-repeat-clock",
+        "vulnerable-repeat-clock",
+        "bypassed-repeat-clock",
+        "see-repeat-clock",
+        "identify-repeat-clock",
+        "prevents-repeat-clock",
+        "avoids-repeat-clock",
+        "introduces-plural-repeat-clock",
+        "contains-plural-repeat-clock",
+        "has-plural-repeat-clock",
+
+        "causes-repeat-clock",
+        "exposes-repeat-clock",
+        "qualified-fixed-repeat-clock",
+        "regression-tests-repeat-clock",
+        "not-remain-fixed-repeat-clock",
+        "exception-recurred-repeat-clock",
+        "regression-test-count-repeat-clock",
+        "defect-report-count-repeat-clock",
+        "must-fixed-repeat-clock",
+        "should-fixed-repeat-clock",
+        "fixed-one-repeat-clock",
+
+        "introduces-repeat-clock",
+        "creates-repeat-clock",
+        "contains-repeat-clock",
+        "has-finding-repeat-clock",
+
+        "direct-reappeared-repeat-clock",
+        "perfect-reappeared-repeat-clock",
+        "recurred-repeat-clock",
+        "reopened-repeat-clock",
+        "qualified-harmless-repeat-clock",
+        "already-fixed-exception-repeat-clock",
+        "bare-critical-repeat-clock",
+        "bare-authentication-repeat-clock",
+        "most-count-repeat-clock",
+        "every-count-repeat-clock",
+        "numerous-count-repeat-clock",
+        "no-exist-repeat-clock",
+        "no-remain-repeat-clock",
+
+        "both-count-repeat-clock",
+        "many-count-repeat-clock",
+        "all-count-repeat-clock",
+        "still-bug-repeat-clock",
+        "there-still-bug-repeat-clock",
+        "have-one-repeat-clock",
+        "eliminated-documented-repeat-clock",
+        "center-repeat-clock",
+        "exception-one-repeat-clock",
+        "reappeared-repeat-clock",
+        "none-exist-repeat-clock",
+        "nominal-this-repeat-clock",
+        "nominal-that-repeat-clock",
+        "grouped-count-repeat-clock",
+        "vulnerability-repeat-clock",
+        "coordinated-nouns-repeat-clock",
+        "colon-security-repeat-clock",
+        "colon-passive-repeat-clock",
+        "eliminated-repeat-clock",
+        "contextual-unresolved-repeat-clock",
+        "plural-persist-repeat-clock",
+        "plural-outstanding-repeat-clock",
+        "mixed-needed-repeat-clock",
+        "got-passive-repeat-clock",
+        "documented-meta-repeat-clock",
+        "positive-count-zero-colon-repeat-clock",
+        "indefinite-present-repeat-clock",
+        "indefinite-happens-repeat-clock",
+        "indefinite-exists-repeat-clock",
+        "ordinary-definition-repeat-clock",
+        "zero-after-colon-repeat-clock",
+        "colon-count-repeat-clock",
+        "emphasized-repeat-clock",
+        "type7-indented-repeat-clock",
+
+        "wrapped-numeric-repeat-clock",
+        "passive-finding-repeat-clock",
+        "abrupt-comment-repeat-clock",
+        "abrupt-dash-comment-repeat-clock",
+        "tab-list-repeat-clock",
+        "footnote-transitive-reference-repeat-clock",
+        "footnote-transitive-destination-repeat-clock",
+        "unused-footnote-repeat-clock",
+        "deep-destination-repeat-clock",
+        "allzero-finding-count-repeat-clock",
+        "finding-softbreak-repeat-clock",
+        "raw-html-numeric-repeat-clock",
+        "markdown-numeric-repeat-clock",
+        "code-numeric-repeat-clock",
+        "finding-blankline-repeat-clock",
+        "found-html-no-repeat-clock",
+        "found-html-zero-repeat-clock",
+        "comment-pipe-clear",
+        "inactive-numeric-row-clock",
+        "inactive-nbsp-row-clock",
+        "inactive-html-row-clock",
+        "inactive-optional-pipe-row-clock",
+        "inactive-quoted-row-clock",
+        "marker-bom-clear",
+        "marker-nbsp-clear",
+        "zerowidth-trigger-clear",
+        "namedzero-trigger-clear",
+        "code-heading-space-clear",
+        "code-heading-tab-clear",
+        "markdown-trigger-clear",
+        "entity-trigger-clear",
+        "numeric-priority-clear",
+        "duplicate-row-clock",
+        "hidden-row-clock",
+        "markdown-priority-clear",
+        "numeric-trigger-clear",
+        "trailing-marker-clear",
+        "bom-space-clear",
+        "bom-tab-clear",
+        "warning-clear",
+        "running-visible-clear",
         "newer-clear",
+        "ordinary-comment-clear",
+        "indented-comment-clear",
+        "tabbed-comment-clear",
+        "uppercase-clear",
         "equal-clear",
         "old-security-clock",
         "missing-security-clock",
@@ -758,11 +2333,37 @@ for (const mode of [
       reviews,
       reviewUpdatedAt: "2026-10-20T12:04:00Z",
     });
+    // Unknown presentation cannot establish an earlier completion clock,
+    // even if English/Markdown might render it harmless. Keep exact native
+    // cases and malformed/untrusted envelopes distinct from opaque bodies.
     assert.equal(
       result.status === 0,
-      ["newer-clear", "malformed-old", "wrong-actor"].includes(mode),
+      [
+        "newer-clear",
+        "ordinary-comment-clear",
+        "malformed-old",
+        "duplicate-leading-old",
+        "whole-fenced-old",
+        "whole-quoted-old",
+        "wrong-actor",
+        "indented-old",
+        "tabbed-old",
+      ].includes(mode),
       result.stderr || result.stdout,
     );
+    if (mode.endsWith("-repeat-clock")) {
+      const recovery = comment(
+        securityHistoryBody(false, "2026-10-20T12:09:00Z"),
+        { id: 934, created_at: "2026-10-20T12:09:00Z" },
+      );
+      const recoveredEvents = [...events, recovery];
+      const recovered = runGate({
+        comments: recoveredEvents,
+        timeline: recoveredEvents,
+        reviews,
+      });
+      assert.equal(recovered.status, 0, recovered.stderr || recovered.stdout);
+    }
   });
 }
 
@@ -835,7 +2436,7 @@ test("actual gate preserves concurrent running section observed clock", () => {
   assert.notEqual(result.status, 0, result.stdout);
 });
 
-for (const clear of [false, true, "inactive-code"])
+for (const clear of [false, true, "inactive-code", "edited-mixed"])
   test(`actual gate section head history ignores foreign other head: ${clear}`, () => {
     const foreign = "b".repeat(40);
     const mixed = (negative, time) =>
@@ -857,6 +2458,10 @@ for (const clear of [false, true, "inactive-code"])
         : mixed(true, "2026-10-20T12:01:00Z"),
       { id: 960, created_at: "2026-10-20T12:01:00Z" },
     );
+    if (clear === "edited-mixed") {
+      old.body = mixed(true, "2026-10-20T12:01:00Z");
+      old.updated_at = "2026-10-20T12:05:00Z";
+    }
     const cleared = comment(mixed(false, "2026-10-20T12:02:00Z"), {
       id: 961,
       created_at: "2026-10-20T12:02:00Z",
@@ -897,3 +2502,751 @@ for (const clear of [false, true, "inactive-code"])
       result.stderr || result.stdout,
     );
   });
+
+test("actual gate preserves latest foreign negative observation", () => {
+  const foreign = "b".repeat(40);
+  const stale = comment(
+    securityHistoryBody(true, "2026-10-20T12:01:00Z")
+      .replaceAll(HEAD, foreign)
+      .replaceAll(HEAD.slice(0, 7), foreign.slice(0, 7)),
+    {
+      id: 970,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const clean = comment(securityHistoryBody(false, "2026-10-20T12:04:00Z"), {
+    id: 971,
+    created_at: "2026-10-20T12:04:00Z",
+  });
+  const events = [
+    { event: "committed", sha: HEAD, created_at: "2026-10-20T12:00:00Z" },
+    clean,
+    stale,
+  ];
+  const result = runGate({ timeline: events, comments: events });
+  assert.notEqual(result.status, 0, result.stdout);
+});
+
+test("unknown presentation retains both negatives until canonical recovery", () => {
+  const body = (code, security, time) =>
+    cleanStateBody(HEAD, (state) => ({
+      ...state,
+      code_review: {
+        ...state.code_review,
+        has_any_findings: code,
+        has_unresolved_findings: code,
+      },
+      security_review: {
+        ...state.code_review,
+        has_any_findings: security,
+        has_unresolved_findings: security,
+      },
+    })).replaceAll("2026-10-20T12:02:00Z", time) +
+    `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+  const old = comment(
+    body(true, true, "2026-10-20T12:01:00Z").replace(
+      /^(\| 🔒[^\n]+)Manual request/gm,
+      "$1 P1",
+    ),
+    {
+      id: 940,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const codeclear = comment(body(false, true, "2026-10-20T12:02:00Z"), {
+    id: 942,
+    created_at: "2026-10-20T12:02:00Z",
+  });
+  const securityBody = body(false, false, "2026-10-20T12:06:00Z")
+    .replace(
+      /"code_review":\{[^}]+\}/,
+      '"code_review":{"status":null,"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null}',
+    )
+    .replace(/^\| 📝[^\n]+\n/gm, "");
+  const securityclear = comment(securityBody, {
+    id: 944,
+    created_at: "2026-10-20T12:06:00Z",
+  });
+  const request = {
+    ...comment(`@codex review ${HEAD}`, {
+      id: 941,
+      created_at: "2026-10-20T12:07:00Z",
+    }),
+    event: "commented",
+    user: { login: "kiaquila" },
+    author_association: "OWNER",
+  };
+  const events = [
+    { ...activation, created_at: "2026-10-20T12:00:00Z" },
+    old,
+    codeclear,
+    securityclear,
+    request,
+    comment(presentationReceipt(HEAD, ":rocket:"), {
+      id: 943,
+      created_at: "2026-10-20T12:08:00Z",
+    }),
+  ];
+  assert.notEqual(runGate({ timeline: events, comments: events }).status, 0);
+  const freshClear = comment(body(false, false, "2026-10-20T12:09:00Z"), {
+    id: 945,
+    created_at: "2026-10-20T12:09:00Z",
+  });
+  const recovered = [...events, freshClear];
+  assert.equal(runGate({ timeline: recovered, comments: recovered }).status, 0);
+  const uncleared = events.filter((event) => event.id !== 944);
+  assert.notEqual(
+    runGate({ timeline: uncleared, comments: uncleared }).status,
+    0,
+  );
+});
+
+test("actual gate retains contradictory false companion trigger observation", () => {
+  const body = (code, security, time) =>
+    cleanStateBody(HEAD, (state) => ({
+      ...state,
+      code_review: {
+        ...state.code_review,
+        has_any_findings: code,
+        has_unresolved_findings: code,
+      },
+      security_review: {
+        ...state.code_review,
+        has_any_findings: security,
+        has_unresolved_findings: security,
+      },
+    })).replaceAll("2026-10-20T12:02:00Z", time) +
+    `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+  const old = comment(
+    body(true, false, "2026-10-20T12:01:00Z").replace(
+      /^(\| 🔒[^\n]+)Manual request/gm,
+      "$1 P1",
+    ),
+    {
+      id: 940,
+      created_at: "2026-10-20T12:01:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    },
+  );
+  const codeclear = comment(body(false, true, "2026-10-20T12:02:00Z"), {
+    id: 942,
+    created_at: "2026-10-20T12:02:00Z",
+  });
+  const securityBody = body(false, false, "2026-10-20T12:06:00Z")
+    .replace(
+      /"code_review":\{[^}]+\}/,
+      '"code_review":{"status":null,"commit_sha":null,"has_any_findings":null,"has_unresolved_findings":null}',
+    )
+    .replace(/^\| 📝[^\n]+\n/gm, "");
+  const securityclear = comment(securityBody, {
+    id: 944,
+    created_at: "2026-10-20T12:06:00Z",
+  });
+  const request = {
+    ...comment(`@codex review ${HEAD}`, {
+      id: 941,
+      created_at: "2026-10-20T12:07:00Z",
+    }),
+    event: "commented",
+    user: { login: "kiaquila" },
+    author_association: "OWNER",
+  };
+  const events = [
+    { ...activation, created_at: "2026-10-20T12:00:00Z" },
+    old,
+    codeclear,
+    request,
+    comment(presentationReceipt(HEAD, ":rocket:"), {
+      id: 943,
+      created_at: "2026-10-20T12:08:00Z",
+    }),
+  ];
+  assert.notEqual(runGate({ timeline: events, comments: events }).status, 0);
+  const uncleared = events.filter((event) => event.id !== 944);
+  assert.notEqual(
+    runGate({ timeline: uncleared, comments: uncleared }).status,
+    0,
+  );
+});
+
+for (const recover of [false, true]) {
+  test(`actual gate bounds completion by comment creation; recovery=${recover}`, () => {
+    const h = HEAD;
+    const body = (negative, time) =>
+      cleanStateBody(h, (state) => ({
+        ...state,
+        security_review: {
+          ...state.code_review,
+          has_any_findings: negative,
+          has_unresolved_findings: negative,
+        },
+      })).replaceAll("2026-10-20T12:02:00Z", time) +
+      `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${h.slice(0, 7)}\` | Manual request |`;
+    const old = comment(body(true, "2026-10-20T12:01:00Z"), {
+      id: 9550,
+      created_at: "2026-10-20T12:03:00Z",
+      updated_at: "2026-10-20T12:05:00Z",
+    });
+    const clear = comment(
+      body(false, recover ? "2026-10-20T12:06:00Z" : "2026-10-20T12:02:00Z"),
+      {
+        id: 9551,
+        created_at: recover ? "2026-10-20T12:06:00Z" : "2026-10-20T12:02:00Z",
+      },
+    );
+    const request = {
+      ...comment(`@codex review ${h}`, {
+        id: 9552,
+        created_at: "2026-10-20T12:07:00Z",
+      }),
+      event: "commented",
+      user: { login: "kiaquila" },
+      author_association: "OWNER",
+    };
+    const events = [
+      { ...activation, created_at: "2026-10-20T12:00:00Z" },
+      old,
+      clear,
+      request,
+      comment(presentationReceipt(h, ":rocket:"), {
+        id: 9553,
+        created_at: "2026-10-20T12:08:00Z",
+      }),
+    ];
+    const result = runGate({ comments: events, timeline: events });
+    assert.equal(result.status === 0, recover, result.stderr || result.stdout);
+  });
+}
+
+for (const section of ["code_review", "security_review"]) {
+  for (const companionHead of [HEAD, OLD]) {
+    test(`future companion clocks cannot backdate ${section} with ${companionHead === HEAD ? "current" : "foreign"} SHA`, () => {
+      const own = "2026-10-23T21:47:00Z";
+      const observed = "2026-10-23T21:55:00Z";
+      const at = (minute) => `2026-10-23T21:${minute}:00Z`;
+      const stateBody = (negative, ownTime, companionTime, foreign = false) => {
+        const clean = {
+          commit_sha: HEAD,
+          has_any_findings: false,
+          has_unresolved_findings: false,
+          status: "completed",
+        };
+        const state = {
+          code_review: { ...clean },
+          security_review: { ...clean },
+        };
+        if (negative) {
+          state[section].has_any_findings = true;
+          if (foreign)
+            state[
+              section === "code_review" ? "security_review" : "code_review"
+            ].commit_sha = companionHead;
+        }
+        const row = (key, label, icon) => {
+          const time = negative && key !== section ? companionTime : ownTime;
+          return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+        };
+        return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n${row("code_review", "Code Review", "📝")}\n${row("security_review", "Security Review", "🛡️")}`;
+      };
+      const record = (id, body, created, updated = created) =>
+        comment(body, { id, created_at: created, updated_at: updated });
+      const old = (companionTime) =>
+        record(11, stateBody(true, own, companionTime, true), own, observed);
+      const clear = record(13, stateBody(false, at("50")), at("50"));
+      const receipt = record(
+        15,
+        presentationReceipt(HEAD, "Breezy!"),
+        at("58"),
+      );
+      const before = [
+        { ...activation, created_at: at("46") },
+        { ...trigger, id: 12, created_at: at("48") },
+      ];
+      const future = old("2026-10-23T22:40:00Z");
+      const history = [future, clear, receipt];
+      assert.equal(
+        hasCodexNegativeHistory(history, HEAD, () => true),
+        true,
+      );
+      assert.equal(
+        codexNegativeCompletionTime(future, HEAD),
+        Date.parse(observed),
+      );
+      const blocked = runGate({ comments: [...before, ...history] });
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      const carried = old(at("46"));
+      assert.equal(codexNegativeCompletionTime(carried, HEAD), Date.parse(own));
+      const carriedResult = runGate({
+        comments: [...before, carried, clear, receipt],
+      });
+      assert.equal(
+        carriedResult.status,
+        0,
+        carriedResult.stdout + carriedResult.stderr,
+      );
+      const cleanCompanion =
+        section === "code_review" ? "Security Review" : "Code Review";
+      const cleanCompanionIcon = section === "code_review" ? "🛡️" : "📝";
+      const invalidClear = record(
+        16,
+        stateBody(false, at("50")).replace(
+          `| ${cleanCompanionIcon} **${cleanCompanion}** | ✅ **Completed** <relative-time datetime="${at("50")}">${at("50")}</relative-time>`,
+          `| ${cleanCompanionIcon} **${cleanCompanion}** | ✅ **Completed** <relative-time datetime="2026-10-23T22:40:00Z">2026-10-23T22:40:00Z</relative-time>`,
+        ),
+        at("50"),
+      );
+      const earlierNegative = record(
+        17,
+        stateBody(true, at("49"), at("46"), true),
+        at("49"),
+      );
+      assert.equal(
+        hasCodexNegativeHistory(
+          [earlierNegative, invalidClear],
+          HEAD,
+          () => true,
+        ),
+        true,
+      );
+      const invalidClearResult = runGate({
+        comments: [...before, earlierNegative, invalidClear, receipt],
+      });
+      assert.notEqual(
+        invalidClearResult.status,
+        0,
+        invalidClearResult.stdout + invalidClearResult.stderr,
+      );
+      const invalidApprovalResult = runGate({
+        comments: [...before, invalidClear],
+      });
+      assert.notEqual(
+        invalidApprovalResult.status,
+        0,
+        invalidApprovalResult.stdout + invalidApprovalResult.stderr,
+      );
+      const newer = record(14, stateBody(false, at("56")), at("56"));
+      const recovered = runGate({
+        comments: [...before, future, clear, newer, receipt],
+      });
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+    });
+  }
+}
+
+for (const pair of JSON.parse(
+  readFileSync(
+    new URL("./fixtures/native-codex-corpus.json", import.meta.url),
+    "utf8",
+  ),
+).lifecyclePairs) {
+  test(`unpaired native lifecycle cannot be bypassed by later receipts or formal reviews: ${pair.repo}`, () => {
+    const bind = (body) =>
+      body
+        .replaceAll(pair.head, HEAD)
+        .replaceAll(pair.head.slice(0, 10), HEAD.slice(0, 10))
+        .replaceAll(pair.head.slice(0, 7), HEAD.slice(0, 7));
+    const lifecycle = {
+      ...pair.lifecycle,
+      id: 51,
+      event: "commented",
+      body: bind(pair.lifecycle.body),
+    };
+    const done = Date.parse(lifecycle.body.match(/datetime="([^"<>]+)"/)[1]);
+    const when = (offset) => new Date(done + offset).toISOString();
+    const goodReceipt = {
+      ...pair.receipt,
+      id: 52,
+      event: "commented",
+      body: bind(pair.receipt.body),
+    };
+    const late = {
+      ...goodReceipt,
+      id: 53,
+      created_at: when(1000),
+      updated_at: when(1000),
+    };
+    const before = [
+      {
+        ...activation,
+        created_at: new Date(
+          Date.parse(lifecycle.created_at) - 60000,
+        ).toISOString(),
+      },
+      {
+        ...trigger,
+        created_at: new Date(
+          Date.parse(lifecycle.created_at) - 30000,
+        ).toISOString(),
+      },
+    ];
+    const afterFormal = formal({
+      submitted_at: when(2000),
+      state: "APPROVED",
+      body: "",
+    });
+    const args = { comments: [...before, lifecycle, late] };
+    const result = runGate(args);
+    assert.notEqual(result.status, 0, result.stdout + result.stderr);
+    const laterFormal = runGate({ ...args, reviews: [afterFormal] });
+    assert.notEqual(
+      laterFormal.status,
+      0,
+      laterFormal.stdout + laterFormal.stderr,
+    );
+    const restOnly = runGate({
+      comments: before,
+      issueComments: [lifecycle, late],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(restOnly.status, 0, restOnly.stdout + restOnly.stderr);
+    const unavailable = runGate({
+      comments: before,
+      timelineUnavailable: true,
+      issueComments: [lifecycle, late],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(
+      unavailable.status,
+      0,
+      unavailable.stdout + unavailable.stderr,
+    );
+    const unavailableWithoutLifecycle = runGate({
+      comments: before,
+      timelineUnavailable: true,
+      issueComments: [late],
+      reviews: [afterFormal],
+    });
+    assert.equal(
+      unavailableWithoutLifecycle.status,
+      0,
+      unavailableWithoutLifecycle.stdout + unavailableWithoutLifecycle.stderr,
+    );
+    const noPositiveFallback = pickAuthoritativeCodexSkipModeComment({
+      timelineEvents: [],
+      issueComments: [late],
+      headSha: HEAD,
+      pendingOnlyWithoutTimeline: true,
+    });
+    assert.equal(noPositiveFallback, null);
+    const validPair = runGate({
+      comments: [...before, lifecycle, goodReceipt],
+    });
+    assert.equal(validPair.status, 0, validPair.stdout + validPair.stderr);
+    const clean = (offset) => {
+      const state = JSON.parse(
+        lifecycle.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+      );
+      state.code_review.has_any_findings = false;
+      state.code_review.has_unresolved_findings = false;
+      return {
+        ...lifecycle,
+        id: 54,
+        created_at: when(offset),
+        updated_at: when(offset),
+        body: lifecycle.body
+          .replace(
+            /codex-review-state:v1 (.+?) -->/,
+            "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+          )
+          .replace(
+            /<relative-time datetime="[^"<>]+">[^<>]+<\/relative-time>/,
+            `<relative-time datetime="${when(offset)}">${when(offset)}</relative-time>`,
+          ),
+      };
+    };
+    const sameSecond = runGate({
+      comments: [
+        ...before,
+        lifecycle,
+        late,
+        clean(Math.floor(done / 1000) * 1000 + 500 - done),
+      ],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(
+      sameSecond.status,
+      0,
+      sameSecond.stdout + sameSecond.stderr,
+    );
+    const laterObservation = { ...lifecycle, updated_at: when(120000) };
+    const muchLater = {
+      ...late,
+      created_at: when(240000),
+      updated_at: when(240000),
+    };
+    const muchLaterFormal = formal({
+      submitted_at: when(250000),
+      state: "APPROVED",
+      body: "",
+    });
+    const intermediate = runGate({
+      comments: [...before, laterObservation, clean(60000), muchLater],
+      reviews: [muchLaterFormal],
+    });
+    assert.notEqual(
+      intermediate.status,
+      0,
+      intermediate.stdout + intermediate.stderr,
+    );
+    const afterObservation = runGate({
+      comments: [...before, laterObservation, clean(300000), muchLater],
+      reviews: [muchLaterFormal],
+    });
+    assert.equal(
+      afterObservation.status,
+      0,
+      afterObservation.stdout + afterObservation.stderr,
+    );
+    const recovered = runGate({
+      comments: [...before, lifecycle, late, clean(60000)],
+      reviews: [afterFormal],
+    });
+    assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+    const editedReceipt = { ...goodReceipt, updated_at: when(1000) };
+    const edited = runGate({
+      comments: [...before, lifecycle, editedReceipt],
+      reviews: [afterFormal],
+    });
+    assert.notEqual(edited.status, 0, edited.stdout + edited.stderr);
+  });
+}
+
+for (const section of ["code_review", "security_review"]) {
+  for (const companionHead of [HEAD, OLD]) {
+    test(`fractional observation ends at its server second for ${section} and ${companionHead === HEAD ? "current" : "foreign"} companion`, () => {
+      const at = (value) => `2026-10-23T21:${value}Z`;
+      const observed = at("55:00.500");
+      const body = (negative, own, companion) => {
+        const clean = {
+          commit_sha: HEAD,
+          has_any_findings: false,
+          has_unresolved_findings: false,
+          status: "completed",
+        };
+        const state = {
+          code_review: { ...clean },
+          security_review: { ...clean },
+        };
+        if (negative) {
+          state[section].has_any_findings = true;
+          state[
+            section === "code_review" ? "security_review" : "code_review"
+          ].commit_sha = companionHead;
+        }
+        const row = (key, label, icon) => {
+          const time = negative && key !== section ? companion : own;
+          return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+        };
+        return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n${row("code_review", "Code Review", "📝")}\n${row("security_review", "Security Review", "🛡️")}`;
+      };
+      const record = (id, value, created, updated = created) =>
+        comment(value, { id, created_at: created, updated_at: updated });
+      const before = [
+        { ...activation, created_at: at("46:00") },
+        { ...trigger, created_at: at("48:00") },
+      ];
+      const clear = record(63, body(false, at("50:00")), at("50:00"));
+      const receipt = record(
+        64,
+        presentationReceipt(HEAD, "Breezy!"),
+        at("58:00"),
+      );
+      const future = record(
+        61,
+        body(true, at("47:00"), at("55:01")),
+        at("47:00"),
+        observed,
+      );
+      assert.equal(hasCodexStateClockBounds(future, HEAD), false);
+      assert.equal(
+        codexNegativeCompletionTime(future, HEAD),
+        Date.parse(observed),
+      );
+      const blocked = runGate({
+        comments: [...before, future, clear, receipt],
+      });
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      for (const companion of [at("46:00"), at("55:00.999999")]) {
+        const valid = record(
+          61,
+          body(true, at("47:00"), companion),
+          at("47:00"),
+          observed,
+        );
+        assert.equal(hasCodexStateClockBounds(valid, HEAD), true);
+        const allowed = runGate({
+          comments: [...before, valid, clear, receipt],
+        });
+        assert.equal(allowed.status, 0, allowed.stdout + allowed.stderr);
+      }
+      const newer = record(65, body(false, at("56:00")), at("56:00"));
+      const recovered = runGate({
+        comments: [...before, future, clear, newer, receipt],
+      });
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+      const ownFuture = record(
+        66,
+        body(false, at("55:01")),
+        at("50:00"),
+        observed,
+      );
+      const ownInside = record(
+        66,
+        body(false, at("55:00.999999")),
+        at("50:00"),
+        observed,
+      );
+      assert.equal(hasCodexStateClockBounds(ownFuture, HEAD), false);
+      assert.equal(hasCodexStateClockBounds(ownInside, HEAD), true);
+      assert.notEqual(runGate({ comments: [...before, ownFuture] }).status, 0);
+      assert.equal(runGate({ comments: [...before, ownInside] }).status, 0);
+    });
+  }
+}
+
+for (const section of ["code_review", "security_review"]) {
+  test(`native ${section} clocks require real UTC ISO calendar dates`, () => {
+    const own = "2026-10-01T10:01:00Z";
+    const stateBody = (clock, negative = false) => {
+      let body = cleanStateBody(HEAD, (state) => {
+        if (section === "security_review")
+          state.security_review = { ...state.code_review };
+        if (negative) state[section].has_any_findings = true;
+        return state;
+      }).replaceAll(
+        "2026-10-20T12:02:00Z",
+        section === "code_review" ? clock : own,
+      );
+      if (section === "security_review")
+        body += `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${clock}">${clock}</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+      return body;
+    };
+    const record = (id, body, updated = "2026-10-01T10:02:00Z") =>
+      comment(body, {
+        id,
+        created_at: "2026-10-01T10:00:00Z",
+        updated_at: updated,
+      });
+    const before = [
+      { ...activation, created_at: "2026-10-01T09:59:00Z" },
+      { ...trigger, created_at: "2026-10-01T10:00:30Z" },
+    ];
+    for (const clock of [
+      "2026-09-31T10:01:00Z",
+      "October 1, 2026 10:01:00 GMT",
+      "2026-02-29T10:01:00Z",
+      "2026-10-01T24:00:00Z",
+      "2026-10-01T10:01:00+00:00",
+    ]) {
+      const invalid = record(71, stateBody(clock));
+      assert.equal(hasCleanCodexState(invalid.body, HEAD), false, clock);
+      assert.equal(hasCodexStateClockBounds(invalid, HEAD), false, clock);
+      if (section === "code_review")
+        assert.equal(
+          Number.isNaN(codexCodeReviewCompletionTime(invalid.body)),
+          true,
+        );
+      const rejected = runGate({ comments: [...before, invalid] });
+      assert.notEqual(
+        rejected.status,
+        0,
+        clock + rejected.stdout + rejected.stderr,
+      );
+      const negative = record(71, stateBody(clock, true));
+      assert.equal(
+        hasCodexNegativeHistory([negative], HEAD, () => true),
+        true,
+        clock,
+      );
+      const earlierClear = record(72, stateBody(own), own);
+      assert.equal(
+        hasCodexNegativeHistory([negative, earlierClear], HEAD, () => true),
+        true,
+        clock,
+      );
+    }
+    for (const clock of [own, "2026-10-01T10:01:00.999999Z"]) {
+      const valid = record(73, stateBody(clock));
+      assert.equal(hasCodexStateClockBounds(valid, HEAD), true, clock);
+      const accepted = runGate({ comments: [...before, valid] });
+      assert.equal(
+        accepted.status,
+        0,
+        clock + accepted.stdout + accepted.stderr,
+      );
+    }
+    const leap = stateBody("2024-02-29T10:01:00.123456Z");
+    assert.equal(hasCleanCodexState(leap, HEAD), true);
+  });
+}
+
+const independentLifecycles = JSON.parse(
+  readFileSync(
+    new URL(
+      "./fixtures/codex-independent-lifecycle-cases.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
+for (const scenario of independentLifecycles.cases) {
+  test(`code lifecycle retires independently from security evidence: ${scenario.name}`, () => {
+    const comments = [
+      {
+        event: "committed",
+        sha: independentLifecycles.sha,
+        created_at: independentLifecycles.requestedAt,
+      },
+      ...scenario.comments.map((entry) => ({ ...entry, event: "commented" })),
+    ];
+    const result = runGate({
+      comments,
+      initialHead: independentLifecycles.sha,
+      finalHead: independentLifecycles.sha,
+      resolvedSha: independentLifecycles.sha,
+    });
+    assert.equal(
+      result.status === 0,
+      scenario.expected,
+      result.stdout + result.stderr,
+    );
+  });
+}
+
+test("current code clearance can carry an unrelated foreign security finding", () => {
+  const scenario = independentLifecycles.cases.find(
+    (entry) => entry.name === "security-finding-uncleared",
+  );
+  const foreign = structuredClone(scenario.comments[1]);
+  const state = JSON.parse(
+    foreign.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+  );
+  state.security_review.commit_sha = OLD;
+  foreign.body = foreign.body
+    .replace(
+      /codex-review-state:v1 (.+?) -->/,
+      "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+    )
+    .split("\n")
+    .map((line) =>
+      line.includes("**Security Review**")
+        ? line.replace(HEAD.slice(0, 7), OLD.slice(0, 7))
+        : line,
+    )
+    .join("\n");
+  const comments = [
+    {
+      event: "committed",
+      sha: HEAD,
+      created_at: independentLifecycles.requestedAt,
+    },
+    ...[scenario.comments[0], foreign, scenario.comments[2]].map((entry) => ({
+      ...entry,
+      event: "commented",
+    })),
+  ];
+  const result = runGate({ comments });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});

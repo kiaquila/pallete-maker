@@ -16,7 +16,7 @@ const validReview = (review, head) =>
   cleanKeys(review, fields) &&
   /^[a-f0-9]{40}$/.test(review.commit_sha || "") &&
   review.commit_sha === head &&
-  ["completed", "running"].includes(review.status) &&
+  ["completed", "running", "failed"].includes(review.status) &&
   [review.has_any_findings, review.has_unresolved_findings].every(
     (flag) => flag === null || typeof flag === "boolean",
   );
@@ -35,16 +35,127 @@ const summaryHelp = `[Your team has set up Codex to review pull requests in this
 Codex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.`;
 const normalize = (text) => text.replace(/\s+/g, " ").trim();
 
+// Native clocks are UTC ISO calendar dates. Date.parse alone also accepts prose
+// and silently rolls impossible dates into another month.
+const canonicalTimestamp = (value) => {
+  if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(value || ""))
+    return NaN;
+  const time = Date.parse(value);
+  return Number.isFinite(time) &&
+    new Date(time).toISOString().slice(0, 19) === value.slice(0, 19)
+    ? time
+    : NaN;
+};
+const observationSecondEnd = (observed) =>
+  Math.floor(observed / 1000) * 1000 + 1000;
+
 // A structured snapshot is authoritative only with one closed-schema machine
 // record and the matching native visible table. Prose and reactions are not proof.
-export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
+export const parseCodexState = (
+  body,
+  head,
+  { sectionHeads = false, negativeEnvelope = false } = {},
+) => {
   if (!/^[a-f0-9]{40}$/.test(head || "")) return false;
-  const match = String(body || "")
-    .trim()
-    .match(
-      /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
-    );
+  const rawMarkerLine = String(body || "").match(
+    /^[^\r\n]*<!-- codex-pull-request-review-summary -->[^\r\n]*$/m,
+  )?.[0];
+  if (
+    !sectionHeads &&
+    !/^ {0,3}<!-- codex-pull-request-review-summary -->[ \t]*$/.test(
+      rawMarkerLine || "",
+    )
+  )
+    return false;
+  const rawHeading = String(body || "").match(
+    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
+  )?.[0];
+  if (
+    !negativeEnvelope &&
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || "")
+  )
+    return false;
+
+  if (
+    !negativeEnvelope &&
+    /^(?: {4}|[ \t]*\t)[ \t\uFEFF]*<!--\s*codex-(?:pull-request-review-summary|review-state|review-receipt)/m.test(
+      String(body || "").replace(/^\uFEFF/, ""),
+    )
+  )
+    return false;
+  // Preserve offsets and line breaks while locating pipes outside comments.
+  // Invisible pipes in metadata separators must not hide a live envelope;
+  // actual table pipes must still prevent comments from assembling raw fields.
+  const htmlComments = [];
+  const commentMask = String(body || "").replace(
+    /<!--[\s\S]*?-->/g,
+    (comment, offset) => {
+      htmlComments.push({ comment, offset, end: offset + comment.length });
+      return comment.replace(/[^\r\n]/g, " ");
+    },
+  );
+  const source = sectionHeads
+    ? String(body || "")
+        .replace(/<!--[\s\S]*?-->/g, (comment, offset, raw) => {
+          const linePrefix = raw.slice(
+            raw.lastIndexOf("\n", offset - 1) + 1,
+            offset,
+          );
+          const indentedCode = /^(?: {4}|[ \t]*\t)/.test(linePrefix);
+          const lineEnd = raw.indexOf("\n", offset + comment.length);
+          const visibleLine = commentMask.slice(
+            raw.lastIndexOf("\n", offset - 1) + 1,
+            lineEnd < 0 ? raw.length : lineEnd,
+          );
+          return /^<!--\s*codex-/i.test(comment) ||
+            indentedCode ||
+            visibleLine.includes("|")
+            ? comment
+            : comment.replace(/[^\r\n]/g, "");
+        })
+        .replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "")
+    : String(body || "").trim();
+  // Comment removal must not turn a code-indented or BOM-prefixed heading
+  // into live Markdown. Validate the effective line before capture trimming.
+  const effectiveHeading = source.match(
+    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
+  )?.[0];
+  if (
+    !negativeEnvelope &&
+    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || "")
+  )
+    return false;
+  const match = source.match(
+    sectionHeads
+      ? /^<!-- codex-pull-request-review-summary -->\s*<!-- codex-review-state:v1 (\{[\s\S]*?\}) -->\s*([\s\S]*)$/
+      : /^<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 (\{[^\r\n]+\}) -->\n([\s\S]*)$/,
+  );
   if (!match) return false;
+  if (sectionHeads) {
+    // Validate the original HTML context rather than an exact physical line.
+    // Adjacent hidden comments keep metadata live, even with intervening
+    // padding. Real first-element code indentation must remain ineligible.
+    const records = htmlComments.filter(
+      ({ comment }) =>
+        comment === summaryMarker || comment.startsWith(statePrefix),
+    );
+    if (
+      records.length < 2 ||
+      records[0].comment !== summaryMarker ||
+      !records[1].comment.startsWith(statePrefix) ||
+      records.slice(0, 2).some(({ offset }) => {
+        const lineStart = String(body || "").lastIndexOf("\n", offset - 1) + 1;
+        const prefix = commentMask.slice(lineStart, offset);
+        const followsComment = htmlComments.some(
+          (prior) => prior.offset < offset && prior.end > lineStart,
+        );
+        return followsComment
+          ? !/^[ \t]*$/.test(prefix)
+          : !/^ {0,3}$/.test(prefix);
+      })
+    )
+      return false;
+  }
   const raw = match[1];
   let state;
   try {
@@ -55,7 +166,13 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   // Native compact JSON round-trips exactly. Duplicate or escaped keys and
   // alternate scalar encodings cannot be silently normalized into valid proof.
   if (
-    JSON.stringify(state) !== raw ||
+    JSON.stringify(state) !==
+      (sectionHeads
+        ? raw.replace(
+            /("(?:\\.|[^"\\])*")|\s+/g,
+            (match, quoted) => quoted || "",
+          )
+        : raw) ||
     !cleanKeys(state, "code_review,security_review") ||
     !(
       (sectionHeads && inactiveReview(state.code_review)) ||
@@ -74,8 +191,14 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
   )
     return false;
   let visible = match[2].trim();
+  if (negativeEnvelope) {
+    // A live typed negative survives ambiguous presentation. Only complete
+    // canonical bodies can establish section clocks, clearing or recovery.
+    // Never infer harmlessness from free-form English or Markdown rendering.
+    return { state, times: {} };
+  }
   if (
-    /codex-review-state|codex-pull-request-review-summary|codex-review-receipt/i.test(
+    /<!--\s*(?:codex-review-state|codex-pull-request-review-summary|codex-review-receipt)/i.test(
       visible,
     )
   )
@@ -90,10 +213,23 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
     if (!help || normalize(help[1]) !== normalize(summaryHelp)) return false;
     visible = visible.slice(0, footer).trim();
   }
-  const lines = visible
-    .split(/\r?\n/)
+  const rawLines = visible.split(/\r?\n/);
+  // Markdown code indentation must never become canonical table evidence
+  // through trimming. Keep only the native block's zero-to-three ASCII spaces.
+  if (
+    rawLines.some((line) =>
+      line.trim() ? !/^ {0,3}\S/.test(line) : !/^[ \t]*$/.test(line),
+    )
+  )
+    return false;
+  // Blank lines end GFM tables. Keep the native heading, intro and contiguous
+  // table as separate blocks instead of removing arbitrary empty lines.
+  const blocks = rawLines
     .map((line) => line.trim())
-    .filter(Boolean);
+    .join("\n")
+    .split(/\n{2,}/);
+  if (blocks.length !== 3) return false;
+  const lines = [blocks[0], blocks[1], ...blocks[2].split("\n")];
   if (
     lines[0] !== "## Codex Review Summary" ||
     lines[1] !==
@@ -121,14 +257,40 @@ export const parseCodexState = (body, head, { sectionHeads = false } = {}) => {
           : "🔄 **Running** since",
       ) ||
       !row[2] ||
+      !["Manual request", "PR opened"].includes(row[5]) ||
       row[1] !== label ||
       !(sectionHeads ? state[section].commit_sha : head).startsWith(row[4]) ||
-      (row[2] && (row[2] !== row[3] || !Number.isFinite(Date.parse(row[2]))))
+      (row[2] &&
+        (row[2] !== row[3] || !Number.isFinite(canonicalTimestamp(row[2]))))
     )
       return false;
-    times[section] = Date.parse(row[2]);
+    times[section] = canonicalTimestamp(row[2]);
   }
   return { state, times };
+};
+
+// Every completed companion must fit the observation upper bound before this
+// snapshot supplies historical clocks. Carried companions may predate creation.
+const completionClocksWithinObservation = (parsed, observed) =>
+  Number.isFinite(observed) &&
+  Object.entries(parsed.state).every(
+    ([section, review]) =>
+      review.status !== "completed" ||
+      (Number.isFinite(parsed.times[section]) &&
+        parsed.times[section] < observationSecondEnd(observed)),
+  );
+
+export const hasCodexStateClockBounds = (entry, head) => {
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
+  return Boolean(
+    parsed &&
+    completionClocksWithinObservation(
+      parsed,
+      Date.parse(entry.updated_at || entry.created_at || ""),
+    ),
+  );
 };
 
 export const hasCleanCodexState = (body, head) => {
@@ -141,17 +303,47 @@ export const hasCleanCodexState = (body, head) => {
   );
 };
 
+// A newer canonical code verdict can retire an unknown code lifecycle while
+// security evidence keeps its own independent finding/clearance requirements.
+export const hasCleanCodexCodeState = (body, head) => {
+  const parsed = parseCodexState(body, head, { sectionHeads: true });
+  return Boolean(parsed && cleanReview(parsed.state.code_review, head));
+};
+
+// A completed code lifecycle with unknown finding flags is not an approval.
+// It may accompany an independent clean receipt. Active security, mixed flags,
+// negatives and any noncanonical presentation must remain review evidence.
+export const isCompletedCodexLifecycle = (body, head) => {
+  const parsed = parseCodexState(body, head);
+  return Boolean(
+    parsed &&
+    parsed.state.code_review.status === "completed" &&
+    parsed.state.code_review.has_any_findings === null &&
+    parsed.state.code_review.has_unresolved_findings === null &&
+    inactiveReview(parsed.state.security_review),
+  );
+};
+
 // Findings belong to their review section across repeated same-head requests.
 // Only a strictly newer canonical completion for that section can clear them.
 export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
   const sections = { code_review: [], security_review: [] };
   for (const entry of comments) {
     if (!isTrusted(entry)) continue;
-    const parsed = parseCodexState(entry.body || "", head, {
+    let parsed = parseCodexState(entry.body || "", head, {
       sectionHeads: true,
     });
+    let negativeOnly = false;
+    if (!parsed) {
+      parsed = parseCodexState(entry.body || "", head, {
+        sectionHeads: true,
+        negativeEnvelope: true,
+      });
+      negativeOnly = true;
+    }
     if (!parsed) continue;
     const observed = Date.parse(entry.updated_at || entry.created_at || "");
+    const created = Date.parse(entry.created_at || "");
     if (!Number.isFinite(observed)) continue;
     for (const section of Object.keys(sections)) {
       const review = parsed.state[section];
@@ -163,16 +355,29 @@ export const hasCodexNegativeHistory = (comments, head, isTrusted) => {
         sections[section].push({
           negative: true,
           time: Math.floor(
-            (review.status === "completed" &&
+            (completionClocksWithinObservation(parsed, observed) &&
+            review.status === "completed" &&
             Number.isFinite(parsed.times[section]) &&
-            parsed.times[section] < observed + 1000
+            Number.isFinite(created) &&
+            Math.floor(parsed.times[section] / 1000) >=
+              Math.floor(created / 1000) &&
+            parsed.times[section] < observationSecondEnd(observed)
               ? parsed.times[section]
               : observed) / 1000,
           ),
         });
-      else if (cleanReview(review, head)) {
+      else if (
+        !negativeOnly &&
+        completionClocksWithinObservation(parsed, observed) &&
+        cleanReview(review, head)
+      ) {
         const completed = parsed.times[section];
-        if (Number.isFinite(completed) && completed < observed + 1000)
+        if (
+          Number.isFinite(completed) &&
+          Number.isFinite(created) &&
+          Math.floor(completed / 1000) >= Math.floor(created / 1000) &&
+          completed < observationSecondEnd(observed)
+        )
           sections[section].push({
             negative: false,
             time: Math.floor(completed / 1000),
@@ -199,12 +404,15 @@ export const codexCodeReviewCompletionTime = (body) => {
   const match = String(body || "").match(
     /^\| 📝 \*\*Code Review\*\* \| ✅ \*\*Completed\*\* <relative-time datetime="([^"<>]+)">/m,
   );
-  return Date.parse(match?.[1] || "");
+  return canonicalTimestamp(match?.[1] || "");
 };
 
 export const codexNegativeCompletionTime = (entry, head) => {
-  const parsed = parseCodexState(entry.body || "", head);
+  const parsed = parseCodexState(entry.body || "", head, {
+    sectionHeads: true,
+  });
   const observed = Date.parse(entry.updated_at || entry.created_at || "");
+  const created = Date.parse(entry.created_at || "");
   if (
     !parsed ||
     Object.values(parsed.state).some((review) => review.status === "running")
@@ -212,15 +420,19 @@ export const codexNegativeCompletionTime = (entry, head) => {
     return NaN;
   const negatives = Object.entries(parsed.state).filter(
     ([, review]) =>
-      review.has_any_findings === true ||
-      review.has_unresolved_findings === true,
+      review.commit_sha === head &&
+      (review.has_any_findings === true ||
+        review.has_unresolved_findings === true),
   );
   if (!negatives.length) return NaN;
   return Math.max(
     ...negatives.map(([section, review]) =>
+      completionClocksWithinObservation(parsed, observed) &&
       review.status === "completed" &&
       Number.isFinite(parsed.times[section]) &&
-      parsed.times[section] < observed + 1000
+      Number.isFinite(created) &&
+      Math.floor(parsed.times[section] / 1000) >= Math.floor(created / 1000) &&
+      parsed.times[section] < observationSecondEnd(observed)
         ? Math.floor(parsed.times[section] / 1000) * 1000
         : observed,
     ),
