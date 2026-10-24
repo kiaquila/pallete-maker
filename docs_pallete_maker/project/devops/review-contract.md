@@ -166,3 +166,18 @@ If the timeline request fails, persisted REST lifecycle evidence still enforces
 the pending latch before formal approval. This fallback may return only a
 pending blocker or no blocker; it never supplies positive comment approval
 without genuine head activation.
+
+### Canonical calendar clocks and independent channel recovery
+
+Native table clocks use real UTC ISO calendar dates, including native fractional
+seconds. Prose dates and calendar rollover dates supply neither approval nor
+historical clearance; typed findings still remain at their observed time.
+Every completed section must precede the exclusive end of the observed GitHub
+server second: `floor(observed / 1000) * 1000 + 1000`. A fractional observation
+never widens that bucket; `.999999` within it remains valid.
+
+A strictly newer canonical CODE FALSE/FALSE completion retires an unknown CODE
+lifecycle independently of the security verdict in that snapshot. Security
+findings and their later own-section clearance remain separate requirements.
+A later receipt cannot replace a missing or equal-second CODE completion, and
+an uncleared security finding still blocks approval.

@@ -4,6 +4,9 @@ import {
 } from "./fixtures/codex-state.mjs";
 import {
   hasCodexNegativeHistory,
+  hasCodexStateClockBounds,
+  hasCleanCodexState,
+  codexCodeReviewCompletionTime,
   codexNegativeCompletionTime,
 } from "../scripts/codex-review-state.mjs";
 import { test } from "node:test";
@@ -3009,3 +3012,241 @@ for (const pair of JSON.parse(
     assert.notEqual(edited.status, 0, edited.stdout + edited.stderr);
   });
 }
+
+for (const section of ["code_review", "security_review"]) {
+  for (const companionHead of [HEAD, OLD]) {
+    test(`fractional observation ends at its server second for ${section} and ${companionHead === HEAD ? "current" : "foreign"} companion`, () => {
+      const at = (value) => `2026-10-23T21:${value}Z`;
+      const observed = at("55:00.500");
+      const body = (negative, own, companion) => {
+        const clean = {
+          commit_sha: HEAD,
+          has_any_findings: false,
+          has_unresolved_findings: false,
+          status: "completed",
+        };
+        const state = {
+          code_review: { ...clean },
+          security_review: { ...clean },
+        };
+        if (negative) {
+          state[section].has_any_findings = true;
+          state[
+            section === "code_review" ? "security_review" : "code_review"
+          ].commit_sha = companionHead;
+        }
+        const row = (key, label, icon) => {
+          const time = negative && key !== section ? companion : own;
+          return `| ${icon} **${label}** | ✅ **Completed** <relative-time datetime="${time}">${time}</relative-time> | \`${state[key].commit_sha.slice(0, 7)}\` | Manual request |`;
+        };
+        return `<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 ${JSON.stringify(state)} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n${row("code_review", "Code Review", "📝")}\n${row("security_review", "Security Review", "🛡️")}`;
+      };
+      const record = (id, value, created, updated = created) =>
+        comment(value, { id, created_at: created, updated_at: updated });
+      const before = [
+        { ...activation, created_at: at("46:00") },
+        { ...trigger, created_at: at("48:00") },
+      ];
+      const clear = record(63, body(false, at("50:00")), at("50:00"));
+      const receipt = record(
+        64,
+        presentationReceipt(HEAD, "Breezy!"),
+        at("58:00"),
+      );
+      const future = record(
+        61,
+        body(true, at("47:00"), at("55:01")),
+        at("47:00"),
+        observed,
+      );
+      assert.equal(hasCodexStateClockBounds(future, HEAD), false);
+      assert.equal(
+        codexNegativeCompletionTime(future, HEAD),
+        Date.parse(observed),
+      );
+      const blocked = runGate({
+        comments: [...before, future, clear, receipt],
+      });
+      assert.notEqual(blocked.status, 0, blocked.stdout + blocked.stderr);
+      for (const companion of [at("46:00"), at("55:00.999999")]) {
+        const valid = record(
+          61,
+          body(true, at("47:00"), companion),
+          at("47:00"),
+          observed,
+        );
+        assert.equal(hasCodexStateClockBounds(valid, HEAD), true);
+        const allowed = runGate({
+          comments: [...before, valid, clear, receipt],
+        });
+        assert.equal(allowed.status, 0, allowed.stdout + allowed.stderr);
+      }
+      const newer = record(65, body(false, at("56:00")), at("56:00"));
+      const recovered = runGate({
+        comments: [...before, future, clear, newer, receipt],
+      });
+      assert.equal(recovered.status, 0, recovered.stdout + recovered.stderr);
+      const ownFuture = record(
+        66,
+        body(false, at("55:01")),
+        at("50:00"),
+        observed,
+      );
+      const ownInside = record(
+        66,
+        body(false, at("55:00.999999")),
+        at("50:00"),
+        observed,
+      );
+      assert.equal(hasCodexStateClockBounds(ownFuture, HEAD), false);
+      assert.equal(hasCodexStateClockBounds(ownInside, HEAD), true);
+      assert.notEqual(runGate({ comments: [...before, ownFuture] }).status, 0);
+      assert.equal(runGate({ comments: [...before, ownInside] }).status, 0);
+    });
+  }
+}
+
+for (const section of ["code_review", "security_review"]) {
+  test(`native ${section} clocks require real UTC ISO calendar dates`, () => {
+    const own = "2026-10-01T10:01:00Z";
+    const stateBody = (clock, negative = false) => {
+      let body = cleanStateBody(HEAD, (state) => {
+        if (section === "security_review")
+          state.security_review = { ...state.code_review };
+        if (negative) state[section].has_any_findings = true;
+        return state;
+      }).replaceAll(
+        "2026-10-20T12:02:00Z",
+        section === "code_review" ? clock : own,
+      );
+      if (section === "security_review")
+        body += `\n| 🔒 **Security Review** | ✅ **Completed** <relative-time datetime="${clock}">${clock}</relative-time> | \`${HEAD.slice(0, 7)}\` | Manual request |`;
+      return body;
+    };
+    const record = (id, body, updated = "2026-10-01T10:02:00Z") =>
+      comment(body, {
+        id,
+        created_at: "2026-10-01T10:00:00Z",
+        updated_at: updated,
+      });
+    const before = [
+      { ...activation, created_at: "2026-10-01T09:59:00Z" },
+      { ...trigger, created_at: "2026-10-01T10:00:30Z" },
+    ];
+    for (const clock of [
+      "2026-09-31T10:01:00Z",
+      "October 1, 2026 10:01:00 GMT",
+      "2026-02-29T10:01:00Z",
+      "2026-10-01T24:00:00Z",
+      "2026-10-01T10:01:00+00:00",
+    ]) {
+      const invalid = record(71, stateBody(clock));
+      assert.equal(hasCleanCodexState(invalid.body, HEAD), false, clock);
+      assert.equal(hasCodexStateClockBounds(invalid, HEAD), false, clock);
+      if (section === "code_review")
+        assert.equal(
+          Number.isNaN(codexCodeReviewCompletionTime(invalid.body)),
+          true,
+        );
+      const rejected = runGate({ comments: [...before, invalid] });
+      assert.notEqual(
+        rejected.status,
+        0,
+        clock + rejected.stdout + rejected.stderr,
+      );
+      const negative = record(71, stateBody(clock, true));
+      assert.equal(
+        hasCodexNegativeHistory([negative], HEAD, () => true),
+        true,
+        clock,
+      );
+      const earlierClear = record(72, stateBody(own), own);
+      assert.equal(
+        hasCodexNegativeHistory([negative, earlierClear], HEAD, () => true),
+        true,
+        clock,
+      );
+    }
+    for (const clock of [own, "2026-10-01T10:01:00.999999Z"]) {
+      const valid = record(73, stateBody(clock));
+      assert.equal(hasCodexStateClockBounds(valid, HEAD), true, clock);
+      const accepted = runGate({ comments: [...before, valid] });
+      assert.equal(
+        accepted.status,
+        0,
+        clock + accepted.stdout + accepted.stderr,
+      );
+    }
+    const leap = stateBody("2024-02-29T10:01:00.123456Z");
+    assert.equal(hasCleanCodexState(leap, HEAD), true);
+  });
+}
+
+const independentLifecycles = JSON.parse(
+  readFileSync(
+    new URL(
+      "./fixtures/codex-independent-lifecycle-cases.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
+for (const scenario of independentLifecycles.cases) {
+  test(`code lifecycle retires independently from security evidence: ${scenario.name}`, () => {
+    const comments = [
+      {
+        event: "committed",
+        sha: independentLifecycles.sha,
+        created_at: independentLifecycles.requestedAt,
+      },
+      ...scenario.comments.map((entry) => ({ ...entry, event: "commented" })),
+    ];
+    const result = runGate({
+      comments,
+      initialHead: independentLifecycles.sha,
+      finalHead: independentLifecycles.sha,
+      resolvedSha: independentLifecycles.sha,
+    });
+    assert.equal(
+      result.status === 0,
+      scenario.expected,
+      result.stdout + result.stderr,
+    );
+  });
+}
+
+test("current code clearance can carry an unrelated foreign security finding", () => {
+  const scenario = independentLifecycles.cases.find(
+    (entry) => entry.name === "security-finding-uncleared",
+  );
+  const foreign = structuredClone(scenario.comments[1]);
+  const state = JSON.parse(
+    foreign.body.match(/codex-review-state:v1 (.+?) -->/)[1],
+  );
+  state.security_review.commit_sha = OLD;
+  foreign.body = foreign.body
+    .replace(
+      /codex-review-state:v1 (.+?) -->/,
+      "codex-review-state:v1 " + JSON.stringify(state) + " -->",
+    )
+    .split("\n")
+    .map((line) =>
+      line.includes("**Security Review**")
+        ? line.replace(HEAD.slice(0, 7), OLD.slice(0, 7))
+        : line,
+    )
+    .join("\n");
+  const comments = [
+    {
+      event: "committed",
+      sha: HEAD,
+      created_at: independentLifecycles.requestedAt,
+    },
+    ...[scenario.comments[0], foreign, scenario.comments[2]].map((entry) => ({
+      ...entry,
+      event: "commented",
+    })),
+  ];
+  const result = runGate({ comments });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});

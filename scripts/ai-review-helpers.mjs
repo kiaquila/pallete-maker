@@ -1,5 +1,6 @@
 import {
   hasCleanCodexState,
+  hasCleanCodexCodeState,
   hasCodexStateClockBounds,
   codexNegativeCompletionTime,
   isCodexStateBody,
@@ -374,7 +375,8 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       !Number.isFinite(Date.parse(entry.created_at || "")) ||
       Math.floor(completedAt / 1000) <
         Math.floor(Date.parse(entry.created_at || "") / 1000) ||
-      completedAt >= codexCommentTimestamp(entry) + 1000 ||
+      completedAt >=
+        Math.floor(codexCommentTimestamp(entry) / 1000) * 1000 + 1000 ||
       (Number.isFinite(stateBoundaryTime) &&
         Math.floor(completedAt / 1000) <=
           Math.floor(stateBoundaryTime / 1000)) ||
@@ -535,7 +537,7 @@ export const pickAuthoritativeCodexSkipModeComment = ({
       return !candidates.some(
         (clear) =>
           eligibleState(clear) &&
-          hasCleanCodexState(getBody(clear), headSha) &&
+          hasCleanCodexCodeState(getBody(clear), headSha) &&
           Math.floor(codexCodeReviewCompletionTime(getBody(clear)) / 1000) >
             observed,
       );
