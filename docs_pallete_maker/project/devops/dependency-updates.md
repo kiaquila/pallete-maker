@@ -39,3 +39,4 @@ validated by the repository's required checks before merge.
 | #50 | Claude Code Action    | 1.0.242 → 1.0.248 | Inactive Claude workflow runtime   |
 | #50 | OSV Scanner Action    | 2.6.0 → 2.7.0     | Dependency vulnerability scan      |
 | #51 | Prettier              | 3.9.9 → 3.9.10    | Formatting checks across repo      |
+| #56 | Claude Code Action    | 1.0.248 → 1.0.254 | Inactive Claude workflow runtime   |

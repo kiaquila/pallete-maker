@@ -38,3 +38,14 @@
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.
+
+## PR #56 — `anthropics/claude-code-action` 1.0.254
+
+- [x] Confirm the PR changes only the two existing action references.
+- [x] Confirm the replacement remains pinned to the full commit SHA for the
+      upstream `v1.0.254` tag.
+- [x] Record the reviewed version bump in the dependency update ledger.
+- [x] Run repository CI locally.
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.
