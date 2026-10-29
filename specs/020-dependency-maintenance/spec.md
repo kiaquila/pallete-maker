@@ -29,6 +29,8 @@ gates.
   while keeping every action pinned to an immutable commit SHA.
 - PR #51 updates `prettier` from `3.9.9` to `3.9.10` together with its
   generated lockfile entry.
+- PR #57 updates `html-validate` from `11.16.2` to `11.16.4` together with its
+  generated lockfile dependencies.
 
 ## Acceptance criteria
 
