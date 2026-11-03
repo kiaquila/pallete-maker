@@ -8,6 +8,11 @@
 4. Request the configured Codex review for the exact PR head.
 5. Merge only after all required checks and review threads are clear.
 
+For PR #59, keep the change limited to the two existing
+`anthropics/claude-code-action` references and this dependency-maintenance
+feature memory. Do not change workflow permissions, triggers, inputs, or job
+structure.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.

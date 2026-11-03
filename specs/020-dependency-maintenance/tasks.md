@@ -62,3 +62,14 @@
 PR #57 merged as `2ae963fb0d62e9aa681840038aa642dd913d4d5f` after local
 preflight passed 508 tests, all GitHub checks passed, and native Codex review
 remained unchanged without findings for 144 seconds.
+
+## PR #59 — `anthropics/claude-code-action` 1.0.263
+
+- [x] Confirm the PR changes only the two existing action references.
+- [x] Confirm the replacement remains pinned to the full commit SHA for the
+      upstream `v1.0.263` tag.
+- [x] Record the reviewed version bump in the dependency update ledger.
+- [x] Run repository CI locally (527 tests passed).
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.
