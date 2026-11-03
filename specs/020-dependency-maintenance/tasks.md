@@ -70,6 +70,19 @@ remained unchanged without findings for 144 seconds.
       upstream `v1.0.263` tag.
 - [x] Record the reviewed version bump in the dependency update ledger.
 - [x] Run repository CI locally (527 tests passed).
+- [x] Obtain a passing Codex AI Review for the current head.
+- [x] Confirm all required GitHub checks and review threads are clear.
+- [x] Merge the pull request.
+
+PR #59 merged as `aecec4639d9be9caf79efbd1c646394a7917874c` after its
+Codex finding was addressed, all review threads were resolved, and all
+required checks passed on the final head.
+
+## PR #60 — `html-validate` 11.17.0
+
+- [x] Confirm the manifest and lockfile contain only the intended update.
+- [x] Record the reviewed version bump in the dependency update ledger.
+- [x] Run repository CI locally with the updated lockfile (527 tests passed).
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.

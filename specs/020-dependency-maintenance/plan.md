@@ -13,6 +13,10 @@ For PR #59, keep the change limited to the two existing
 feature memory. Do not change workflow permissions, triggers, inputs, or job
 structure.
 
+For PR #60, keep the change limited to the `html-validate` manifest and
+lockfile entries, the dependency ledger, and this dependency-maintenance
+feature memory. Run the full repository CI suite with the updated validator.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.
