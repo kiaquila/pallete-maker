@@ -17,6 +17,10 @@ For PR #60, keep the change limited to the `html-validate` manifest and
 lockfile entries, the dependency ledger, and this dependency-maintenance
 feature memory. Run the full repository CI suite with the updated validator.
 
+For PR #61, verify both Claude workflow references against the upstream
+`v1.0.266` tag and record the update in the dependency ledger. Keep workflow
+permissions, triggers, inputs, and job structure unchanged.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.
