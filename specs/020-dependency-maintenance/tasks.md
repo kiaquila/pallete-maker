@@ -96,3 +96,12 @@ required checks passed on the final head.
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.
+
+## PR #62 — `html-validate` 11.18.0
+
+- [x] Confirm the manifest and lockfile contain only the intended update.
+- [x] Record the version bump in the dependency update ledger.
+- [x] Run repository CI locally with the updated lockfile (527 tests passed).
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.

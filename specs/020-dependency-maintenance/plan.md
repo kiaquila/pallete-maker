@@ -21,6 +21,10 @@ For PR #61, verify both Claude workflow references against the upstream
 `v1.0.266` tag and record the update in the dependency ledger. Keep workflow
 permissions, triggers, inputs, and job structure unchanged.
 
+For PR #62, verify the manifest and lockfile contain only the validator bump,
+record the release in the dependency ledger, and run local CI with the updated
+validator.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.
