@@ -1,5 +1,14 @@
 const summaryMarker = "<!-- codex-pull-request-review-summary -->";
 const statePrefix = "<!-- codex-review-state:v1 ";
+const summaryHeading = "## Codex Review Summary";
+const collapsibleOpening =
+  /^<details>\r?\n<summary><strong>Codex Review Summary<\/strong>: (?:✅ Completed|🔄 Running)<\/summary>\r?$/m;
+const hasNativeSummaryOpening = (body) =>
+  /^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(
+    body.match(/^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m)?.[0] || "",
+  ) || collapsibleOpening.test(body);
+const collapsibleSummary =
+  /^<details>\r?\n<summary><strong>Codex Review Summary<\/strong>: (✅ Completed|🔄 Running)<\/summary>\r?\n\r?\n([\s\S]+)\r?\n\r?\n<\/details>$/;
 const cleanKeys = (value, keys) =>
   value &&
   typeof value === "object" &&
@@ -67,13 +76,7 @@ export const parseCodexState = (
     )
   )
     return false;
-  const rawHeading = String(body || "").match(
-    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
-  )?.[0];
-  if (
-    !negativeEnvelope &&
-    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(rawHeading || "")
-  )
+  if (!negativeEnvelope && !hasNativeSummaryOpening(String(body || "")))
     return false;
 
   if (
@@ -117,14 +120,7 @@ export const parseCodexState = (
     : String(body || "").trim();
   // Comment removal must not turn a code-indented or BOM-prefixed heading
   // into live Markdown. Validate the effective line before capture trimming.
-  const effectiveHeading = source.match(
-    /^[^\r\n]*## Codex Review Summary[ \t]*\r?$/m,
-  )?.[0];
-  if (
-    !negativeEnvelope &&
-    !/^ {0,3}## Codex Review Summary[ \t]*\r?$/.test(effectiveHeading || "")
-  )
-    return false;
+  if (!negativeEnvelope && !hasNativeSummaryOpening(source)) return false;
   const match = source.match(
     sectionHeads
       ? /^<!-- codex-pull-request-review-summary -->\s*<!-- codex-review-state:v1 (\{[\s\S]*?\}) -->\s*([\s\S]*)$/
@@ -203,6 +199,16 @@ export const parseCodexState = (
     )
   )
     return false;
+  const wrapper = visible.match(collapsibleSummary);
+  if (wrapper) {
+    const status = Object.values(state).some(
+      (review) => review.status === "running",
+    )
+      ? "🔄 Running"
+      : "✅ Completed";
+    if (wrapper[1] !== status) return false;
+    visible = `${summaryHeading}\n\n${wrapper[2]}`;
+  }
   const footer = visible.indexOf("<details>");
   if (footer >= 0) {
     const help = visible
@@ -231,7 +237,7 @@ export const parseCodexState = (
   if (blocks.length !== 3) return false;
   const lines = [blocks[0], blocks[1], ...blocks[2].split("\n")];
   if (
-    lines[0] !== "## Codex Review Summary" ||
+    lines[0] !== summaryHeading ||
     lines[1] !==
       "This comment shows the latest Codex review activity on this pull request." ||
     lines[2] !== "| Review | Status | Commit | Review trigger |" ||
