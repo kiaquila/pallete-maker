@@ -87,3 +87,10 @@ lifecycle independently of the security verdict in that snapshot. Security
 findings and their later own-section clearance remain separate requirements.
 A later receipt cannot replace a missing or equal-second CODE completion, and
 an uncleared security finding still blocks approval.
+
+### Collapsible native review summaries
+
+Recognize the observed opening and closing details tags and validate the outer
+status before applying the existing table parser. Exercise the real connector
+body from PR #61, mismatched status and malformed wrappers, and the existing
+history and timestamp safeguards. Keep the required gate on trusted main.
