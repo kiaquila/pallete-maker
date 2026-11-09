@@ -168,6 +168,12 @@ findings and their later own-section clearance remain separate requirements.
 A later receipt cannot replace a missing or equal-second CODE completion, and
 an uncleared security finding still blocks approval.
 
+### Collapsible native review summaries
+
+- [x] Reproduce the required check timeout with the real native reply on PR #61.
+- [ ] Verify the new presentation and rejection cases with repository preflight.
+- [ ] Obtain a passing native Codex review before merging the parser update.
+
 - [x] Reproduce fractional observation/calendar and independent-channel cases.
 - [x] Pass eleven focused groups with CODE/SEC, foreign companion and negative controls.
 - [x] Pass the updated full preflight (508 tests) and feature-memory check.

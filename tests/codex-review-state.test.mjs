@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasCleanCodexState } from "../scripts/codex-review-state.mjs";
+import { readFileSync } from "node:fs";
+import {
+  hasCleanCodexState,
+  hasCodexNegativeHistory,
+  parseCodexState,
+} from "../scripts/codex-review-state.mjs";
 import {
   pickAuthoritativeCodexSkipModeComment,
   classifyCodexSummaryComment,
@@ -39,6 +44,75 @@ const pick = (events) =>
   });
 test("strict full-head native state supplies proof", () =>
   assert.equal(hasCleanCodexState(clean, head), true));
+
+test("the real collapsible connector summary supplies current-head proof", () => {
+  const body = readFileSync(
+    new URL("./fixtures/codex-collapsible-summary.txt", import.meta.url),
+    "utf8",
+  ).trimEnd();
+  const sha = "e414bc72bfa05da4c4e1b6af106d13eef85e8ef0";
+  const received = {
+    ...bot(body, 2),
+    created_at: "2026-11-09T20:52:58Z",
+    updated_at: "2026-11-09T20:53:54Z",
+  };
+  const select = (summary) =>
+    pickAuthoritativeCodexSkipModeComment({
+      timelineEvents: [
+        { ...activation, sha, created_at: "2026-11-09T20:52:36Z" },
+        {
+          ...trigger,
+          body: `@codex review ${sha}`,
+          created_at: "2026-11-09T20:52:38Z",
+        },
+        summary,
+      ],
+      issueComments: [summary],
+      headSha: sha,
+    });
+  assert.equal(select(received).classification.outcome, "pass");
+  for (const malformed of [
+    body.replace("✅ Completed</summary>", "🔄 Running</summary>"),
+    body.replace("<details>\n<summary>", "<details open>\n<summary>"),
+    body.replace("<details>\n<summary>", "    <details>\n<summary>"),
+    body.replace(/\n<\/details>$/, ""),
+    body + "\n\nAdditional review text.",
+    body.replace("`e414bc7`", "`0000000`"),
+  ]) {
+    assert.equal(
+      select({ ...received, body: malformed }).classification.outcome,
+      "pending",
+    );
+  }
+  const running = body
+    .replace("✅ Completed</summary>", "🔄 Running</summary>")
+    .replace('"status":"completed"', '"status":"running"')
+    .replace("✅ **Completed**", "🔄 **Running** since");
+  assert.ok(parseCodexState(running, sha));
+  assert.equal(
+    select({ ...received, body: running }).classification.outcome,
+    "pending",
+  );
+  const finding = body.replace(
+    '"has_any_findings":false',
+    '"has_any_findings":true',
+  );
+  assert.equal(hasCleanCodexState(finding, sha), false);
+  assert.equal(
+    hasCodexNegativeHistory(
+      [
+        {
+          ...received,
+          body: finding.replace("✅ Completed</summary>", "Changed</summary>"),
+        },
+      ],
+      sha,
+      () => true,
+    ),
+    true,
+  );
+});
+
 for (const [name, body] of [
   ["unknown key", cleanStateBody(head, (s) => ({ ...s, unknown: false }))],
   [

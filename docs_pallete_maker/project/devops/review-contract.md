@@ -104,8 +104,12 @@ For `pallete-maker`, reviewers should prioritize:
 
 A structured summary proves completion only when its unique leading official
 markers contain closed, duplicate-free typed JSON for the full current head and
-its complete native body matches the supported heading, introduction, contiguous
-four-column table, canonical section rows and exact optional service help footer.
+its complete native body matches the supported Markdown heading or the observed
+collapsible heading with matching status, followed by the introduction,
+contiguous four-column table, canonical section rows and exact optional service
+help footer. The
+[collapsible summary on PR #61](https://github.com/kiaquila/pallete-maker/pull/61#issuecomment-6751178615)
+is the compatibility fixture.
 Both observed triggers, `Manual request` and `PR opened`, are supported. Unknown
 prose, arbitrary links, HTML or Markdown variants remain pending; the gate does
 not try to interpret general English or reproduce GitHub Markdown rendering.

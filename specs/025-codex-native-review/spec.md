@@ -87,3 +87,10 @@ lifecycle independently of the security verdict in that snapshot. Security
 findings and their later own-section clearance remain separate requirements.
 A later receipt cannot replace a missing or equal-second CODE completion, and
 an uncleared security finding still blocks approval.
+
+### Collapsible native review summaries
+
+Accept the Codex connector's collapsible summary observed on PR #61 as an
+additional canonical presentation. The outer status must agree with the typed
+review sections. The enclosed introduction, table, clocks, and optional help
+footer must satisfy the same rules as a summary with a Markdown heading.
