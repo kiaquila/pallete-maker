@@ -38,6 +38,9 @@ gates.
   immutable commit SHA.
 - PR #60 updates `html-validate` from `11.16.4` to `11.17.0` together with its
   generated lockfile entries.
+- PR #61 updates `anthropics/claude-code-action` from `1.0.263` to `1.0.266`
+  in the two existing Claude workflows, with both references pinned to the
+  release commit SHA.
 - PR #62 updates `html-validate` from `11.17.0` to `11.18.0` in the manifest
   and lockfile.
 
