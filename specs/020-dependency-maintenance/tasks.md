@@ -86,3 +86,13 @@ required checks passed on the final head.
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.
+
+## PR #61 — `anthropics/claude-code-action` 1.0.266
+
+- [x] Confirm the dependency diff updates only the two existing action references.
+- [x] Verify that both references pin the upstream `v1.0.266` release commit.
+- [x] Record the version bump in the dependency update ledger.
+- [x] Run repository CI locally (527 tests passed).
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.
