@@ -17,6 +17,10 @@ For PR #60, keep the change limited to the `html-validate` manifest and
 lockfile entries, the dependency ledger, and this dependency-maintenance
 feature memory. Run the full repository CI suite with the updated validator.
 
+For PR #62, verify the manifest and lockfile contain only the validator bump,
+record the release in the dependency ledger, and run local CI with the updated
+validator.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.

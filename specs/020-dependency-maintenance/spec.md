@@ -38,6 +38,8 @@ gates.
   immutable commit SHA.
 - PR #60 updates `html-validate` from `11.16.4` to `11.17.0` together with its
   generated lockfile entries.
+- PR #62 updates `html-validate` from `11.17.0` to `11.18.0` in the manifest
+  and lockfile.
 
 ## Acceptance criteria
 

@@ -43,3 +43,4 @@ validated by the repository's required checks before merge.
 | #57 | html-validate         | 11.16.2 → 11.16.4 | Development HTML validation tool   |
 | #59 | Claude Code Action    | 1.0.254 → 1.0.263 | Inactive Claude workflow runtime   |
 | #60 | html-validate         | 11.16.4 → 11.17.0 | Development HTML validation tool   |
+| #62 | html-validate         | 11.17.0 → 11.18.0 | Development HTML validation tool   |
