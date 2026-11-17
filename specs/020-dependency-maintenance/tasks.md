@@ -105,3 +105,13 @@ required checks passed on the final head.
 - [ ] Obtain a passing Codex AI Review for the current head.
 - [ ] Confirm all required GitHub checks and review threads are clear.
 - [ ] Merge the pull request.
+
+## PR #65 — Tailwind CSS 4.3.5 and `html-validate` 11.21.0
+
+- [x] Confirm the manifest and lockfile contain only the intended updates.
+- [x] Record the version bumps in the dependency update ledger.
+- [x] Regenerate and verify the committed stylesheet.
+- [x] Run repository CI locally with the updated lockfile (528 tests passed).
+- [ ] Obtain a passing Codex AI Review for the current head.
+- [ ] Confirm all required GitHub checks and review threads are clear.
+- [ ] Merge the pull request.

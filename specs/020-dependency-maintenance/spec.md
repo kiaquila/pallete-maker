@@ -43,6 +43,9 @@ gates.
   release commit SHA.
 - PR #62 updates `html-validate` from `11.17.0` to `11.18.0` in the manifest
   and lockfile.
+- PR #65 updates `@tailwindcss/cli` and `tailwindcss` from `4.3.3` to `4.3.5`,
+  and `html-validate` from `11.18.0` to `11.21.0`, together with the generated
+  lockfile changes.
 
 ## Acceptance criteria
 
