@@ -25,6 +25,11 @@ For PR #62, verify the manifest and lockfile contain only the validator bump,
 record the release in the dependency ledger, and run local CI with the updated
 validator.
 
+For PR #65, keep the manifest and lockfile changes limited to the Tailwind CSS,
+Tailwind CLI, and HTML validator updates. Regenerate the committed stylesheet,
+confirm it remains current, record all three versions in the dependency ledger,
+and run the full local CI suite.
+
 ## Risks
 
 - A dependency release can change behavior despite a compatible version bump.
