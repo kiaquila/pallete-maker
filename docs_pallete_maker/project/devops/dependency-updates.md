@@ -47,3 +47,5 @@ validated by the repository's required checks before merge.
 | #62 | html-validate         | 11.17.0 → 11.18.0 | Development HTML validation tool   |
 | #65 | Tailwind CSS + CLI    | 4.3.3 → 4.3.5     | CSS compiler and generated styles  |
 | #65 | html-validate         | 11.18.0 → 11.21.0 | Development HTML validation tool   |
+| #67 | html-validate         | 11.21.0 → 11.21.1 | Development HTML validation tool   |
+| #67 | Prettier              | 3.9.10 → 3.10.1   | Formatting checks across repo      |
