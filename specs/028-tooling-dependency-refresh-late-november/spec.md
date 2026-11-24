@@ -15,12 +15,13 @@ application behavior:
 - update `html-validate` from 11.21.0 to 11.21.1
 - update `prettier` from 3.9.10 to 3.10.1
 - preserve the existing scripts, configuration, and runtime dependencies
+- record the reviewed versions in the dependency update ledger
 - record the maintenance intent in this feature-memory folder
 
 ## Acceptance criteria
 
-- `package.json` and `pnpm-lock.yaml` contain only the Dependabot-proposed
-  version updates plus this feature memory
+- the PR diff contains only the Dependabot-proposed version updates, the
+  dependency ledger entry, and this feature memory
 - `pnpm install --frozen-lockfile` succeeds
 - `pnpm run ci` passes with the updated validator and formatter
 - required GitHub checks and the Vercel preview are green
